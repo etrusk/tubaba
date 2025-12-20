@@ -1,6 +1,6 @@
-# Global Instructions for All Modes
+# Global Rules for All Modes
 
-These rules apply to every mode in this project. Mode-specific rules extend but do not override these.
+These rules apply to every mode in this project. Mode-specific rules in `.roo/rules-{mode}/` extend but do not override these.
 
 ## Non-Negotiable Behaviors
 
@@ -51,3 +51,25 @@ memory-bank/     → Project context and decisions (read at session start)
 2. If you must assume, state the assumption explicitly
 3. Prefer "I don't know" over confident-sounding guesses
 4. Suggest information sources that could resolve uncertainty
+
+### Context Freshness Protocol
+
+Long sessions degrade context. Apply these checkpoints:
+
+**Every 5 substantive messages or 30 minutes:**
+- Re-read `specs/plan.md` if implementing
+- Verify current work aligns with requirements
+- Check if decisions should be logged to `memory-bank/01-decisions.md`
+
+**Before starting new subtask:**
+- Re-read `specs/tasks.md` for current priorities
+- Confirm previous subtask is complete
+
+**When uncertain or output feels "off":**
+- Re-read `memory-bank/02-progress.md` for session context
+- Ask: "Should I re-read the current project state?"
+
+**Checkpoint triggers (log to memory-bank/):**
+- Architecture decision made → `01-decisions.md`
+- Subtask completed → `02-progress.md`
+- New requirement discovered → flag for human, update specs

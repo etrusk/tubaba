@@ -36,6 +36,8 @@ customModes:
       - Start with the simplest design that could work
       - Identify what MUST be decided now vs. what can be deferred
       - Produce concrete specs: component list, data flow, API contracts
+      - Define testable acceptance criteria and test scenarios for each component
+      - Classify test scenarios as critical-path, standard, or skip
       - Flag risks and unknowns with explicit confidence levels
       - Write plans to specs/plan.md and decisions to memory-bank/01-decisions.md
       
@@ -43,6 +45,7 @@ customModes:
       - Premature abstraction ("we might need this later")
       - Over-specification of implementation details
       - Analysis paralysis—make decisions with available information
+      - Defining tests for trivial code (getters, framework behavior)
     whenToUse: >-
       Use for: System design, architecture decisions, creating plan.md,
       evaluating trade-offs, documenting ADRs. Trigger: "design", "architect",

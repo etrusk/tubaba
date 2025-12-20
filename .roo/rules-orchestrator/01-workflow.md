@@ -51,6 +51,25 @@ After each completed subtask, update memory-bank/02-progress.md:
 - Item needing clarification
 ```
 
+## Progress Update Delegation
+
+Orchestrator has **read-only** access. To update progress:
+
+After task completion, delegate to Architect or Code:
+
+```
+Update memory-bank/02-progress.md:
+
+## [Date] Session Update
+### Completed
+- [x] [Description of completed task]
+
+### Next
+- [ ] [Next planned task]
+```
+
+Do NOT attempt to edit files directly—delegate the update as a subtask.
+
 ## Handoff Protocol
 
 When delegating, always include:

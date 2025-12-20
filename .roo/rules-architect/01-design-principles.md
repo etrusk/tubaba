@@ -74,3 +74,62 @@ Use explicit uncertainty markers:
 - **High confidence:** "This approach will work because [evidence]"
 - **Medium confidence:** "I recommend X, though Y is a reasonable alternative if [condition]"
 - **Low confidence:** "I'm uncertain between X and Y. Key question: [what would resolve this]"
+
+## Test Scenario Specification
+
+For each component in specs/plan.md, define test scenarios that Code mode will implement.
+
+### Template
+
+```markdown
+## Test Scenarios
+
+### [Component Name]
+
+**Critical path** (test-first required):
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| [name] | [input] | [output] | [boundary] |
+
+**Standard coverage** (test alongside implementation):
+- [Scenario]: [Expected behavior]
+
+**Skip testing** (justify):
+- [Item]: [Reason—e.g., trivial getter, framework behavior]
+```
+
+### Guidelines
+
+1. **Critical path** = failure here breaks the product or loses money
+   - Auth, payments, core business logic, data integrity
+   
+2. **Standard coverage** = should work but failure is recoverable
+   - Secondary features, non-critical validations
+   
+3. **Skip testing** = testing cost exceeds value
+   - Getters/setters, config, UI styling, prototype code
+
+### Example
+
+```markdown
+## Test Scenarios
+
+### UserAuth Component
+
+**Critical path:**
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| Valid login | correct email/password | JWT token, user object | case-insensitive email |
+| Invalid password | wrong password | 401 error, no token | after 5 fails, lockout |
+| Token refresh | valid refresh token | new access token | expired refresh → 401 |
+
+**Standard coverage:**
+- Logout: clears tokens from storage
+- Remember me: extends token expiry
+
+**Skip testing:**
+- Password field masking: browser/framework behavior
+- Email format hint: trivial UI
+```
+
+Human reviews these scenarios before Code begins implementation. If scenarios look wrong, push back before proceeding.

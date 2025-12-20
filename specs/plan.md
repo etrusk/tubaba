@@ -52,3 +52,11 @@ Items explicitly not covered in this plan:
 
 - Item 1
 - Item 2
+
+## Test Scenarios
+
+<!-- Architect: Define test scenarios for each component above -->
+<!-- Classify as: Critical path | Standard coverage | Skip testing -->
+<!-- Human must approve before Code implements -->
+
+[To be filled by Architect mode]
