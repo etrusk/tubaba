@@ -1,0 +1,56 @@
+# Secrets - NEVER let agents access these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# Dependencies - read package.json instead
+node_modules/
+.pnpm-store/
+
+# Build outputs - don't analyze generated code
+dist/
+build/
+.next/
+out/
+.nuxt/
+.output/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large binary files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.pdf
+*.mp4
+*.mov
+
+# Package lock files (read package.json for deps)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Test artifacts
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.log
