@@ -1,0 +1,27 @@
+{
+  "name": "best-game-ever",
+  "version": "1.0.0",
+  "description": "A research-validated setup for AI-assisted development with Roo Code.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/etrusk/tubaba.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/etrusk/tubaba/issues"
+  },
+  "homepage": "https://github.com/etrusk/tubaba#readme",
+  "devDependencies": {
+    "@vitest/ui": "^4.0.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
+}
