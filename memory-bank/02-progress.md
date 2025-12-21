@@ -4,6 +4,48 @@ New sessions go at the top.
 
 ---
 
+## 2025-12-21 Phase 3 Complete
+
+### Context
+Implemented Phase 3: Enemy AI (Segment 3).
+
+### Completed
+- [x] RuleConditionEvaluator: 41 tests (5 condition types)
+- [x] EnemyBrain: 27 tests (rule priority, targeting, conditions)
+- [x] Enemy AI Integration: 16 tests (multi-turn scenarios)
+- [x] Total: 360/360 tests passing
+
+### Key Artifacts
+- `src/ai/rule-condition-evaluator.ts` - Condition evaluation (hp-below, ally-count, status checks)
+- `src/ai/enemy-brain.ts` - AI decision-making (selectAction)
+- `tests/integration/enemy-ai.test.ts` - Integration scenarios with snapshots
+
+### Next Session
+- Begin Phase 4: Run Management (RunStateManager, CharacterProgression)
+
+---
+
+## 2025-12-21 Phase 1 Complete, Phase 2 Complete
+
+### Context
+Continued implementation. Verified Phase 1 was complete, then implemented Phase 2.
+
+### Completed
+- [x] Verified Phase 1: Combat Engine - 215/215 tests passing
+- [x] Phase 2: Targeting System
+  - TargetSelector: 38 tests (7 targeting modes)
+  - TargetFilter: 23 tests (Taunt forcing, dead exclusion)
+- [x] Total: 276/276 tests passing
+
+### Key Artifacts
+- `src/targeting/target-selector.ts` - All targeting modes
+- `src/targeting/target-filter.ts` - Status-based filtering
+
+### Next Session
+- Begin Phase 3: Enemy AI (RuleConditionEvaluator, EnemyBrain)
+
+---
+
 <!--
 ## Session: [Date]
 
