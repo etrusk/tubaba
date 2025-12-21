@@ -1,0 +1,93 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Enemy AI Integration > Scenario: Multi-Turn AI Combat > should demonstrate full multi-turn battle with AI decisions 1`] = `
+[
+  {
+    "actorId": "player-1",
+    "message": "Hero used Strike",
+    "skillName": "Strike",
+    "tick": 3,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-1",
+    "message": "Goblin takes 15 damage",
+    "targetId": "enemy-1",
+    "tick": 3,
+    "type": "damage",
+    "value": 15,
+  },
+  {
+    "actorId": "player-1",
+    "message": "Hero used Strike",
+    "skillName": "Strike",
+    "tick": 6,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-1",
+    "message": "Goblin takes 15 damage",
+    "targetId": "enemy-1",
+    "tick": 6,
+    "type": "damage",
+    "value": 15,
+  },
+  {
+    "message": "Goblin was knocked out",
+    "targetId": "enemy-1",
+    "tick": 6,
+    "type": "knockout",
+  },
+  {
+    "message": "Victory!",
+    "tick": 6,
+    "type": "victory",
+  },
+]
+`;
+
+exports[`Enemy AI Integration > Scenario: Taunt Interaction > should demonstrate taunt forcing in full combat 1`] = `
+[
+  {
+    "actorId": "player-1",
+    "message": "Tank used Taunt",
+    "skillName": "Taunt",
+    "tick": 3,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-2",
+    "message": "DPS used Strike",
+    "skillName": "Strike",
+    "tick": 3,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-2",
+    "message": "Goblin takes 15 damage",
+    "targetId": "enemy-1",
+    "tick": 3,
+    "type": "damage",
+    "value": 15,
+  },
+  {
+    "actorId": "player-1",
+    "message": "taunting applied to Tank",
+    "statusType": "taunting",
+    "targetId": "player-1",
+    "tick": 3,
+    "type": "status-applied",
+  },
+  {
+    "message": "Goblin was knocked out",
+    "targetId": "enemy-1",
+    "tick": 3,
+    "type": "knockout",
+  },
+  {
+    "message": "Victory!",
+    "tick": 3,
+    "type": "victory",
+  },
+]
+`;
