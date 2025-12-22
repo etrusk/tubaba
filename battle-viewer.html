@@ -233,7 +233,9 @@
     }
 
     .control-buttons button {
-      padding: 12px 20px;
+      padding: 15px 24px;
+      min-width: 120px;
+      min-height: 50px;
       font-size: 1rem;
       font-weight: bold;
       border: none;
@@ -284,6 +286,77 @@
       cursor: pointer;
     }
 
+    /* Skill Priority Editor Buttons */
+    .move-btn {
+      min-width: 40px;
+      min-height: 40px;
+      width: 40px;
+      height: 40px;
+      padding: 8px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .move-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .move-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Apply/Cancel Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    .apply-btn,
+    .cancel-btn {
+      padding: 12px 32px;
+      min-width: 100px;
+      min-height: 44px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .apply-btn {
+      background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    }
+
+    .cancel-btn {
+      background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    }
+
+    .apply-btn:hover:not(:disabled),
+    .cancel-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .apply-btn:disabled,
+    .cancel-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* Instructions Panel */
     .instructions-panel {
       flex: 1;
@@ -293,6 +366,113 @@
 
     .instructions-panel h2 {
       margin-bottom: 20px;
+    }
+
+    /* Action Forecast Panel */
+    .forecast-panel {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 600px;
+    }
+
+    .forecast-panel h2 {
+      margin-bottom: 20px;
+    }
+
+    .forecast-timeline {
+      margin-bottom: 20px;
+    }
+
+    .forecast-timeline h3 {
+      color: #64b5f6;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .timeline-entry {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      border-left: 3px solid #2196f3;
+    }
+
+    .timeline-entry.queued {
+      font-weight: bold;
+      border-left-color: #ffd700;
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .timeline-entry .tick-number {
+      color: #64b5f6;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .character-forecast {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+
+    .character-forecast h4 {
+      color: #4caf50;
+      margin-bottom: 8px;
+    }
+
+    .character-forecast.enemy h4 {
+      color: #f44336;
+    }
+
+    .forecast-current-action,
+    .forecast-next-action {
+      margin: 8px 0;
+      padding: 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .forecast-label {
+      font-weight: bold;
+      color: #64b5f6;
+      margin-right: 5px;
+    }
+
+    .forecast-rules {
+      margin-top: 10px;
+    }
+
+    .forecast-rules h5 {
+      color: #9c27b0;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .rule-item {
+      padding: 5px 8px;
+      margin: 4px 0;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: monospace;
+    }
+
+    .rule-item.disabled {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
+    .rule-priority {
+      display: inline-block;
+      min-width: 24px;
+      padding: 2px 6px;
+      background: #9c27b0;
+      border-radius: 3px;
+      font-weight: bold;
+      margin-right: 8px;
+      font-size: 0.8rem;
     }
 
     /* Debug Inspector */
@@ -474,6 +654,42 @@
       font-family: monospace;
     }
 
+    /* Skill Priority Editor */
+    .skill-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .skill-item .skill-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .skill-item .skill-name {
+      flex: 1;
+      font-weight: bold;
+    }
+
+    .skill-item .skill-priority {
+      color: #ffd700;
+      font-size: 0.9rem;
+    }
+
+    .skill-item.selected {
+      background: rgba(255, 215, 0, 0.2);
+      border: 1px solid #ffd700;
+    }
+
+    .skill-item.disabled .skill-name {
+      opacity: 0.5;
+      text-decoration: line-through;
+    }
+
     /* Scrollbar styling */
     ::-webkit-scrollbar {
       width: 8px;
@@ -540,10 +756,16 @@
           </div>
         </div>
         
-        <!-- Instructions Panel (Bottom) -->
+        <!-- Instructions Panel (Middle) -->
         <div class="panel instructions-panel">
           <h2>🎮 Character Instructions</h2>
           <div id="instructions-container"></div>
+        </div>
+        
+        <!-- Action Forecast Panel (Bottom) -->
+        <div class="panel forecast-panel">
+          <h2>🔮 Action Forecast</h2>
+          <div id="forecast-container"></div>
         </div>
       </div>
     </div>
@@ -556,6 +778,8 @@
   </div>
 
   <script type="module">
+    console.log('Battle Viewer script starting...');
+    
     import { BattleController } from './dist/ui/battle-controller.js';
     import { renderCharacterCard } from './dist/ui/character-card.js';
     import { renderDebugInspector } from './dist/ui/debug-inspector.js';
@@ -565,13 +789,17 @@
     import { renderSkillPriorityEditor } from './dist/ui/skill-priority-editor.js';
     import { renderConditionBuilder } from './dist/ui/condition-builder.js';
     import { renderTargetingOverrideSelector } from './dist/ui/targeting-override-selector.js';
+    import { renderActionForecast } from './dist/ui/action-forecast.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
+
+    console.log('Imports loaded successfully');
 
     // Get DOM elements
     const playersContainer = document.getElementById('players-container');
     const enemiesContainer = document.getElementById('enemies-container');
     const instructionsContainer = document.getElementById('instructions-container');
+    const forecastContainer = document.getElementById('forecast-container');
     const debugContainer = document.getElementById('debug-container');
     const eventLogContainer = document.getElementById('event-log-container');
     const tickDisplay = document.getElementById('tick-display');
@@ -696,6 +924,10 @@
       
       // Render event log
       eventLogContainer.innerHTML = renderEventLog(state.eventLog);
+      
+      // Render forecast
+      const forecast = battleController.getForecast();
+      forecastContainer.innerHTML = renderActionForecast(forecast);
       
       // Render debug info if available
       if (lastDebugInfo) {

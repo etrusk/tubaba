@@ -726,10 +726,11 @@ describe('BattleViewer Integration', () => {
       const tickResult = TickExecutor.executeTickWithDebug(state);
       const html = renderBattleViewer(tickResult.updatedState, tickResult.debugInfo);
       
-      // Verify targeting decisions shown
+      // Verify targeting decisions shown with new verbose format
       expect(html).toContain('Targeting Decisions');
-      expect(html).toContain('Caster');
-      expect(html).toContain('Skill');
+      expect(html).toContain('Hero'); // Character name instead of "Caster"
+      expect(html).toContain('strike');
+      expect(html).toMatch(/uses|targeting/i); // Verbose targeting description
     });
 
     it('should display resolution substeps in debug panel', () => {

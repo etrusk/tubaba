@@ -106,10 +106,10 @@ export function renderSkillPriorityEditor(
 
       return `    <li class="${classes.join(' ')}" data-skill-id="${instruction.skillId}" data-enabled="${isEnabled}">
       <div class="skill-controls">
-        <button class="move-btn" data-action="move-up"${upDisabled}>↑</button>
-        <button class="move-btn" data-action="move-down"${downDisabled}>↓</button>
+        <button class="move-btn" data-action="move-up"${upDisabled} title="Move up: This skill will be tried BEFORE the skill above it">↑</button>
+        <button class="move-btn" data-action="move-down"${downDisabled} title="Move down: This skill will be tried AFTER the skill below it">↓</button>
       </div>
-      <input type="checkbox" class="skill-enable"${checked} data-action="toggle-skill" />
+      <input type="checkbox" class="skill-enable"${checked} data-action="toggle-skill" data-skill-id="${instruction.skillId}" title="Enable/Disable: When disabled, this skill will not be used by the AI" />
       <span class="skill-name">${skill.name}</span>
       <span class="skill-priority">${instruction.priority}</span>
     </li>`;
@@ -123,5 +123,15 @@ export function renderSkillPriorityEditor(
   <ul class="skill-list">
 ${skillItems}
   </ul>
+  
+  <div class="action-help">
+    <p><strong>How priority works:</strong></p>
+    <ul>
+      <li>↑ Move up = Skill is tried earlier (higher priority)</li>
+      <li>↓ Move down = Skill is tried later (lower priority)</li>
+      <li>☐ Checkbox = Enable/disable skill for AI</li>
+    </ul>
+    <p>The AI tries skills from top to bottom until one's conditions are met.</p>
+  </div>
 </div>`;
 }

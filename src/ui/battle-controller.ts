@@ -5,9 +5,17 @@ import type {
   SkillInstruction
 } from '../types/instructions.js';
 import type { Condition, TargetingMode } from '../types/skill.js';
+import type { ActionForecast } from '../types/forecast.js';
 import { TickExecutor } from '../engine/tick-executor.js';
-import { produce, freeze } from 'immer';
 import { applyInstructionsToCharacter, createDefaultInstructions } from './instructions-converter.js';
+import { forecastNextActions } from './action-forecast-analyzer.js';
+
+/**
+ * Deep clone utility for state management
+ */
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
 
 /**
  * Time provider interface for dependency injection (testing)
@@ -45,10 +53,13 @@ export class BattleController {
   // Instructions state (separate from combat history)
   private instructionsState: InstructionsBuilderState;
   private appliedInstructions: Map<string, CharacterInstructions>;
+  
+  // Forecast cache
+  private forecastCache: ActionForecast | null;
 
   constructor(initialState: CombatState, timeProvider: TimeProvider = defaultTimeProvider) {
-    // Freeze the initial state to ensure immutability
-    this.initialState = freeze(initialState, true);
+    // Deep clone the initial state to ensure immutability
+    this.initialState = deepClone(initialState);
     this.currentState = this.initialState;
     this.history = [this.initialState];
     this.currentHistoryIndex = 0;
@@ -56,11 +67,15 @@ export class BattleController {
     this.speed = 1.0;
     this.playing = false;
     this.timeProvider = timeProvider;
+    this.forecastCache = null;
     
-    // Initialize instructions for all players
+    // Initialize instructions for all characters (players AND enemies)
     const instructions = new Map<string, CharacterInstructions>();
     for (const player of initialState.players) {
       instructions.set(player.id, createDefaultInstructions(player));
+    }
+    for (const enemy of initialState.enemies) {
+      instructions.set(enemy.id, createDefaultInstructions(enemy));
     }
     
     this.instructionsState = {
@@ -111,11 +126,10 @@ export class BattleController {
       return;
     }
 
-    // Execute tick using Immer's produce for structural sharing
-    const nextState = produce(this.currentState, draft => {
-      const result = TickExecutor.executeTick(draft);
-      Object.assign(draft, result.updatedState);
-    });
+    // Deep clone current state and execute tick
+    const stateCopy = deepClone(this.currentState);
+    const result = TickExecutor.executeTick(stateCopy);
+    const nextState = result.updatedState;
 
     this.currentState = nextState;
 
@@ -129,6 +143,9 @@ export class BattleController {
 
     // Update index to point to current state
     this.currentHistoryIndex = this.history.length - 1;
+
+    // Invalidate forecast cache
+    this.forecastCache = null;
 
     // Auto-stop playback if battle just ended
     if (this.currentState.battleStatus !== 'ongoing') {
@@ -177,6 +194,9 @@ export class BattleController {
       if (!this.playing) return;
 
       this.step();
+
+      // Invalidate forecast cache after step
+      this.forecastCache = null;
 
       // Continue scheduling if still playing (step() sets playing=false when battle ends)
       if (this.playing) {
@@ -447,9 +467,8 @@ export class BattleController {
     });
 
     // Update current state with modified players
-    this.currentState = produce(this.currentState, draft => {
-      draft.players = updatedPlayers;
-    });
+    this.currentState = deepClone(this.currentState);
+    this.currentState.players = updatedPlayers;
 
     // Update history at current index
     this.history[this.currentHistoryIndex] = this.currentState;
@@ -463,6 +482,9 @@ export class BattleController {
     );
 
     this.instructionsState.isDirty = false;
+    
+    // Invalidate forecast cache since instructions changed
+    this.forecastCache = null;
   }
 
   /**
@@ -493,5 +515,19 @@ export class BattleController {
    */
   isDirty(): boolean {
     return this.instructionsState.isDirty;
+  }
+
+  /**
+   * Get action forecast for current state
+   * Returns cached forecast if state hasn't changed
+   */
+  getForecast(): ActionForecast {
+    if (this.forecastCache === null) {
+      this.forecastCache = forecastNextActions(
+        this.currentState,
+        this.instructionsState.instructions
+      );
+    }
+    return this.forecastCache;
   }
 }

@@ -135,8 +135,9 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
     
     expect(html).toContain('✓');
     expect(html).toContain('✗');
-    expect(html).toContain('rule-0');
-    expect(html).toContain('rule-1');
+    // Now shows skill name instead of rule-0/rule-1
+    expect(html).toContain('heal');
+    expect(html).toContain('Priority');
   });
 
   it('should highlight matched rule distinctly from failed rules', () => {
@@ -412,7 +413,8 @@ describe('DebugInspector - AC52: Targeting Display', () => {
     const debugInfo = createDebugInfo([], [decision], []);
     const html = renderDebugInspector(debugInfo);
     
-    expect(html).toContain('all-enemies');
+    // Now shows human-readable targeting mode description
+    expect(html).toMatch(/targeting all enemies|all-enemies/i);
   });
 });
 

@@ -8,129 +8,100 @@
 
 <!-- Tasks ready to start, in priority order -->
 
-### Phase 6: Instructions Builder UI (Segment 6)
+### Phase 7: Action Forecast Feature
 
-1. **Define Instructions Data Structures**
-   - Add `CharacterInstructions`, `SkillInstruction`, `InstructionsBuilderState`, `InstructionsPanelData` to `src/types/index.ts`
-   - Export from type modules
+**Overview:** Add "see the future" feature showing action timeline, next action predictions, and complete AI rule summaries for all characters.
+
+**Dependencies:** Phase 6 (Instructions Builder) complete, BattleController with instruction tracking
+
+**Estimated Tests:** ~60-80 tests (20 analyzer + 25 renderer + 10 controller + 15 integration)
+
+**Acceptance Criteria:** AC62-AC65 (Action Timeline, Next Action Prediction, Rule Summary, Real-time Updates)
+
+1. **Define Action Forecast Type Definitions**
+   - Create `src/types/forecast.ts`
+   - Define: `ActionForecast`, `ActionTimelineEntry`, `CharacterForecast`, `RuleSummary`
    - Depends on: Existing type definitions
+   - Estimated: 30 minutes, no tests (type definitions)
 
-2. **Write Instructions Converter Test Suite**
-   - Tests for `SkillInstruction[]` to `Rule[]` conversion
-   - Tests for applying instructions to Character.skills
-   - Tests for human mode (rules cleared)
-   - Tests for AI mode (rules populated)
-   - Depends on: Instructions data structures
+2. **Write ActionForecastAnalyzer Test Suite** (AC62-AC63)
+   - Tests for `forecastNextActions()` - prediction using selectAction()
+   - Tests for `buildTimeline()` - action ordering with queued + predicted
+   - Tests for `summarizeRules()` - human-readable rule formatting
+   - Edge cases: all idle, all queued, no matching rules, stunned characters
+   - Depends on: Forecast type definitions
+   - Estimated: ~20 tests
 
-3. **Implement Instructions Converter Utilities**
-   - Create `src/ui/instructions-converter.ts`
-   - Implement `applyInstructionsToCharacter()`
-   - Implement helper conversion functions
-   - Depends on: Converter tests
+3. **Implement ActionForecastAnalyzer**
+   - `forecastNextActions(state, instructions)` - main analysis function
+   - Reuse `selectAction()` from enemy-brain.ts for predictions
+   - Build ordered timeline combining queued actions + predictions
+   - Generate human-readable rule summaries from instructions
+   - Depends on: ActionForecastAnalyzer tests
+   - Files: `src/ui/action-forecast-analyzer.ts`
 
-4. **Write InstructionsBuilder Test Suite** (AC54-AC61)
-   - Tests for character selection rendering
-   - Tests for control mode toggle integration
-   - Tests for skill editor visibility based on mode
-   - Tests for "Apply" and "Cancel" actions
-   - Tests for validation error display
-   - Depends on: Instructions data structures
+4. **Write ActionForecastRenderer Test Suite** (AC64)
+   - Tests for `renderActionForecast()` - complete forecast HTML
+   - Tests for `renderTimeline()` - timeline section with tick numbers
+   - Tests for `renderCharacterForecast()` - per-character forecast section
+   - Tests for `renderRuleSummary()` - rule list formatting
+   - Edge cases: empty forecast, all disabled rules, no timeline entries
+   - Depends on: Forecast type definitions
+   - Estimated: ~25 tests
 
-5. **Implement InstructionsBuilder Container**
-   - Create `src/ui/instructions-builder.ts`
-   - Pure render function coordinating sub-components
-   - Handle selection state display
-   - Depends on: InstructionsBuilder tests
+5. **Implement ActionForecastRenderer**
+   - Pure render function generating HTML from forecast data
+   - Timeline: ordered list with tick numbers, character → skill → targets
+   - Character forecasts: current action, next prediction, rule list
+   - Rule summaries: priority, conditions text, targeting mode
+   - Depends on: ActionForecastRenderer tests
+   - Files: `src/ui/action-forecast.ts`
 
-6. **Write ControlModeToggle Test Suite**
-   - Tests for toggle rendering with current mode
-   - Tests for active state indicator
-   - Tests for help text display
-   - Depends on: Instructions data structures
+6. **Write BattleController Forecast Extension Tests**
+   - Tests for `getForecast()` - returns current forecast
+   - Tests for forecast update on `step()` - rebuilds after tick
+   - Tests for forecast update on `play()` - updates during playback
+   - Tests for forecast update on instruction change
+   - Edge cases: battle ended, empty instructions, all characters dead
+   - Depends on: ActionForecastAnalyzer implementation
+   - Estimated: ~10 tests
 
-7. **Implement ControlModeToggle**
-   - Create `src/ui/control-mode-toggle.ts`
-   - Render toggle button with state
-   - Include help text for mode explanation
-   - Depends on: ControlModeToggle tests
+7. **Implement BattleController Forecast Extension**
+   - Add `private forecastCache: ActionForecast | null` property
+   - Add `getForecast(): ActionForecast` method
+   - Call analyzer in `step()` and `play()` to update cache
+   - Pass instructions map to analyzer
+   - Invalidate cache on instruction changes
+   - Depends on: BattleController forecast tests
+   - Files: `src/ui/battle-controller.ts` (extend existing)
 
-8. **Write SkillPriorityEditor Test Suite**
-   - Tests for skill list rendering ordered by priority
-   - Tests for priority number auto-calculation
-   - Tests for up/down arrow controls
-   - Tests for enable/disable skill toggle
-   - Tests for single skill edge case (no reordering)
-   - Depends on: Instructions data structures
+8. **Update battle-viewer.html with Forecast Panel**
+   - Add forecast panel below instructions panel (right column)
+   - Wire up forecast rendering on tick updates
+   - Add CSS styling for timeline and rule summaries
+   - Visual distinction between queued (bold) and predicted (normal) actions
+   - Depends on: ActionForecastRenderer implementation
+   - Files: `battle-viewer.html` (extend existing layout)
 
-9. **Implement SkillPriorityEditor**
-   - Create `src/ui/skill-priority-editor.ts`
-   - Render skill list with priority numbers
-   - Up/down arrow handlers for reordering
-   - Enable/disable checkboxes
-   - Depends on: SkillPriorityEditor tests
+9. **Write Action Forecast Integration Tests** (AC65)
+   - Full battle with forecast updates at each tick
+   - Verify timeline accuracy (queued actions execute when predicted)
+   - Verify next action prediction matches actual selectAction() result
+   - Verify rule summaries reflect instruction configuration
+   - Verify real-time updates on state/instruction changes
+   - Snapshot tests capturing complete forecast state
+   - Depends on: All forecast component implementations
+   - Estimated: ~15 tests
 
-10. **Write ConditionBuilder Test Suite**
-    - Tests for condition list rendering
-    - Tests for adding conditions with type selection
-    - Tests for type-specific input rendering (threshold, status selector)
-    - Tests for editing condition values
-    - Tests for removing conditions
-    - Tests for validation (threshold 0-100, required fields)
-    - Tests for multiple condition types
-    - Depends on: Instructions data structures
+**Phase 7 Success Criteria:**
+- All 60-80 tests passing
+- AC62-AC65 acceptance criteria met
+- Forecast updates <5ms per tick
+- Timeline shows next 5 actions in deterministic order
+- Predictions match actual AI behavior (100% accuracy)
+- Rule summaries human-readable and complete
 
-11. **Implement ConditionBuilder**
-    - Create `src/ui/condition-builder.ts`
-    - Render condition list with edit/delete buttons
-    - Type-specific input rendering
-    - Validation and error display
-    - Depends on: ConditionBuilder tests
-
-12. **Write TargetingOverrideSelector Test Suite**
-    - Tests for dropdown rendering with all TargetingMode options
-    - Tests for "(Default)" option to clear override
-    - Tests for help text per targeting mode
-    - Depends on: Instructions data structures
-
-13. **Implement TargetingOverrideSelector**
-    - Create `src/ui/targeting-override-selector.ts`
-    - Render dropdown with TargetingMode options
-    - Default option handling
-    - Depends on: TargetingOverrideSelector tests
-
-14. **Write BattleController Instructions Extension Tests**
-    - Tests for `selectCharacter()` method
-    - Tests for `updateControlMode()` method
-    - Tests for `updateSkillPriority()` method
-    - Tests for `addCondition()` / `removeCondition()` methods
-    - Tests for `updateTargetingOverride()` method
-    - Tests for `applyInstructions()` method
-    - Tests for instructions state persistence across battle steps
-    - Depends on: Instructions converter utilities
-
-15. **Implement BattleController Instructions Extension**
-    - Add `InstructionsBuilderState` property to BattleController
-    - Implement instruction management methods
-    - Implement `applyInstructions()` using converter utilities
-    - Depends on: BattleController extension tests
-
-16. **Update battle-viewer.html Layout**
-    - Refactor from 3-column to 2-column layout
-    - Left: Enemies (top) + Players (bottom)
-    - Right: Controls (top) + Instructions Panel (bottom)
-    - Wire character card click events to `selectCharacter()`
-    - Wire instructions builder event handlers
-    - Import new UI components
-    - Depends on: All component implementations
-
-17. **Write Instructions Integration Tests**
-    - Full workflow: select character → configure AI → apply → battle uses rules
-    - Verify rules applied to Character.skills correctly
-    - Verify EnemyBrain uses generated rules (player characters using AI)
-    - Snapshot test: configured instructions → AI battle log matches expected
-    - Test persistence across battle reset
-    - Test human mode removes rules
-    - Depends on: battle-viewer.html layout update
+---
 
 ### Phase 5: UI Layer (Segment 5)
 
@@ -212,6 +183,28 @@
 ## Completed
 
 <!-- Recently completed tasks for reference -->
+
+### Phase 6: Instructions Builder UI (Segment 6) - Completed 2025-12-22
+
+- [x] **Define Instructions Data Structures** - 4 new types in `src/types/instructions.ts`
+- [x] **Write Instructions Converter Test Suite** - 23 tests for SkillInstruction → Rule conversion
+- [x] **Implement Instructions Converter Utilities** - `src/ui/instructions-converter.ts` with conversion logic
+- [x] **Write InstructionsBuilder Test Suite** - 34 tests (AC54-AC61)
+- [x] **Implement InstructionsBuilder Container** - `src/ui/instructions-builder.ts` main component
+- [x] **Write ControlModeToggle Test Suite** - 22 tests for Human/AI mode toggle
+- [x] **Implement ControlModeToggle** - `src/ui/control-mode-toggle.ts` mode switcher
+- [x] **Write SkillPriorityEditor Test Suite** - 39 tests for priority reordering
+- [x] **Implement SkillPriorityEditor** - `src/ui/skill-priority-editor.ts` with up/down arrows
+- [x] **Write ConditionBuilder Test Suite** - 51 tests for 5 condition types
+- [x] **Implement ConditionBuilder** - `src/ui/condition-builder.ts` with validation
+- [x] **Write TargetingOverrideSelector Test Suite** - 40 tests for targeting mode selection
+- [x] **Implement TargetingOverrideSelector** - `src/ui/targeting-override-selector.ts` dropdown
+- [x] **Write BattleController Instructions Extension Tests** - 37 tests for 16 new methods
+- [x] **Implement BattleController Instructions Extension** - Extended BattleController with instructions state
+- [x] **Update battle-viewer.html Layout** - Restructured to 2-column layout
+- [x] **Write Instructions Integration Tests** - 16 tests for full workflow validation
+
+**Phase 6 Summary:** 262/262 tests passing (23 Converter + 34 InstructionsBuilder + 22 ControlModeToggle + 39 SkillPriorityEditor + 51 ConditionBuilder + 40 TargetingOverrideSelector + 37 BattleController + 16 Integration). Total project: 886/886 tests.
 
 ### Phase 4: Run Management (Segment 4) - Completed 2025-12-21
 - [x] **Write RunStateManager Test Suite** - 43 tests (AC35-AC40)

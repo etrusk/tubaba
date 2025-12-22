@@ -1599,3 +1599,280 @@ describe('BattleController - Editing Skill State', () => {
     expect(controller.getEditingSkillId()).toBe(null);
   });
 });
+
+describe('BattleController - Action Forecast Extension', () => {
+  it('should return forecast via getForecast()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast = controller.getForecast();
+    
+    expect(forecast).toBeDefined();
+    expect(forecast.timeline).toBeDefined();
+    expect(forecast.characterForecasts).toBeDefined();
+    expect(Array.isArray(forecast.timeline)).toBe(true);
+    expect(Array.isArray(forecast.characterForecasts)).toBe(true);
+  });
+
+  it('should update forecast when step() is called', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast1 = controller.getForecast();
+    const tick1 = controller.getCurrentTick();
+    
+    controller.step();
+    
+    const forecast2 = controller.getForecast();
+    const tick2 = controller.getCurrentTick();
+    
+    // Tick should have changed
+    expect(tick2).toBe(tick1 + 1);
+    // Forecast should be regenerated (different reference)
+    expect(forecast2).not.toBe(forecast1);
+  });
+
+  it('should update forecast during play()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const mockTime = new MockTimeProvider();
+    const controller = new BattleController(initialState, mockTime);
+    
+    controller.play();
+    
+    const forecast1 = controller.getForecast();
+    
+    // Trigger a tick
+    mockTime.triggerNext();
+    
+    const forecast2 = controller.getForecast();
+    
+    // Forecast should have updated
+    expect(forecast2).not.toBe(forecast1);
+    
+    controller.pause();
+  });
+
+  it('should include character forecasts for all alive characters', () => {
+    const skill1 = createTestSkill('strike');
+    const player1 = createCharacterWithSkills('player-1', [skill1]);
+    const player2 = createCharacterWithSkills('player-2', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player1, player2], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast = controller.getForecast();
+    
+    // Should have forecasts for all 3 characters
+    expect(forecast.characterForecasts.length).toBe(3);
+    const characterIds = forecast.characterForecasts.map(f => f.characterId).sort();
+    expect(characterIds).toEqual(['enemy-1', 'player-1', 'player-2']);
+  });
+
+  it('should use instructions map for forecast predictions', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Add a condition to the strike skill
+    const condition = { type: 'hp-below' as const, threshold: 50 };
+    controller.addCondition('player-1', 'strike', condition);
+    
+    const forecast = controller.getForecast();
+    
+    // Forecast should include rule summary with the condition
+    const player1Forecast = forecast.characterForecasts.find(f => f.characterId === 'player-1');
+    expect(player1Forecast?.rulesSummary.length).toBeGreaterThan(0);
+    expect(player1Forecast?.rulesSummary[0]?.conditionsText).toContain('HP < 50%');
+  });
+
+  it('should include timeline entries for queued actions', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    player.currentAction = {
+      skillId: 'strike',
+      casterId: 'player-1',
+      targets: ['enemy-1'],
+      ticksRemaining: 2,
+    };
+    
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 10);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast = controller.getForecast();
+    
+    // Should have at least one timeline entry for the queued action
+    expect(forecast.timeline.length).toBeGreaterThan(0);
+    expect(forecast.timeline[0]?.isQueued).toBe(true);
+    expect(forecast.timeline[0]?.tickNumber).toBe(12); // Current tick 10 + 2 remaining
+  });
+
+  it('should return empty forecast when no instructions configured', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Clear all instructions
+    controller.updateControlMode('player-1', 'human');
+    
+    const forecast = controller.getForecast();
+    
+    // Should still return forecast structure, but with no predictions
+    expect(forecast).toBeDefined();
+    expect(forecast.timeline).toBeDefined();
+    expect(forecast.characterForecasts).toBeDefined();
+  });
+
+  it('should handle forecast when battle has ended', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 0, 100, [], false);
+    const endedState = createCombatState([player], [enemy], 10, [], 'victory');
+    
+    const controller = new BattleController(endedState);
+    
+    const forecast = controller.getForecast();
+    
+    // Should still return valid forecast structure
+    expect(forecast).toBeDefined();
+    expect(forecast.timeline).toBeDefined();
+    expect(forecast.characterForecasts).toBeDefined();
+  });
+
+  it('should reflect current state in forecast', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 5);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast = controller.getForecast();
+    
+    // Character forecast should reflect current state
+    const player1Forecast = forecast.characterForecasts.find(f => f.characterId === 'player-1');
+    expect(player1Forecast?.characterName).toBe('Character player-1');
+    expect(player1Forecast?.isPlayer).toBe(true);
+  });
+
+  it('should cache forecast between calls', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const forecast1 = controller.getForecast();
+    const forecast2 = controller.getForecast();
+    
+    // Should return same reference when state hasn't changed
+    expect(forecast2).toBe(forecast1);
+  });
+});
+
+describe('BattleController - Bug Fixes: Forecast and Enemy Instructions', () => {
+  it('getForecast returns updated forecast after applyInstructions', () => {
+    const skill1 = createTestSkill('strike', 'Strike');
+    const skill2 = createTestSkill('heal', 'Heal');
+    const player = createCharacterWithSkills('player-1', [skill1, skill2]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Get initial forecast
+    const forecast1 = controller.getForecast();
+    const player1Forecast1 = forecast1.characterForecasts.find(f => f.characterId === 'player-1');
+    
+    // Initially, strike skill should be enabled
+    const strikeRule1 = player1Forecast1?.rulesSummary.find(r => r.skillName === 'Strike');
+    expect(strikeRule1).toBeDefined();
+    expect(strikeRule1?.enabled).toBe(true);
+    
+    // Disable strike skill
+    controller.toggleSkillEnabled('player-1', 'strike');
+    
+    // Apply instructions
+    controller.applyInstructions();
+    
+    // Get forecast again - should be updated
+    const forecast2 = controller.getForecast();
+    
+    // Forecasts should be different references (cache invalidated)
+    expect(forecast2).not.toBe(forecast1);
+    
+    // Strike should now show as disabled in the forecast
+    const player1Forecast2 = forecast2.characterForecasts.find(f => f.characterId === 'player-1');
+    const strikeRule2 = player1Forecast2?.rulesSummary.find(r => r.skillName === 'Strike');
+    expect(strikeRule2).toBeDefined();
+    expect(strikeRule2?.enabled).toBe(false);
+    
+    // Heal should still be enabled
+    const healRule2 = player1Forecast2?.rulesSummary.find(r => r.skillName === 'Heal');
+    expect(healRule2).toBeDefined();
+    expect(healRule2?.enabled).toBe(true);
+  });
+
+  it('creates default instructions for enemies', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy1 = createTestCharacter('enemy-1', 100, 100, [], false);
+    const enemy2 = createTestCharacter('enemy-2', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy1, enemy2], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Verify instructions exist for all enemies
+    const instructionsState = controller.getInstructionsState();
+    
+    expect(instructionsState.instructions.has('enemy-1')).toBe(true);
+    expect(instructionsState.instructions.has('enemy-2')).toBe(true);
+    
+    // Verify enemy instructions have correct properties
+    const enemy1Instructions = instructionsState.instructions.get('enemy-1');
+    expect(enemy1Instructions?.characterId).toBe('enemy-1');
+    expect(enemy1Instructions?.controlMode).toBe('ai');
+    
+    const enemy2Instructions = instructionsState.instructions.get('enemy-2');
+    expect(enemy2Instructions?.characterId).toBe('enemy-2');
+    expect(enemy2Instructions?.controlMode).toBe('ai');
+  });
+
+  it('includes enemy forecasts when enemies have default instructions', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Get forecast
+    const forecast = controller.getForecast();
+    
+    // Should include forecast for enemy
+    const enemyForecast = forecast.characterForecasts.find(f => f.characterId === 'enemy-1');
+    expect(enemyForecast).toBeDefined();
+    expect(enemyForecast?.characterId).toBe('enemy-1');
+    expect(enemyForecast?.isPlayer).toBe(false);
+  });
+});

@@ -4,6 +4,55 @@ New sessions go at the top.
 
 ---
 
+## 2025-12-22 Phase 6 Complete - Instructions Builder UI
+
+### Context
+Implemented Phase 6: Instructions Builder UI feature. Allows configuring AI behavior for player characters through a visual interface.
+
+### Completed
+
+- [x] **Architecture Design** - Created specs/instructions-builder-spec.md with 5 components, 8 acceptance criteria (AC54-AC61)
+- [x] **Data Structures** - 4 new types: CharacterInstructions, SkillInstruction, InstructionsBuilderState, InstructionsPanelData
+- [x] **Instructions Converter** - SkillInstruction[] → Rule[] conversion (23 tests)
+- [x] **InstructionsBuilder Container** - Main panel component (34 tests)
+- [x] **ControlModeToggle** - Human/AI mode switch (22 tests)
+- [x] **SkillPriorityEditor** - Priority reordering with up/down arrows (39 tests)
+- [x] **ConditionBuilder** - Add/edit/remove conditions for 5 types (51 tests)
+- [x] **TargetingOverrideSelector** - Override targeting mode (40 tests)
+- [x] **BattleController Extensions** - 16 new methods for instructions management (37 tests)
+- [x] **Layout Update** - Restructured battle-viewer.html to 2-column layout
+- [x] **Integration Tests** - Full workflow verification (16 tests)
+- [x] **Review Fixes** - Fixed condition type and function signature issues
+
+### Test Summary
+- **Phase 6 New Tests:** 262 tests
+- **Project Total:** 886/886 tests passing
+- **Acceptance Criteria:** AC54-AC61 all covered
+
+### Key Artifacts
+- `specs/instructions-builder-spec.md` - Full specification
+- `src/types/instructions.ts` - Type definitions
+- `src/ui/instructions-converter.ts` - Converter utilities
+- `src/ui/instructions-builder.ts` - Main container
+- `src/ui/control-mode-toggle.ts` - Mode toggle
+- `src/ui/skill-priority-editor.ts` - Priority editor
+- `src/ui/condition-builder.ts` - Condition builder
+- `src/ui/targeting-override-selector.ts` - Targeting selector
+- `battle-viewer.html` - Updated layout
+
+### Key Decisions
+- Human mode defined but manual skill selection UI deferred
+- Using up/down arrows (drag-and-drop deferred)
+- Single rule per skill in UI (engine supports multiple)
+- Instructions stored in-memory only (no localStorage)
+
+### Next Session
+- Optional: Add manual skill selection UI for Human mode
+- Optional: Add drag-and-drop for skill reordering
+- Feature branch ready for merge to master
+
+---
+
 ## 2025-12-22 BattleController Architecture Refactoring
 
 ### Context

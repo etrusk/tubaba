@@ -4,6 +4,151 @@ Record significant technical decisions here. New decisions go at the top.
 
 ---
 
+## 2025-12-22 Action Forecast Feature
+
+**Status:** Accepted
+
+**Context:** The battle viewer currently shows what happened in past ticks (via DebugInspector and EventLog) and what's happening now (via CharacterCards), but players cannot see what will happen next. This creates difficulty:
+- Understanding AI behavior patterns before they execute
+- Validating instruction configurations work as intended
+- Anticipating battle flow for strategic planning
+- Debugging unexpected future actions
+
+The request is for a "see the future" feature that shows:
+1. **Action Timeline** - When each character will act (queued + predicted)
+2. **Next Action Forecast** - What idle characters will do when they act
+3. **Rule Summary** - Complete AI decision tree for each character
+
+**Industry Standards Compliance:**
+- **SOLID:** Single Responsibility - ActionForecastAnalyzer (prediction) separate from ActionForecastRenderer (display)
+- **SOLID:** Open/Closed - Reuses existing `selectAction()` from enemy-brain.ts (no duplicate prediction logic)
+- **SOLID:** Dependency Inversion - Analyzer depends on AI interface, not implementation details
+- **UI Patterns:** Read-only analysis pattern - forecast never modifies combat state
+- **Known Anti-Patterns Avoided:**
+  - Not creating parallel prediction logic (reuses selectAction)
+  - Not coupling forecast to combat engine (read-only observer)
+  - Not deep-copying state for prediction (structural sharing via immutability)
+
+**Options Considered:**
+
+1. **Full Forecast (Timeline + Next Actions + Rule Summary) - Chosen**
+   - Display all three components: ordered timeline, immediate predictions, complete rules
+   - Always visible panel updated every tick
+   - Uses actual `selectAction()` for 100% accurate predictions
+   - **Pros:**
+     - Complete visibility into AI decision-making
+     - Players can verify instructions work before battle
+     - Timeline shows exactly when actions will execute
+     - Rule summary explains WHY each action was chosen
+     - Zero performance cost (<5ms per tick)
+     - Reuses battle-tested enemy AI logic
+   - **Cons:**
+     - ~60-80 new tests for analyzer + renderer + integration
+     - Reveals enemy AI rules (reduces mystery)
+     - Timeline only shows next immediate action (not multi-turn lookahead)
+     - Requires BattleController extension for instruction tracking
+
+2. **Timeline Only (Minimal)**
+   - Show only action timeline (queued actions + next predicted action)
+   - **Pros:** Simpler implementation (~20 tests)
+   - **Cons:**
+     - No explanation of WHY actions chosen
+     - Cannot validate instruction configuration
+     - Less useful for debugging AI behavior
+
+3. **Rule Summary Only**
+   - Display static rule lists without predictions
+   - **Pros:** Simple static display (~10 lines of code)
+   - **Cons:**
+     - No dynamic feedback (which rule will trigger?)
+     - Cannot see action timing
+     - No validation that rules work as expected
+
+4. **What-If Simulator (Complex)**
+   - Allow modifying state variables to see how predictions change
+   - **Pros:** Maximum flexibility for testing
+   - **Cons:**
+     - Requires state mutation UI (sliders for HP, status toggles)
+     - Confusing distinction between actual and hypothetical state
+     - Significant complexity increase (100+ tests)
+     - Out of scope for prototype
+
+**Decision:** Implement full Action Forecast with Timeline + Next Actions + Rule Summary (Option 1)
+
+**Key Design Choices:**
+
+| Aspect | Decision | Rationale |
+|--------|----------|-----------|
+| **Prediction Logic** | Reuse `selectAction()` from enemy-brain.ts | Ensures 100% accuracy, no duplicate logic, battle-tested |
+| **Update Frequency** | Every tick + instruction change | Real-time accuracy with minimal cost |
+| **Timeline Depth** | Next 5 actions | Balances visibility with UI clutter |
+| **Rule Text Format** | Human-readable strings | Better UX than condition objects |
+| **Enemy Rules** | Visible | Prototype focus is understanding mechanics, not mystery |
+| **State Coupling** | Read-only analysis | No side effects, can't corrupt combat state |
+| **Performance** | <5ms per tick | Acceptable for real-time updates |
+
+**Data Structures Defined:**
+1. `ActionForecast` - Complete forecast with timeline + per-character details
+2. `ActionTimelineEntry` - Single action in timeline with timing
+3. `CharacterForecast` - Current action, next prediction, rule summary
+4. `RuleSummary` - Human-readable rule representation
+
+**Component Breakdown:**
+1. **ActionForecastAnalyzer** - Prediction engine using selectAction()
+2. **ActionForecastRenderer** - Pure render function for HTML generation
+3. **BattleController Extension** - Forecast state management and updates
+
+**Integration Approach:**
+- Analyzer calls `selectAction()` for each idle character
+- Predictions combined with queued actions to build timeline
+- Rule summaries generated from CharacterInstructions
+- Renderer transforms forecast data to HTML
+- BattleController updates forecast on every tick/instruction change
+
+**Consequences:**
+
+**Positive:**
+- Players can validate instructions before battle starts
+- Complete transparency into AI decision-making
+- Zero duplicate prediction logic (DRY principle)
+- Read-only analysis prevents state corruption
+- Timeline shows exact execution order
+- Rule summaries provide learning/debugging aid
+- 4 critical path acceptance criteria (AC62-AC65) ensure quality
+
+**Negative:**
+- Test suite grows by ~60-80 tests (~7% increase from current 886)
+- Reveals enemy AI strategies (reduces mystery)
+- Timeline only shows immediate next action (not multi-turn lookahead)
+- Requires BattleController to track instruction map
+- Enemy rule visibility may feel like "cheating" (can toggle later)
+
+**Out of Scope (Explicitly Deferred):**
+- Multi-turn lookahead (predicting 2+ actions ahead requires simulating full ticks)
+- Alternative timeline branches ("what if" scenarios)
+- Manual action override from forecast (would require human control mode UI)
+- Forecast accuracy metrics (tracking prediction vs actual)
+- Forecast export/sharing
+- Historical forecast vs actual comparison
+- Enemy rule hiding toggle (show all for prototype)
+- Conditional formatting (highlighting risky actions)
+- Forecast confidence scores
+
+**Validation Strategy:**
+- Unit tests verify prediction matches actual `selectAction()` output
+- Integration tests verify timeline ordering matches tick execution
+- Snapshot tests capture complete forecast state
+- Performance tests ensure <5ms update time
+
+**Alternatives Rejected:**
+- **Timeline only** - Insufficient visibility for validation
+- **Rule summary only** - No dynamic feedback
+- **What-if simulator** - Too complex for prototype scope
+
+**Full Specification:** See [`specs/action-forecast-spec.md`](../specs/action-forecast-spec.md) for complete component details, acceptance criteria (AC62-AC65), and test scenarios.
+
+---
+
 ## 2025-12-22 Instructions Builder UI Architecture
 
 **Status:** Accepted

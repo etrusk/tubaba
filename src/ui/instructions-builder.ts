@@ -1,5 +1,22 @@
-import type { CharacterInstructions } from '../types/instructions.js';
+import type { CharacterInstructions, SkillInstruction } from '../types/instructions.js';
 import type { Character } from '../types/character.js';
+import type { Skill } from '../types/skill.js';
+import { renderSkillPriorityEditor, calculatePriority } from './skill-priority-editor.js';
+import { renderConditionBuilder } from './condition-builder.js';
+import { renderTargetingOverrideSelector } from './targeting-override-selector.js';
+
+/**
+ * Create default skill instructions from available skills
+ * Used when no instructions exist yet
+ */
+function createDefaultSkillInstructions(availableSkills: Skill[]): SkillInstruction[] {
+  return availableSkills.map((skill, index) => ({
+    skillId: skill.id,
+    priority: calculatePriority(index, availableSkills.length),
+    conditions: [],
+    enabled: true,
+  }));
+}
 
 /**
  * Render the main instructions builder panel
@@ -28,6 +45,36 @@ export function renderInstructionsBuilder(
   // Determine control mode (default to 'ai' if no instructions)
   const controlMode = instructions?.controlMode ?? 'ai';
 
+  // Extract skill instructions or create defaults if empty
+  let skillInstructions = instructions?.skillInstructions ?? [];
+  if (skillInstructions.length === 0 && availableSkills.length > 0) {
+    skillInstructions = createDefaultSkillInstructions(availableSkills);
+  }
+
+  // Find selected skill and instruction when editing
+  let conditionSlotContent = '';
+  let targetingSlotContent = '';
+  
+  if (editingSkillId !== null) {
+    const selectedInstruction = skillInstructions.find(
+      (inst) => inst.skillId === editingSkillId
+    );
+    const selectedSkill = availableSkills.find(
+      (skill) => skill.id === editingSkillId
+    );
+
+    if (selectedInstruction && selectedSkill) {
+      conditionSlotContent = renderConditionBuilder(
+        selectedInstruction.conditions,
+        null
+      );
+      targetingSlotContent = renderTargetingOverrideSelector(
+        selectedInstruction.targetingOverride,
+        selectedSkill.targeting
+      );
+    }
+  }
+
   // Build character configuration UI
   return `<div class="instructions-builder">
   <div class="instructions-content" data-character-id="${selectedCharacter.id}">
@@ -38,12 +85,16 @@ export function renderInstructionsBuilder(
     
     <!-- Skill editor (visible only in AI mode) -->
     <div class="skill-editor" data-visible="${controlMode === 'ai'}">
-      <div class="skill-priority-section" id="skill-priority-slot">${renderSkillList(availableSkills)}</div>
+      <div class="skill-priority-section" id="skill-priority-slot">${renderSkillPriorityEditor(
+        skillInstructions,
+        availableSkills,
+        editingSkillId
+      )}</div>
       
       <!-- Condition/targeting (visible when editing specific skill) -->
       <div class="skill-details">
-        <div class="condition-section" id="condition-slot"></div>
-        <div class="targeting-section" id="targeting-slot"></div>
+        <div class="condition-section" id="condition-slot">${conditionSlotContent}</div>
+        <div class="targeting-section" id="targeting-slot">${targetingSlotContent}</div>
       </div>
     </div>
     
@@ -88,14 +139,3 @@ function renderActionButtons(isDirty: boolean): string {
 </div>`;
 }
 
-/**
- * Render the skill list (placeholder for SkillPriorityEditor)
- */
-function renderSkillList(skills: any[]): string {
-  if (skills.length === 0) {
-    return '';
-  }
-  
-  // Simple skill list rendering for testing
-  return skills.map(skill => `<div class="skill-item">${skill.name}</div>`).join('');
-}
