@@ -936,3 +936,666 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
     expect(history[30]!.tickNumber).toBe(30);
   });
 });
+
+// Helper functions for creating skills and instructions
+function createTestSkill(
+  id: string,
+  name: string = `Skill ${id}`,
+  baseDuration: number = 3
+): any {
+  return {
+    id,
+    name,
+    baseDuration,
+    effects: [{ type: 'damage', value: 10 }],
+    targeting: 'single-enemy-lowest-hp' as const,
+    rules: []
+  };
+}
+
+function createCharacterWithSkills(
+  id: string,
+  skills: any[] = []
+): Character {
+  return {
+    id,
+    name: `Character ${id}`,
+    maxHp: 100,
+    currentHp: 100,
+    skills,
+    statusEffects: [],
+    currentAction: null,
+    isPlayer: true,
+  };
+}
+
+describe('BattleController - AC54: Character Selection', () => {
+  it('should set selectedCharacterId when selectCharacter() is called', () => {
+    const player1 = createTestCharacter('player-1', 100, 100, [], true);
+    const player2 = createTestCharacter('player-2', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player1, player2], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.selectCharacter('player-1');
+    
+    const instructionsState = controller.getInstructionsState();
+    expect(instructionsState.selectedCharacterId).toBe('player-1');
+  });
+
+  it('should clear selection when selectCharacter(null) is called', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.selectCharacter('player-1');
+    expect(controller.getInstructionsState().selectedCharacterId).toBe('player-1');
+    
+    controller.selectCharacter(null);
+    expect(controller.getInstructionsState().selectedCharacterId).toBe(null);
+  });
+
+  it('should toggle selection when selectCharacter(sameId) is called', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Select player-1
+    controller.selectCharacter('player-1');
+    expect(controller.getInstructionsState().selectedCharacterId).toBe('player-1');
+    
+    // Select player-1 again (toggle off)
+    controller.selectCharacter('player-1');
+    expect(controller.getInstructionsState().selectedCharacterId).toBe(null);
+  });
+
+  it('should return selected character via getSelectedCharacter()', () => {
+    const player1 = createTestCharacter('player-1', 100, 100, [], true);
+    const player2 = createTestCharacter('player-2', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player1, player2], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.selectCharacter('player-2');
+    
+    const selected = controller.getSelectedCharacter();
+    expect(selected).not.toBe(null);
+    expect(selected?.id).toBe('player-2');
+  });
+
+  it('should return null when no character is selected', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const selected = controller.getSelectedCharacter();
+    expect(selected).toBe(null);
+  });
+
+  it('should return null when selected character no longer exists in state', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Select a character that doesn't exist
+    controller.selectCharacter('nonexistent-id');
+    
+    const selected = controller.getSelectedCharacter();
+    expect(selected).toBe(null);
+  });
+
+  it('should return selected character instructions via getSelectedCharacterInstructions()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.selectCharacter('player-1');
+    
+    const instructions = controller.getSelectedCharacterInstructions();
+    expect(instructions).not.toBe(null);
+    expect(instructions?.characterId).toBe('player-1');
+  });
+
+  it('should return null from getSelectedCharacterInstructions() when no selection', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const instructions = controller.getSelectedCharacterInstructions();
+    expect(instructions).toBe(null);
+  });
+});
+
+describe('BattleController - AC55: Control Mode Updates', () => {
+  it('should update control mode for a character', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Default should be 'ai'
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('ai');
+    
+    controller.updateControlMode('player-1', 'human');
+    
+    const updated = controller.getInstructionsState().instructions.get('player-1');
+    expect(updated?.controlMode).toBe('human');
+  });
+
+  it('should persist control mode across battle steps', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    
+    // Step forward
+    controller.step();
+    controller.step();
+    
+    // Control mode should still be 'human'
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('human');
+  });
+
+  it('should be no-op when updating control mode for unknown character', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Should not throw
+    controller.updateControlMode('nonexistent-id', 'human');
+    
+    // Should not have created instructions for nonexistent character
+    const instructions = controller.getInstructionsState().instructions.get('nonexistent-id');
+    expect(instructions).toBeUndefined();
+  });
+
+  it('should set isDirty when control mode is updated', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    expect(controller.isDirty()).toBe(false);
+    
+    controller.updateControlMode('player-1', 'human');
+    
+    expect(controller.isDirty()).toBe(true);
+  });
+});
+
+describe('BattleController - Skill Instruction Updates', () => {
+  it('should reorder skills via updateSkillPriority()', () => {
+    const skill1 = createTestSkill('strike');
+    const skill2 = createTestSkill('heal');
+    const skill3 = createTestSkill('shield');
+    const player = createCharacterWithSkills('player-1', [skill1, skill2, skill3]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    const originalOrder = instructions?.skillInstructions.map(si => si.skillId);
+    expect(originalOrder).toEqual(['strike', 'heal', 'shield']);
+    
+    // Move 'heal' (index 1) to index 0
+    controller.updateSkillPriority('player-1', 'heal', 0);
+    
+    const updated = controller.getInstructionsState().instructions.get('player-1');
+    const newOrder = updated?.skillInstructions.map(si => si.skillId);
+    expect(newOrder).toEqual(['heal', 'strike', 'shield']);
+  });
+
+  it('should toggle skill enabled state via toggleSkillEnabled()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    const skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'strike');
+    expect(skillInstruction?.enabled).toBe(true);
+    
+    controller.toggleSkillEnabled('player-1', 'strike');
+    
+    const updated = controller.getInstructionsState().instructions.get('player-1');
+    const toggledInstruction = updated?.skillInstructions.find(si => si.skillId === 'strike');
+    expect(toggledInstruction?.enabled).toBe(false);
+    
+    // Toggle again
+    controller.toggleSkillEnabled('player-1', 'strike');
+    
+    const toggled2 = controller.getInstructionsState().instructions.get('player-1');
+    const toggledInstruction2 = toggled2?.skillInstructions.find(si => si.skillId === 'strike');
+    expect(toggledInstruction2?.enabled).toBe(true);
+  });
+
+  it('should add condition via addCondition()', () => {
+    const skill1 = createTestSkill('heal');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const condition = { type: 'hp-below' as const, threshold: 50 };
+    controller.addCondition('player-1', 'heal', condition);
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    const skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'heal');
+    expect(skillInstruction?.conditions.length).toBe(1);
+    expect(skillInstruction?.conditions[0]).toEqual(condition);
+  });
+
+  it('should remove condition via removeCondition()', () => {
+    const skill1 = createTestSkill('heal');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const condition1 = { type: 'hp-below' as const, threshold: 50 };
+    const condition2 = { type: 'ally-count' as const, threshold: 2 };
+    controller.addCondition('player-1', 'heal', condition1);
+    controller.addCondition('player-1', 'heal', condition2);
+    
+    let instructions = controller.getInstructionsState().instructions.get('player-1');
+    let skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'heal');
+    expect(skillInstruction?.conditions.length).toBe(2);
+    
+    // Remove first condition
+    controller.removeCondition('player-1', 'heal', 0);
+    
+    instructions = controller.getInstructionsState().instructions.get('player-1');
+    skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'heal');
+    expect(skillInstruction?.conditions.length).toBe(1);
+    expect(skillInstruction?.conditions[0]).toEqual(condition2);
+  });
+
+  it('should update targeting override via updateTargetingOverride()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateTargetingOverride('player-1', 'strike', 'single-enemy-highest-hp');
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    const skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'strike');
+    expect(skillInstruction?.targetingOverride).toBe('single-enemy-highest-hp');
+  });
+
+  it('should clear targeting override when updateTargetingOverride() called with undefined', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateTargetingOverride('player-1', 'strike', 'single-enemy-highest-hp');
+    controller.updateTargetingOverride('player-1', 'strike', undefined);
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    const skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'strike');
+    expect(skillInstruction?.targetingOverride).toBeUndefined();
+  });
+
+  it('should set isDirty when skill instructions are updated', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    expect(controller.isDirty()).toBe(false);
+    
+    controller.toggleSkillEnabled('player-1', 'strike');
+    
+    expect(controller.isDirty()).toBe(true);
+  });
+});
+
+describe('BattleController - AC60: Instructions Application', () => {
+  it('should apply instructions to characters when applyInstructions() is called', () => {
+    const skill1 = createTestSkill('strike');
+    const skill2 = createTestSkill('heal');
+    const player = createCharacterWithSkills('player-1', [skill1, skill2]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Add a condition to heal skill
+    const condition = { type: 'hp-below' as const, threshold: 50 };
+    controller.addCondition('player-1', 'heal', condition);
+    
+    controller.applyInstructions();
+    
+    // Check that character in state now has rules
+    const currentState = controller.getCurrentState();
+    const healSkill = currentState.players[0]?.skills.find(s => s.id === 'heal');
+    expect(healSkill?.rules?.length).toBe(1);
+    expect(healSkill?.rules?.[0]?.conditions).toEqual([condition]);
+  });
+
+  it('should clear rules when control mode is human', () => {
+    const skill1 = createTestSkill('strike');
+    skill1.rules = [{ priority: 10, conditions: [] }]; // Start with a rule
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    controller.applyInstructions();
+    
+    const currentState = controller.getCurrentState();
+    const strikeSkill = currentState.players[0]?.skills.find(s => s.id === 'strike');
+    expect(strikeSkill?.rules?.length).toBe(0);
+  });
+
+  it('should only apply enabled skill instructions', () => {
+    const skill1 = createTestSkill('strike');
+    const skill2 = createTestSkill('heal');
+    const player = createCharacterWithSkills('player-1', [skill1, skill2]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Disable strike
+    controller.toggleSkillEnabled('player-1', 'strike');
+    
+    controller.applyInstructions();
+    
+    const currentState = controller.getCurrentState();
+    const strikeSkill = currentState.players[0]?.skills.find(s => s.id === 'strike');
+    const healSkill = currentState.players[0]?.skills.find(s => s.id === 'heal');
+    
+    expect(strikeSkill?.rules?.length).toBe(0); // Disabled, no rules
+    expect(healSkill?.rules?.length).toBe(1); // Enabled, has default rule
+  });
+
+  it('should apply targeting override when specified', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateTargetingOverride('player-1', 'strike', 'single-enemy-highest-hp');
+    controller.applyInstructions();
+    
+    const currentState = controller.getCurrentState();
+    const strikeSkill = currentState.players[0]?.skills.find(s => s.id === 'strike');
+    expect(strikeSkill?.rules?.[0]?.targetingOverride).toBe('single-enemy-highest-hp');
+  });
+
+  it('should set isDirty to false after applyInstructions()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.toggleSkillEnabled('player-1', 'strike');
+    expect(controller.isDirty()).toBe(true);
+    
+    controller.applyInstructions();
+    expect(controller.isDirty()).toBe(false);
+  });
+});
+
+describe('BattleController - AC61: Instructions Persistence', () => {
+  it('should preserve instructions across step()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    const condition = { type: 'hp-below' as const, threshold: 50 };
+    controller.addCondition('player-1', 'strike', condition);
+    
+    controller.step();
+    controller.step();
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('human');
+    expect(instructions?.skillInstructions[0]?.conditions).toEqual([condition]);
+  });
+
+  it('should preserve instructions across stepBack()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    
+    controller.step();
+    controller.step();
+    controller.stepBack();
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('human');
+  });
+
+  it('should preserve instructions across reset()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    const condition = { type: 'hp-below' as const, threshold: 50 };
+    controller.addCondition('player-1', 'strike', condition);
+    
+    controller.step();
+    controller.step();
+    controller.reset();
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('human');
+    expect(instructions?.skillInstructions[0]?.conditions).toEqual([condition]);
+  });
+
+  it('should keep instructions separate from combat state history', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.updateControlMode('player-1', 'human');
+    controller.step();
+    
+    // Instructions should not be in combat state
+    const currentState = controller.getCurrentState();
+    expect((currentState as any).instructionsState).toBeUndefined();
+  });
+
+  it('should return current instructions state via getInstructionsState()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    const instructionsState = controller.getInstructionsState();
+    
+    expect(instructionsState).toBeDefined();
+    expect(instructionsState.selectedCharacterId).toBe(null);
+    expect(instructionsState.instructions).toBeInstanceOf(Map);
+    expect(instructionsState.editingSkillId).toBe(null);
+    expect(instructionsState.isDirty).toBe(false);
+  });
+});
+
+describe('BattleController - Dirty State Tracking', () => {
+  it('should start with isDirty = false', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    expect(controller.isDirty()).toBe(false);
+  });
+
+  it('should set isDirty when instructions are modified', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.addCondition('player-1', 'strike', { type: 'hp-below' as const, threshold: 50 });
+    
+    expect(controller.isDirty()).toBe(true);
+  });
+
+  it('should clear isDirty when applyInstructions() is called', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.toggleSkillEnabled('player-1', 'strike');
+    expect(controller.isDirty()).toBe(true);
+    
+    controller.applyInstructions();
+    expect(controller.isDirty()).toBe(false);
+  });
+
+  it('should revert changes and clear isDirty when discardChanges() is called', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Make a change
+    controller.updateControlMode('player-1', 'human');
+    expect(controller.isDirty()).toBe(true);
+    
+    // Discard changes
+    controller.discardChanges();
+    
+    expect(controller.isDirty()).toBe(false);
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('ai'); // Reverted to default
+  });
+
+  it('should preserve original instructions when discarding changes', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    // Apply initial change
+    controller.updateControlMode('player-1', 'human');
+    controller.applyInstructions();
+    
+    // Make new change
+    controller.updateControlMode('player-1', 'ai');
+    expect(controller.isDirty()).toBe(true);
+    
+    // Discard - should revert to 'human'
+    controller.discardChanges();
+    
+    const instructions = controller.getInstructionsState().instructions.get('player-1');
+    expect(instructions?.controlMode).toBe('human');
+  });
+});
+
+describe('BattleController - Editing Skill State', () => {
+  it('should set editing skill ID via setEditingSkill()', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.setEditingSkill('strike');
+    
+    expect(controller.getEditingSkillId()).toBe('strike');
+  });
+
+  it('should clear editing skill ID when setEditingSkill(null) is called', () => {
+    const skill1 = createTestSkill('strike');
+    const player = createCharacterWithSkills('player-1', [skill1]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    controller.setEditingSkill('strike');
+    expect(controller.getEditingSkillId()).toBe('strike');
+    
+    controller.setEditingSkill(null);
+    expect(controller.getEditingSkillId()).toBe(null);
+  });
+
+  it('should return null initially from getEditingSkillId()', () => {
+    const player = createTestCharacter('player-1', 100, 100, [], true);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    const initialState = createCombatState([player], [enemy], 0);
+    
+    const controller = new BattleController(initialState);
+    
+    expect(controller.getEditingSkillId()).toBe(null);
+  });
+});

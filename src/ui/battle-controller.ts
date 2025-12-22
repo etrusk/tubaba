@@ -1,6 +1,13 @@
-import type { CombatState } from '../types/index.js';
+import type { CombatState, Character } from '../types/index.js';
+import type {
+  InstructionsBuilderState,
+  CharacterInstructions,
+  SkillInstruction
+} from '../types/instructions.js';
+import type { Condition, TargetingMode } from '../types/skill.js';
 import { TickExecutor } from '../engine/tick-executor.js';
 import { produce, freeze } from 'immer';
+import { applyInstructionsToCharacter, createDefaultInstructions } from './instructions-converter.js';
 
 /**
  * Time provider interface for dependency injection (testing)
@@ -34,6 +41,10 @@ export class BattleController {
   private speed: number;
   private playing: boolean;
   private timeProvider: TimeProvider;
+  
+  // Instructions state (separate from combat history)
+  private instructionsState: InstructionsBuilderState;
+  private appliedInstructions: Map<string, CharacterInstructions>;
 
   constructor(initialState: CombatState, timeProvider: TimeProvider = defaultTimeProvider) {
     // Freeze the initial state to ensure immutability
@@ -45,6 +56,27 @@ export class BattleController {
     this.speed = 1.0;
     this.playing = false;
     this.timeProvider = timeProvider;
+    
+    // Initialize instructions for all players
+    const instructions = new Map<string, CharacterInstructions>();
+    for (const player of initialState.players) {
+      instructions.set(player.id, createDefaultInstructions(player));
+    }
+    
+    this.instructionsState = {
+      selectedCharacterId: null,
+      instructions,
+      editingSkillId: null,
+      isDirty: false
+    };
+    
+    // Track applied instructions separately for discard functionality
+    this.appliedInstructions = new Map(
+      Array.from(instructions.entries()).map(([id, inst]) => [
+        id,
+        JSON.parse(JSON.stringify(inst)) // Deep clone
+      ])
+    );
   }
 
   /**
@@ -214,5 +246,252 @@ export class BattleController {
     this.currentState = this.initialState;
     this.history = [this.initialState];
     this.currentHistoryIndex = 0;
+  }
+
+  // ===== Instructions Management Methods =====
+
+  /**
+   * Select a character for editing instructions
+   * If characterId is null, clears selection
+   * If same characterId is selected, toggles (deselects)
+   */
+  selectCharacter(characterId: string | null): void {
+    if (characterId === null) {
+      this.instructionsState.selectedCharacterId = null;
+      return;
+    }
+
+    // Toggle if same character selected
+    if (this.instructionsState.selectedCharacterId === characterId) {
+      this.instructionsState.selectedCharacterId = null;
+    } else {
+      this.instructionsState.selectedCharacterId = characterId;
+    }
+  }
+
+  /**
+   * Get the currently selected character from combat state
+   * Returns null if no selection or character not found
+   */
+  getSelectedCharacter(): Character | null {
+    if (this.instructionsState.selectedCharacterId === null) {
+      return null;
+    }
+
+    const character = this.currentState.players.find(
+      p => p.id === this.instructionsState.selectedCharacterId
+    );
+
+    return character || null;
+  }
+
+  /**
+   * Get instructions for the currently selected character
+   * Returns null if no selection
+   */
+  getSelectedCharacterInstructions(): CharacterInstructions | null {
+    if (this.instructionsState.selectedCharacterId === null) {
+      return null;
+    }
+
+    return this.instructionsState.instructions.get(
+      this.instructionsState.selectedCharacterId
+    ) || null;
+  }
+
+  /**
+   * Update control mode for a character
+   * No-op if character doesn't exist in instructions
+   */
+  updateControlMode(characterId: string, mode: 'human' | 'ai'): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return; // No-op for unknown character
+    }
+
+    instructions.controlMode = mode;
+    this.instructionsState.isDirty = true;
+  }
+
+  /**
+   * Reorder a skill instruction to a new priority index
+   */
+  updateSkillPriority(characterId: string, skillId: string, newIndex: number): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return;
+    }
+
+    const skillInstructions = instructions.skillInstructions;
+    const currentIndex = skillInstructions.findIndex(si => si.skillId === skillId);
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    // Remove from current position
+    const [removed] = skillInstructions.splice(currentIndex, 1);
+
+    // Insert at new position
+    skillInstructions.splice(newIndex, 0, removed!);
+
+    this.instructionsState.isDirty = true;
+  }
+
+  /**
+   * Toggle enabled state of a skill instruction
+   */
+  toggleSkillEnabled(characterId: string, skillId: string): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return;
+    }
+
+    const skillInstruction = instructions.skillInstructions.find(
+      si => si.skillId === skillId
+    );
+
+    if (skillInstruction) {
+      skillInstruction.enabled = !skillInstruction.enabled;
+      this.instructionsState.isDirty = true;
+    }
+  }
+
+  /**
+   * Add a condition to a skill instruction
+   */
+  addCondition(characterId: string, skillId: string, condition: Condition): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return;
+    }
+
+    const skillInstruction = instructions.skillInstructions.find(
+      si => si.skillId === skillId
+    );
+
+    if (skillInstruction) {
+      skillInstruction.conditions.push(condition);
+      this.instructionsState.isDirty = true;
+    }
+  }
+
+  /**
+   * Remove a condition from a skill instruction by index
+   */
+  removeCondition(characterId: string, skillId: string, conditionIndex: number): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return;
+    }
+
+    const skillInstruction = instructions.skillInstructions.find(
+      si => si.skillId === skillId
+    );
+
+    if (skillInstruction && conditionIndex >= 0 && conditionIndex < skillInstruction.conditions.length) {
+      skillInstruction.conditions.splice(conditionIndex, 1);
+      this.instructionsState.isDirty = true;
+    }
+  }
+
+  /**
+   * Update targeting override for a skill instruction
+   * Pass undefined to clear the override
+   */
+  updateTargetingOverride(
+    characterId: string,
+    skillId: string,
+    targeting?: TargetingMode
+  ): void {
+    const instructions = this.instructionsState.instructions.get(characterId);
+    if (!instructions) {
+      return;
+    }
+
+    const skillInstruction = instructions.skillInstructions.find(
+      si => si.skillId === skillId
+    );
+
+    if (skillInstruction) {
+      skillInstruction.targetingOverride = targeting;
+      this.instructionsState.isDirty = true;
+    }
+  }
+
+  /**
+   * Set which skill is currently being edited
+   */
+  setEditingSkill(skillId: string | null): void {
+    this.instructionsState.editingSkillId = skillId;
+  }
+
+  /**
+   * Get the currently editing skill ID
+   */
+  getEditingSkillId(): string | null {
+    return this.instructionsState.editingSkillId;
+  }
+
+  /**
+   * Apply instructions to characters in combat state
+   * Converts SkillInstructions to Rules and updates character skills
+   */
+  applyInstructions(): void {
+    const updatedPlayers = this.currentState.players.map(player => {
+      const instructions = this.instructionsState.instructions.get(player.id);
+      if (instructions) {
+        return applyInstructionsToCharacter(player, instructions);
+      }
+      return player;
+    });
+
+    // Update current state with modified players
+    this.currentState = produce(this.currentState, draft => {
+      draft.players = updatedPlayers;
+    });
+
+    // Update history at current index
+    this.history[this.currentHistoryIndex] = this.currentState;
+
+    // Save applied state for discard functionality
+    this.appliedInstructions = new Map(
+      Array.from(this.instructionsState.instructions.entries()).map(([id, inst]) => [
+        id,
+        JSON.parse(JSON.stringify(inst)) // Deep clone
+      ])
+    );
+
+    this.instructionsState.isDirty = false;
+  }
+
+  /**
+   * Discard unapplied changes to instructions
+   * Reverts to last applied state
+   */
+  discardChanges(): void {
+    // Restore from last applied state
+    this.instructionsState.instructions = new Map(
+      Array.from(this.appliedInstructions.entries()).map(([id, inst]) => [
+        id,
+        JSON.parse(JSON.stringify(inst)) // Deep clone
+      ])
+    );
+
+    this.instructionsState.isDirty = false;
+  }
+
+  /**
+   * Get current instructions state
+   */
+  getInstructionsState(): InstructionsBuilderState {
+    return this.instructionsState;
+  }
+
+  /**
+   * Check if there are unsaved instruction changes
+   */
+  isDirty(): boolean {
+    return this.instructionsState.isDirty;
   }
 }

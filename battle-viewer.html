@@ -34,12 +34,26 @@
       margin-bottom: 10px;
     }
 
-    /* Three-panel layout */
+    /* Two-column layout */
     .battle-arena {
       display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
-      min-height: 400px;
+      min-height: 500px;
+    }
+
+    /* Left column: stacked enemies and players */
+    .battle-column-left {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Right column: stacked controls and instructions */
+    .battle-column-right {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .panel {
@@ -71,6 +85,13 @@
       padding: 15px;
       border: 2px solid transparent;
       transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .character-card:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
 
     .character-card.player {
@@ -79,6 +100,12 @@
 
     .character-card.enemy {
       border-color: #f44336;
+    }
+
+    .character-card.selected {
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
     }
 
     .character-name {
@@ -255,6 +282,17 @@
       background: rgba(255, 255, 255, 0.9);
       font-size: 1rem;
       cursor: pointer;
+    }
+
+    /* Instructions Panel */
+    .instructions-panel {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 600px;
+    }
+
+    .instructions-panel h2 {
+      margin-bottom: 20px;
     }
 
     /* Debug Inspector */
@@ -460,41 +498,53 @@
   <div class="battle-viewer">
     <h1>⚔️ Battle Viewer ⚔️</h1>
     
-    <!-- Three-panel layout -->
+    <!-- Two-column layout -->
     <div class="battle-arena">
-      <!-- Players Panel -->
-      <div class="panel players-panel">
-        <h2>🛡️ Players</h2>
-        <div class="character-list" id="players-container"></div>
-      </div>
-      
-      <!-- Controls Panel -->
-      <div class="panel controls-panel">
-        <div class="tick-display" id="tick-display">Tick: 0</div>
-        <div class="battle-status ongoing" id="battle-status">Ongoing</div>
-        
-        <div class="control-buttons">
-          <button id="play-btn" class="primary">▶️ Play</button>
-          <button id="pause-btn" class="danger">⏸️ Pause</button>
-          <button id="step-btn">⏭️ Step</button>
-          <button id="step-back-btn">⏮️ Step Back</button>
-          <button id="reset-btn">🔄 Reset</button>
+      <!-- Left column: Enemies + Players -->
+      <div class="battle-column-left">
+        <!-- Enemies Panel (Top) -->
+        <div class="panel enemies-panel">
+          <h2>👹 Enemies</h2>
+          <div class="character-list" id="enemies-container"></div>
         </div>
         
-        <div class="speed-control">
-          <label for="speed-select">Speed:</label>
-          <select id="speed-select">
-            <option value="0.5">0.5x</option>
-            <option value="1" selected>1x</option>
-            <option value="2">2x</option>
-          </select>
+        <!-- Players Panel (Bottom) -->
+        <div class="panel players-panel">
+          <h2>🛡️ Players</h2>
+          <div class="character-list" id="players-container"></div>
         </div>
       </div>
       
-      <!-- Enemies Panel -->
-      <div class="panel enemies-panel">
-        <h2>👹 Enemies</h2>
-        <div class="character-list" id="enemies-container"></div>
+      <!-- Right column: Controls + Instructions -->
+      <div class="battle-column-right">
+        <!-- Controls Panel (Top) -->
+        <div class="panel controls-panel">
+          <div class="tick-display" id="tick-display">Tick: 0</div>
+          <div class="battle-status ongoing" id="battle-status">Ongoing</div>
+          
+          <div class="control-buttons">
+            <button id="play-btn" class="primary">▶️ Play</button>
+            <button id="pause-btn" class="danger">⏸️ Pause</button>
+            <button id="step-btn">⏭️ Step</button>
+            <button id="step-back-btn">⏮️ Step Back</button>
+            <button id="reset-btn">🔄 Reset</button>
+          </div>
+          
+          <div class="speed-control">
+            <label for="speed-select">Speed:</label>
+            <select id="speed-select">
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="2">2x</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Instructions Panel (Bottom) -->
+        <div class="panel instructions-panel">
+          <h2>🎮 Character Instructions</h2>
+          <div id="instructions-container"></div>
+        </div>
       </div>
     </div>
     
@@ -510,12 +560,18 @@
     import { renderCharacterCard } from './dist/ui/character-card.js';
     import { renderDebugInspector } from './dist/ui/debug-inspector.js';
     import { renderEventLog } from './dist/ui/event-log.js';
+    import { renderInstructionsBuilder } from './dist/ui/instructions-builder.js';
+    import { renderControlModeToggle } from './dist/ui/control-mode-toggle.js';
+    import { renderSkillPriorityEditor } from './dist/ui/skill-priority-editor.js';
+    import { renderConditionBuilder } from './dist/ui/condition-builder.js';
+    import { renderTargetingOverrideSelector } from './dist/ui/targeting-override-selector.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
 
     // Get DOM elements
     const playersContainer = document.getElementById('players-container');
     const enemiesContainer = document.getElementById('enemies-container');
+    const instructionsContainer = document.getElementById('instructions-container');
     const debugContainer = document.getElementById('debug-container');
     const eventLogContainer = document.getElementById('event-log-container');
     const tickDisplay = document.getElementById('tick-display');
@@ -597,16 +653,39 @@
     // Render functions
     function renderBattle() {
       const state = battleController.getCurrentState();
+      const instructionsState = battleController.getInstructionsState();
+      const selectedCharacterId = instructionsState.selectedCharacterId;
       
       // Render players
       playersContainer.innerHTML = state.players
-        .map(player => renderCharacterCard(player))
+        .map(player => {
+          const card = renderCharacterCard(player);
+          const isSelected = player.id === selectedCharacterId;
+          return card.replace('<div class="character-card player"', 
+            `<div class="character-card player${isSelected ? ' selected' : ''}" data-character-id="${player.id}"`);
+        })
         .join('');
       
       // Render enemies
       enemiesContainer.innerHTML = state.enemies
-        .map(enemy => renderCharacterCard(enemy))
+        .map(enemy => {
+          const card = renderCharacterCard(enemy);
+          const isSelected = enemy.id === selectedCharacterId;
+          return card.replace('<div class="character-card enemy"', 
+            `<div class="character-card enemy${isSelected ? ' selected' : ''}" data-character-id="${enemy.id}"`);
+        })
         .join('');
+      
+      // Render instructions panel
+      const selectedCharacter = battleController.getSelectedCharacter();
+      const selectedInstructions = battleController.getSelectedCharacterInstructions();
+      
+      instructionsContainer.innerHTML = renderInstructionsBuilder(
+        selectedCharacter,
+        selectedInstructions,
+        battleController.getEditingSkillId(),
+        instructionsState.isDirty
+      );
       
       // Render tick display
       tickDisplay.textContent = `Tick: ${state.tickNumber}`;
@@ -638,6 +717,142 @@
       stepBackBtn.disabled = isPlaying || state.tickNumber === 0;
       resetBtn.disabled = isPlaying;
     }
+
+    // Character selection handler
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.character-card');
+      if (card) {
+        const characterId = card.dataset.characterId;
+        if (characterId) {
+          battleController.selectCharacter(characterId);
+          renderBattle();
+        }
+      }
+    });
+
+    // Instructions panel event handlers
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      const action = target.dataset.action;
+      
+      if (!action) return;
+      
+      const instructionsState = battleController.getInstructionsState();
+      const characterId = instructionsState.selectedCharacterId;
+      
+      if (!characterId && action !== 'cancel') return;
+      
+      switch (action) {
+        case 'set-human':
+          battleController.updateControlMode(characterId, 'human');
+          renderBattle();
+          break;
+          
+        case 'set-ai':
+          battleController.updateControlMode(characterId, 'ai');
+          renderBattle();
+          break;
+          
+        case 'move-up': {
+          const skillId = target.closest('[data-skill-id]')?.dataset.skillId;
+          if (skillId) {
+            const instructions = battleController.getSelectedCharacterInstructions();
+            const currentIndex = instructions.skillInstructions.findIndex(si => si.skillId === skillId);
+            if (currentIndex > 0) {
+              battleController.updateSkillPriority(characterId, skillId, currentIndex - 1);
+              renderBattle();
+            }
+          }
+          break;
+        }
+          
+        case 'move-down': {
+          const skillId = target.closest('[data-skill-id]')?.dataset.skillId;
+          if (skillId) {
+            const instructions = battleController.getSelectedCharacterInstructions();
+            const currentIndex = instructions.skillInstructions.findIndex(si => si.skillId === skillId);
+            if (currentIndex < instructions.skillInstructions.length - 1) {
+              battleController.updateSkillPriority(characterId, skillId, currentIndex + 1);
+              renderBattle();
+            }
+          }
+          break;
+        }
+          
+        case 'toggle-skill': {
+          const skillId = target.dataset.skillId;
+          if (skillId) {
+            battleController.toggleSkillEnabled(characterId, skillId);
+            renderBattle();
+          }
+          break;
+        }
+          
+        case 'add-condition': {
+          const skillId = battleController.getEditingSkillId();
+          if (skillId) {
+            // Create a default condition
+            const condition = {
+              type: 'hp-below',
+              value: 50
+            };
+            battleController.addCondition(characterId, skillId, condition);
+            renderBattle();
+          }
+          break;
+        }
+          
+        case 'remove-condition': {
+          const skillId = battleController.getEditingSkillId();
+          const conditionIndex = parseInt(target.dataset.conditionIndex, 10);
+          if (skillId && !isNaN(conditionIndex)) {
+            battleController.removeCondition(characterId, skillId, conditionIndex);
+            renderBattle();
+          }
+          break;
+        }
+          
+        case 'apply':
+          battleController.applyInstructions();
+          renderBattle();
+          break;
+          
+        case 'cancel':
+          battleController.discardChanges();
+          renderBattle();
+          break;
+      }
+    });
+
+    // Skill selection handler
+    document.addEventListener('click', (e) => {
+      const skillItem = e.target.closest('.skill-item');
+      if (skillItem && !e.target.closest('button')) {
+        const skillId = skillItem.dataset.skillId;
+        if (skillId) {
+          const currentEditingSkillId = battleController.getEditingSkillId();
+          // Toggle: if clicking the same skill, deselect
+          battleController.setEditingSkill(skillId === currentEditingSkillId ? null : skillId);
+          renderBattle();
+        }
+      }
+    });
+
+    // Targeting override change handler
+    document.addEventListener('change', (e) => {
+      const target = e.target;
+      if (target.dataset.input === 'targeting-override') {
+        const instructionsState = battleController.getInstructionsState();
+        const characterId = instructionsState.selectedCharacterId;
+        const skillId = battleController.getEditingSkillId();
+        
+        if (characterId && skillId) {
+          const value = target.value || undefined;
+          battleController.updateTargetingOverride(characterId, skillId, value);
+          renderBattle();
+        }
+      }
+    });
 
     // Control button handlers
     playBtn.addEventListener('click', () => {

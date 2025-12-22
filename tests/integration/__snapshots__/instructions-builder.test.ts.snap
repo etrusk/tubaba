@@ -1,0 +1,47 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Instructions Builder Integration > Snapshot Test: AI Battle Log > executes battle with configured AI rules and snapshots event log 1`] = `
+[
+  {
+    "actorId": "player-1",
+    "message": "AI Fighter used Strike",
+    "skillName": "Strike",
+    "tick": 3,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-1",
+    "message": "Weak Goblin takes 15 damage",
+    "targetId": "enemy-1",
+    "tick": 3,
+    "type": "damage",
+    "value": 15,
+  },
+  {
+    "actorId": "player-1",
+    "message": "AI Fighter used Strike",
+    "skillName": "Strike",
+    "tick": 6,
+    "type": "action-resolved",
+  },
+  {
+    "actorId": "player-1",
+    "message": "Weak Goblin takes 15 damage",
+    "targetId": "enemy-1",
+    "tick": 6,
+    "type": "damage",
+    "value": 15,
+  },
+  {
+    "message": "Weak Goblin was knocked out",
+    "targetId": "enemy-1",
+    "tick": 6,
+    "type": "knockout",
+  },
+  {
+    "message": "Victory!",
+    "tick": 6,
+    "type": "victory",
+  },
+]
+`;

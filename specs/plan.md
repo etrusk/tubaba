@@ -128,6 +128,38 @@ This plan implements a deterministic auto-battler combat system using test-drive
 - **Outputs:** Interactive battle visualization
 - **Dependencies:** All above components
 
+### Segment 6: Instructions Builder UI
+
+#### Component 6.1: InstructionsBuilder (Container)
+- **Purpose:** Main container coordinating all builder sub-components for AI configuration
+- **Inputs:** `InstructionsPanelData`, event handlers
+- **Outputs:** HTML string for entire instructions panel
+- **Dependencies:** ControlModeToggle, SkillPriorityEditor, ConditionBuilder, TargetingOverrideSelector
+
+#### Component 6.2: ControlModeToggle
+- **Purpose:** Switch between Human (manual) and AI (automated) control
+- **Inputs:** Current `controlMode` ('human' | 'ai')
+- **Outputs:** HTML toggle button with state
+- **Dependencies:** None (pure view function)
+
+#### Component 6.3: SkillPriorityEditor
+- **Purpose:** Configure which skills are prioritized by AI
+- **Inputs:** `SkillInstruction[]`, available `Skill[]`
+- **Outputs:** HTML list with priority controls
+- **Dependencies:** None (pure view function)
+
+#### Component 6.4: ConditionBuilder
+- **Purpose:** Add/edit conditions for when a skill should trigger
+- **Inputs:** `Condition[]` for selected skill, available condition types
+- **Outputs:** HTML form for condition configuration
+- **Dependencies:** RuleConditionEvaluator (for condition type definitions)
+
+#### Component 6.5: TargetingOverrideSelector
+- **Purpose:** Override default skill targeting mode
+- **Inputs:** Current `targetingOverride` or undefined, available `TargetingMode[]`
+- **Outputs:** HTML dropdown with targeting modes
+- **Dependencies:** None (pure view function)
+
 ## Data Structures
 
 ### Core Entity Types
@@ -257,6 +289,37 @@ interface SkillUnlockChoice {
   skillId: string;               // Skill to unlock (must be from encounter rewards)
 }
 
+// Per-character instruction configuration
+interface CharacterInstructions {
+  characterId: string;           // Which character these instructions apply to
+  controlMode: 'human' | 'ai';   // Manual control or automated
+  skillInstructions: SkillInstruction[]; // Rules per skill (only used if controlMode = 'ai')
+}
+
+// Configuration for a single skill's AI behavior
+interface SkillInstruction {
+  skillId: string;                   // Which skill this instruction applies to
+  priority: number;                  // Higher = evaluated first (1-100 scale)
+  conditions: Condition[];           // When to use this skill (reuses existing type)
+  targetingOverride?: TargetingMode; // Optional targeting mode override
+  enabled: boolean;                  // Allow disabling rules without deleting
+}
+
+// UI state for instructions builder panel
+interface InstructionsBuilderState {
+  selectedCharacterId: string | null;        // Currently editing character (null = no selection)
+  instructions: Map<string, CharacterInstructions>; // All character instructions
+  editingSkillId: string | null;             // Currently editing skill (null = viewing all)
+  isDirty: boolean;                          // Unsaved changes indicator
+}
+
+// Props for rendering instructions builder
+interface InstructionsPanelData {
+  selectedCharacter: Character | null;       // Character being configured
+  instructions: CharacterInstructions | null; // Current instructions for character
+  availableSkills: Skill[];                  // Skills the character has equipped
+}
+
 // Debug-enhanced tick result
 interface TickResultWithDebug extends TickResult {
   debugInfo: DebugInfo;
@@ -379,6 +442,25 @@ TDD order: Write tests first, implement to pass tests, validate with integration
 35. [ ] **BattleViewer integration tests** - Full battle with all components (depends on: 34)
 36. [ ] **BattleViewer HTML** - Single file combining all components (depends on: 35)
 
+### Phase 6: Instructions Builder UI (Segment 6)
+37. [ ] **Instructions data structures** - Define types in src/types/ (depends on: 1)
+38. [ ] **Instructions converter utilities tests** - Write tests for instruction-to-rule conversion (depends on: 37)
+39. [ ] **Instructions converter utilities** - Implement conversion functions (depends on: 38)
+40. [ ] **InstructionsBuilder tests** - Write tests for container component (AC54-AC61) (depends on: 37)
+41. [ ] **InstructionsBuilder implementation** - Implement container rendering (depends on: 40)
+42. [ ] **ControlModeToggle tests** - Write tests for mode toggle (depends on: 37)
+43. [ ] **ControlModeToggle implementation** - Implement toggle rendering (depends on: 42)
+44. [ ] **SkillPriorityEditor tests** - Write tests for priority editor (depends on: 37)
+45. [ ] **SkillPriorityEditor implementation** - Implement priority editor (depends on: 44)
+46. [ ] **ConditionBuilder tests** - Write tests for condition builder (depends on: 37)
+47. [ ] **ConditionBuilder implementation** - Implement condition builder (depends on: 46)
+48. [ ] **TargetingOverrideSelector tests** - Write tests for targeting selector (depends on: 37)
+49. [ ] **TargetingOverrideSelector implementation** - Implement targeting selector (depends on: 48)
+50. [ ] **BattleController instructions extension tests** - Write tests for instruction management (depends on: 39)
+51. [ ] **BattleController instructions extension** - Implement instruction methods (depends on: 50)
+52. [ ] **battle-viewer.html layout update** - Refactor to 2-column with instructions panel (depends on: 41, 43, 45, 47, 49, 51)
+53. [ ] **Instructions integration tests** - Full workflow from configuration to AI battle (depends on: 52)
+
 ## Technical Decisions
 
 | Decision | Choice | Rationale |
@@ -393,6 +475,10 @@ TDD order: Write tests first, implement to pass tests, validate with integration
 | **Targeting Validation** | Separate filter step | Status effects (Taunt, Stunned) can modify targets after selection |
 | **UI Framework** | Vanilla JavaScript | Prototype goal: tactile UX feedback with minimal complexity. Single HTML file, no build step, ES module imports. Deferred animations/polish. |
 | **Primary UI Feature** | Debug Inspector | Key UX requirement: see ALL decision-making (rule evaluations, targeting, resolution substeps) to validate game mechanics |
+| **Instructions Storage** | Per-character in-memory | Allows mixing human and AI characters, persists across battle resets but not page reload |
+| **Rule Generation** | On "Apply" click | Prevents incomplete configurations from affecting battle, explicit user action required |
+| **Priority Representation** | 0-100 auto-calculated | Simpler UX than manual entry, linear interpolation from skill order prevents conflicts |
+| **Reordering UI** | Up/down arrows | Simpler than drag-and-drop for prototype, accessible, drag can be added later |
 
 ## Open Questions
 
@@ -701,6 +787,43 @@ Items explicitly not covered in this implementation plan:
 - Animation timing (out of scope)
 - DOM element creation (framework behavior)
 
+### Segment 6: Instructions Builder UI
+
+#### Component 6.1: InstructionsBuilder
+
+**Critical Path Tests:**
+
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC54: Character selection** | Click character card with `data-character-id="player-1"` | `InstructionsBuilderState.selectedCharacterId` = "player-1", panel renders character's instructions | Click same character again → deselects (panel shows "Select a character") |
+| **AC55: Control mode toggle** | Selected character, click "AI Mode" toggle | `CharacterInstructions.controlMode` = 'ai', skill editor visible | Toggle to Human → skill editor hidden, rules cleared |
+| **AC56: Skill priority reordering** | AI mode, skills [Heal, Strike, Shield], move Strike to priority 1 | `SkillInstruction[0]` = Strike (priority 100), Heal (priority 50), Shield (priority 0) | Single skill → priority 100 (no reordering UI) |
+| **AC57: Condition addition** | Editing Strike skill, add "hp-below 50%" | `SkillInstruction.conditions` = `[{type: 'hp-below', threshold: 50}]` | Add multiple conditions → all stored (AND logic) |
+| **AC58: Condition editing** | Existing "hp-below 30%", change to 50 | Condition updated: `threshold: 50` | Invalid threshold (-10) → validation error, change blocked |
+| **AC59: Targeting override** | Strike skill, select "single-enemy-highest-hp" | `SkillInstruction.targetingOverride` = 'single-enemy-highest-hp' | Select "(Default)" → clears override (undefined) |
+| **AC60: Instructions application** | Configured 2 skills with rules, click "Apply" | `Character.skills[x].rules` populated, battle uses AI | No instructions → no rules applied (idle character) |
+| **AC61: Instructions persistence** | Apply instructions, step 5 ticks, return to builder | Instructions still present in UI | Reset battle → instructions persist |
+
+**Standard Coverage Tests:**
+
+- Character card click event binding
+- Deselect character (click elsewhere)
+- Multiple condition types (hp-below, ally-count, enemy-has-status, self-has-status, ally-has-status)
+- Status type selector for status-based conditions
+- Threshold validation (0-100 for hp-below)
+- Priority auto-calculation from order
+- Enable/disable skill toggle
+- "Cancel" button discards changes
+- Dirty state indicator
+- Empty state when no character selected
+
+**Skip Testing:**
+
+- Drag-and-drop library behavior
+- CSS toggle button appearance
+- Help text content
+- Tooltip hover effects
+
 ## Integration Test Strategy
 
 ### Deterministic Combat Log Snapshots
@@ -766,9 +889,13 @@ These integration tests validate:
 - Phase 5 (UI Layer): ~70-95 tests (15-20 debug enhancement + 20-25 BattleController + 30-40 rendering + 5-10 integration)
 - Integration tests: ~85-95 tests (combat engine + AI + run management snapshots)
 
-**Total Project Estimate:** 525-550 tests
+**Total Project Estimate (with Phase 6):** 627-678 tests
 
-The majority of tests are in critical path components (Phases 1-4), with Phase 5 focusing on standard coverage for UI rendering and debug tooling. Integration tests validate end-to-end scenarios using deterministic snapshot comparisons.
+- Phases 1-4 (Combat Engine, Targeting, AI, Run Management): 455 tests
+- Phase 5 (UI Layer - Debug Inspector): 70-95 tests
+- Phase 6 (Instructions Builder UI): 102-128 tests
+
+The majority of tests are in critical path components (Phases 1-4), with Phases 5-6 focusing on UI components for visualization and AI configuration. Integration tests validate end-to-end scenarios using deterministic snapshot comparisons.
 
 ## Next Steps for Human Approval
 

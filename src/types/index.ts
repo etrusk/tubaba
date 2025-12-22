@@ -46,3 +46,11 @@ export type {
   ResolutionSubstep,
   SubstepDetail,
 } from './debug.js';
+
+// Instructions types
+export type {
+  CharacterInstructions,
+  SkillInstruction,
+  InstructionsBuilderState,
+  InstructionsPanelData,
+} from './instructions.js';

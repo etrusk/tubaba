@@ -8,6 +8,130 @@
 
 <!-- Tasks ready to start, in priority order -->
 
+### Phase 6: Instructions Builder UI (Segment 6)
+
+1. **Define Instructions Data Structures**
+   - Add `CharacterInstructions`, `SkillInstruction`, `InstructionsBuilderState`, `InstructionsPanelData` to `src/types/index.ts`
+   - Export from type modules
+   - Depends on: Existing type definitions
+
+2. **Write Instructions Converter Test Suite**
+   - Tests for `SkillInstruction[]` to `Rule[]` conversion
+   - Tests for applying instructions to Character.skills
+   - Tests for human mode (rules cleared)
+   - Tests for AI mode (rules populated)
+   - Depends on: Instructions data structures
+
+3. **Implement Instructions Converter Utilities**
+   - Create `src/ui/instructions-converter.ts`
+   - Implement `applyInstructionsToCharacter()`
+   - Implement helper conversion functions
+   - Depends on: Converter tests
+
+4. **Write InstructionsBuilder Test Suite** (AC54-AC61)
+   - Tests for character selection rendering
+   - Tests for control mode toggle integration
+   - Tests for skill editor visibility based on mode
+   - Tests for "Apply" and "Cancel" actions
+   - Tests for validation error display
+   - Depends on: Instructions data structures
+
+5. **Implement InstructionsBuilder Container**
+   - Create `src/ui/instructions-builder.ts`
+   - Pure render function coordinating sub-components
+   - Handle selection state display
+   - Depends on: InstructionsBuilder tests
+
+6. **Write ControlModeToggle Test Suite**
+   - Tests for toggle rendering with current mode
+   - Tests for active state indicator
+   - Tests for help text display
+   - Depends on: Instructions data structures
+
+7. **Implement ControlModeToggle**
+   - Create `src/ui/control-mode-toggle.ts`
+   - Render toggle button with state
+   - Include help text for mode explanation
+   - Depends on: ControlModeToggle tests
+
+8. **Write SkillPriorityEditor Test Suite**
+   - Tests for skill list rendering ordered by priority
+   - Tests for priority number auto-calculation
+   - Tests for up/down arrow controls
+   - Tests for enable/disable skill toggle
+   - Tests for single skill edge case (no reordering)
+   - Depends on: Instructions data structures
+
+9. **Implement SkillPriorityEditor**
+   - Create `src/ui/skill-priority-editor.ts`
+   - Render skill list with priority numbers
+   - Up/down arrow handlers for reordering
+   - Enable/disable checkboxes
+   - Depends on: SkillPriorityEditor tests
+
+10. **Write ConditionBuilder Test Suite**
+    - Tests for condition list rendering
+    - Tests for adding conditions with type selection
+    - Tests for type-specific input rendering (threshold, status selector)
+    - Tests for editing condition values
+    - Tests for removing conditions
+    - Tests for validation (threshold 0-100, required fields)
+    - Tests for multiple condition types
+    - Depends on: Instructions data structures
+
+11. **Implement ConditionBuilder**
+    - Create `src/ui/condition-builder.ts`
+    - Render condition list with edit/delete buttons
+    - Type-specific input rendering
+    - Validation and error display
+    - Depends on: ConditionBuilder tests
+
+12. **Write TargetingOverrideSelector Test Suite**
+    - Tests for dropdown rendering with all TargetingMode options
+    - Tests for "(Default)" option to clear override
+    - Tests for help text per targeting mode
+    - Depends on: Instructions data structures
+
+13. **Implement TargetingOverrideSelector**
+    - Create `src/ui/targeting-override-selector.ts`
+    - Render dropdown with TargetingMode options
+    - Default option handling
+    - Depends on: TargetingOverrideSelector tests
+
+14. **Write BattleController Instructions Extension Tests**
+    - Tests for `selectCharacter()` method
+    - Tests for `updateControlMode()` method
+    - Tests for `updateSkillPriority()` method
+    - Tests for `addCondition()` / `removeCondition()` methods
+    - Tests for `updateTargetingOverride()` method
+    - Tests for `applyInstructions()` method
+    - Tests for instructions state persistence across battle steps
+    - Depends on: Instructions converter utilities
+
+15. **Implement BattleController Instructions Extension**
+    - Add `InstructionsBuilderState` property to BattleController
+    - Implement instruction management methods
+    - Implement `applyInstructions()` using converter utilities
+    - Depends on: BattleController extension tests
+
+16. **Update battle-viewer.html Layout**
+    - Refactor from 3-column to 2-column layout
+    - Left: Enemies (top) + Players (bottom)
+    - Right: Controls (top) + Instructions Panel (bottom)
+    - Wire character card click events to `selectCharacter()`
+    - Wire instructions builder event handlers
+    - Import new UI components
+    - Depends on: All component implementations
+
+17. **Write Instructions Integration Tests**
+    - Full workflow: select character → configure AI → apply → battle uses rules
+    - Verify rules applied to Character.skills correctly
+    - Verify EnemyBrain uses generated rules (player characters using AI)
+    - Snapshot test: configured instructions → AI battle log matches expected
+    - Test persistence across battle reset
+    - Test human mode removes rules
+    - Depends on: battle-viewer.html layout update
+
 ### Phase 5: UI Layer (Segment 5)
 
 1. **Write TickExecutor Debug Enhancement Test Suite** (AC45-AC47)

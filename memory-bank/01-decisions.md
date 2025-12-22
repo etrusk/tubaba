@@ -4,6 +4,146 @@ Record significant technical decisions here. New decisions go at the top.
 
 ---
 
+## 2025-12-22 Instructions Builder UI Architecture
+
+**Status:** Accepted
+
+**Context:** The battle viewer currently shows automated enemy AI using the [`EnemyBrain`](../src/ai/enemy-brain.ts) system with rule-based decision-making. Player characters require manual skill selection, but there's no UI for configuring player AI or understanding why AI makes decisions. The request is to add an instructions builder that allows:
+1. Configuring player characters to use AI automation (vs manual control)
+2. Building rules using existing `Rule`/`Condition` types from [`src/types/skill.ts`](../src/types/skill.ts)
+3. 2-column layout with battle visualization left, controls/instructions right
+
+**Industry Standards Compliance:**
+- **SOLID:** Single Responsibility Principle - each component (ControlModeToggle, SkillPriorityEditor, ConditionBuilder, TargetingOverrideSelector) handles one concern
+- **SOLID:** Open/Closed - reuses existing Rule/Condition types rather than creating parallel system
+- **UI Patterns:** Container/Presenter pattern - InstructionsBuilder coordinates, sub-components are pure render functions
+- **Known Anti-Patterns Avoided:**
+  - Not creating duplicate rule evaluation logic (reuses EnemyBrain)
+  - Not building custom DSL for rules (uses existing type system)
+  - Not coupling instructions to battle state (persists independently)
+
+**Options Considered:**
+
+1. **Full Instructions Builder with Layout Redesign (Chosen)**
+   - Add 5 new UI components for instruction configuration
+   - Transform battle-viewer.html from 3-column to 2-column layout
+   - Character cards clickable to open instructions panel
+   - Instructions converted to `Rule[]` arrays on "Apply"
+   - **Pros:**
+     - Reuses existing EnemyBrain system (no duplicate logic)
+     - Player and enemy AI use same underlying mechanics
+     - Visual UI for rule configuration (more accessible than JSON editing)
+     - Explicit "Apply" prevents accidental mid-battle changes
+     - Layout groups related controls (battle left, controls right)
+   - **Cons:**
+     - ~102-128 new tests for UI components
+     - Requires battle-viewer.html restructure
+     - Manual control mode defined but requires future in-battle UI work
+     - Complexity: 5 sub-components + container + BattleController extensions
+
+2. **JSON Editor for Rules**
+   - Provide text area for editing `Character.skills[].rules` as JSON
+   - **Pros:** Minimal implementation (~20 lines)
+   - **Cons:**
+     - Poor UX (requires understanding JSON and type structures)
+     - Error-prone (invalid JSON, type mismatches)
+     - No validation until runtime
+     - Doesn't address layout request
+
+3. **Separate Configuration Phase**
+   - Pre-battle screen for setting up rules before starting encounter
+   - **Pros:** Cleaner separation of setup vs battle
+   - **Cons:**
+     - Doesn't allow runtime inspection/adjustment
+     - Requires additional routing/state management
+     - User can't see battle context while configuring
+
+4. **Live Rule Editing (Real-time Apply)**
+   - Changes to instructions immediately update `Character.skills[].rules` without "Apply" button
+   - **Pros:** Fewer clicks, instant feedback
+   - **Cons:**
+     - Mid-battle changes could corrupt ongoing actions
+     - Incomplete configurations could cause AI to fail
+     - No undo mechanism (every edit is permanent)
+     - Violates expectation that battle state is stable
+
+**Decision:** Implement full Instructions Builder with layout redesign (Option 1)
+
+**Key Design Choices:**
+
+| Aspect | Decision | Rationale |
+|--------|----------|-----------|
+| **Layout** | 2-column: Battle (left) + Controls/Instructions (right) | Groups related elements, provides space for instructions panel |
+| **Rule Reuse** | Convert `SkillInstruction[]` to existing `Rule[]` type | Leverages tested EnemyBrain system, no duplicate logic |
+| **Control Mode** | Per-character 'human' \| 'ai' toggle | Allows mixing manual and automated characters in same party |
+| **Apply Timing** | Explicit "Apply" button, not real-time | Prevents incomplete configurations, gives user control |
+| **Priority UI** | Auto-calculated 0-100 from skill order | Simpler than manual entry, prevents priority conflicts |
+| **Reordering** | Up/down arrows (defer drag-and-drop) | Accessible, simpler to implement, drag enhancement later |
+| **Persistence** | In-memory only (not localStorage) | Prototype scope, persists across battle resets but not page reload |
+| **Multiple Rules** | Single rule per skill in UI | Engine supports multiple, UI simplifies (can extend later) |
+
+**Data Structures Defined:**
+1. `CharacterInstructions` - per-character control mode + skill instructions
+2. `SkillInstruction` - priority, conditions, targeting override, enabled flag
+3. `InstructionsBuilderState` - selected character, instructions map, dirty state
+4. `InstructionsPanelData` - props for rendering builder
+
+**Component Breakdown:**
+1. **InstructionsBuilder (Container)** - coordinates sub-components, handles apply/cancel
+2. **ControlModeToggle** - human vs AI mode switch
+3. **SkillPriorityEditor** - skill ordering with up/down arrows
+4. **ConditionBuilder** - add/edit/remove conditions with type-specific inputs
+5. **TargetingOverrideSelector** - dropdown for targeting mode override
+
+**Integration Approach:**
+- Converter utility transforms `SkillInstruction[]` → `Rule[]`
+- `BattleController` extended with instruction management methods
+- Character cards emit click events to select for editing
+- `applyInstructions()` attaches rules to `Character.skills` before battle starts
+
+**Consequences:**
+
+**Positive:**
+- Player characters can use same rule-based AI as enemies
+- Visual debugging: see exactly what rules AI will follow
+- No duplicate rule evaluation logic (DRY principle)
+- Explicit apply prevents mid-battle corruption
+- Layout provides dedicated space for configuration
+- 8 critical path acceptance criteria (AC54-AC61) ensure quality
+
+**Negative:**
+- Test suite grows by ~102-128 tests (15% increase from current 525-550)
+- Manual control mode requires future in-battle skill selection UI (deferred)
+- battle-viewer.html restructure needed (3-column → 2-column)
+- 5 new UI components to maintain
+- No drag-and-drop for skill reordering (deferred to future enhancement)
+
+**Out of Scope (Explicitly Deferred):**
+- Manual skill selection during battle (human mode defined but no in-battle UI)
+- Drag-and-drop reordering (using up/down arrows)
+- Instruction templates/presets (e.g., "Tank", "Healer")
+- Import/export to JSON or localStorage
+- Multiple rules per skill (UI creates one rule, engine supports multiple)
+- OR logic or nested conditions (AND-only)
+- Real-time rule simulation ("what would AI do now")
+- Undo/redo for instruction changes
+- Instruction sharing between characters
+
+**Validation Strategy:**
+- Client-side validation before save (threshold ranges, required fields)
+- Type safety through TypeScript (reusing existing `Condition`, `TargetingMode` types)
+- Integration tests verify converted rules work with EnemyBrain
+- Snapshot tests capture configured instructions → AI battle log
+
+**Alternatives Rejected:**
+- **JSON editor** - Poor UX, error-prone, doesn't address layout
+- **Separate config phase** - Loses runtime context, extra complexity
+- **Real-time apply** - Risky mid-battle changes, no undo
+
+**Full Specification:** See [`specs/instructions-builder-spec.md`](../specs/instructions-builder-spec.md) for complete component details, acceptance criteria, and test scenarios.
+
+---
+
 ## 2025-12-21 Phase 5 UI Layer Gap Analysis
 
 **Status:** Accepted
