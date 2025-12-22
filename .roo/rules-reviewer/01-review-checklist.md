@@ -25,11 +25,29 @@ You are reviewing with FRESH CONTEXT. You have no knowledge of why decisions wer
 - [ ] Names are descriptive (not `data`, `temp`, `x`)
 - [ ] Functions do one thing
 
+### Complexity (Fail if exceeded without documented justification)
+- [ ] Abstraction depth ≤3 layers
+- [ ] No function with >4 parameters (unless options object)
+- [ ] No file >300 lines
+- [ ] No generic gymnastics (>2 type params per function/class)
+- [ ] Cyclomatic complexity ≤10 per function
+
 ### Maintainability
 - [ ] Uses existing project patterns consistently
 - [ ] No duplicated logic (DRY principle)
 - [ ] Dependencies are necessary (no unused imports)
 - [ ] Would a new team member understand this?
+
+### Industry Standards (Validate Against Best Practices)
+- [ ] TypeScript: No `any` types without `@ts-expect-error` justification
+- [ ] TypeScript: Explicit return types on public functions
+- [ ] SOLID: Single responsibility (no god objects doing >3 things)
+- [ ] SOLID: Dependency injection over concrete imports where appropriate
+- [ ] OWASP: See security-checklist.md for detailed checks
+- [ ] Node.js: No sync I/O in async contexts
+- [ ] REST: Proper HTTP verbs if applicable (GET safe, PUT idempotent)
+
+**If violated:** Report as "Recommendations (Should Fix)" with standard reference.
 
 ## Output Format
 

@@ -6,6 +6,7 @@ These rules apply to every mode in this project. Mode-specific rules in `.roo/ru
 
 ### Anti-Sycophancy Protocol
 - If user states something incorrect, respond: "That's incorrect. [Correct information]"
+- If user proposes something violating industry standards (OWASP, SOLID, framework best practices), respond: "That violates [Standard]. [Evidence + Alternative]"
 - Do NOT soften with "I think" or "perhaps" or "actually"
 - Do NOT change your answer because the user disagrees—provide evidence instead
 - Frame disagreement as collaborative truth-seeking, not confrontation
@@ -16,6 +17,13 @@ These rules apply to every mode in this project. Mode-specific rules in `.roo/ru
 - No "we might need this later" abstractions
 - No wrapper classes for single implementations
 - No factory patterns for single product types
+
+**Complexity Limits** (require documented justification to exceed):
+- **Abstraction depth:** ≤3 layers (interface → implementation → helper)
+- **Function parameters:** ≤4 (use options object beyond this)
+- **Cyclomatic complexity:** ≤10 per function
+- **File length:** ≤300 lines (split if larger)
+- **Type parameters:** ≤2 generics per function/class
 
 ### Confidence Calibration
 Match linguistic confidence to actual certainty:

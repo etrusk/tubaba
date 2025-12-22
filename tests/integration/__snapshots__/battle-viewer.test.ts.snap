@@ -1,0 +1,111 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for battle at specific tick 1`] = `
+"<div class="battle-viewer">
+  <div class="players"><div class="character-card player" data-character-id="player-1">
+  <div class="character-name">Hero</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 100%"></div>
+    <span class="hp-text">100/100</span>
+  </div>
+  <div class="status-effects"></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="enemies"><div class="character-card enemy" data-character-id="enemy-1">
+  <div class="character-name">Goblin</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 70%"></div>
+    <span class="hp-text">35/50</span>
+  </div>
+  <div class="status-effects"><span class="status poisoned" data-duration="3">Poisoned (3)</span></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="event-log">
+  <div class="event damage" data-tick="5">
+    <span class="tick">Tick 5</span>
+    <span class="type">damage</span>
+    <span class="message">Goblin takes 5 poison damage</span>
+    <span class="meta">Target: enemy-1 | Value: 5</span>
+  </div>
+  <div class="event damage" data-tick="4">
+    <span class="tick">Tick 4</span>
+    <span class="type">damage</span>
+    <span class="message">Goblin takes 5 poison damage</span>
+    <span class="meta">Target: enemy-1 | Value: 5</span>
+  </div>
+  <div class="event action-resolved" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">action-resolved</span>
+    <span class="message">Hero used Poison</span>
+    <span class="meta">Actor: player-1 | Skill: Poison</span>
+  </div>
+  <div class="event status-applied" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">status-applied</span>
+    <span class="message">poisoned applied to Goblin</span>
+    <span class="meta">Actor: player-1 | Target: enemy-1 | Status: poisoned</span>
+  </div>
+  <div class="event damage" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">damage</span>
+    <span class="message">Goblin takes 5 poison damage</span>
+    <span class="meta">Target: enemy-1 | Value: 5</span>
+  </div>
+</div>
+  
+</div>"
+`;
+
+exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for initial state 1`] = `
+"<div class="battle-viewer">
+  <div class="players"><div class="character-card player" data-character-id="player-1">
+  <div class="character-name">Hero</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 100%"></div>
+    <span class="hp-text">100/100</span>
+  </div>
+  <div class="status-effects"></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="enemies"><div class="character-card enemy" data-character-id="enemy-1">
+  <div class="character-name">Goblin</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 100%"></div>
+    <span class="hp-text">50/50</span>
+  </div>
+  <div class="status-effects"></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="event-log">
+  <p>No events</p>
+</div>
+  
+</div>"
+`;
+
+exports[`BattleViewer Integration > Snapshot Tests > should produce deterministic rendering for same input 1`] = `
+"<div class="battle-viewer">
+  <div class="players"><div class="character-card player" data-character-id="player-1">
+  <div class="character-name">Hero</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 80%"></div>
+    <span class="hp-text">80/100</span>
+  </div>
+  <div class="status-effects"><span class="status shielded" data-duration="2">Shielded (15, 2)</span></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="enemies"><div class="character-card enemy" data-character-id="enemy-1">
+  <div class="character-name">Goblin</div>
+  <div class="hp-bar-container">
+    <div class="hp-bar" style="width: 60%"></div>
+    <span class="hp-text">30/50</span>
+  </div>
+  <div class="status-effects"><span class="status poisoned" data-duration="3">Poisoned (3)</span></div>
+  <div class="action-display"><span class="action-name">Idle</span></div>
+</div></div>
+  <div class="event-log">
+  <p>No events</p>
+</div>
+  
+</div>"
+`;

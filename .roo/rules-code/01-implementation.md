@@ -66,6 +66,65 @@ If you encounter these, STOP and request clarification:
 - Existing code that doesn't match the plan
 - Missing types/interfaces you expected to exist
 - Test failures you don't understand
+- Architecture decisions needed (see Escalation Protocol below)
+
+## Escalation Protocol
+
+When implementation reveals architecture issues, escalate rather than work around them.
+
+### Escalate to Architect Mode
+
+Use `switch_mode` to Architect when you discover:
+
+| Issue | Example | Why Escalate |
+|-------|---------|--------------|
+| **Design violation found** | Implementing reveals circular dependency | Architecture decision needed |
+| **SOLID principle conflict** | Following plan requires god object | Design pattern change needed |
+| **Standards violation in plan** | Specified approach violates OWASP/TypeScript best practices | Plan revision needed |
+| **Missing abstraction** | Same code needed in 3+ places with no shared interface | Interface design needed |
+| **Scope mismatch** | Task requires changes to unrelated components | Boundary clarification needed |
+
+### Escalation Format
+
+When escalating, provide:
+
+```markdown
+## Escalation: [Issue Type]
+
+**Discovered during:** [Task/file you were working on]
+
+**Issue:** [What you found that requires architecture decision]
+
+**Standard violated:** [OWASP/SOLID/TypeScript/etc. with reference]
+
+**Options I see:**
+1. [Option A] - [tradeoffs]
+2. [Option B] - [tradeoffs]
+
+**Blocked until:** [What decision is needed to proceed]
+```
+
+### Escalate to Debug Mode
+
+Use `switch_mode` to Debug when:
+- Test failures you can't diagnose
+- Runtime errors with unclear cause
+- Performance issues requiring investigation
+
+### Escalate to Orchestrator
+
+Use `switch_mode` to Orchestrator when:
+- Task scope unclear or appears larger than specified
+- Dependencies on other incomplete tasks discovered
+- Multiple mode switches needed to complete task
+
+### DO NOT Escalate
+
+Handle these yourself:
+- Implementation details within approved design
+- Minor refactoring within current file
+- Test writing for specified components
+- Bug fixes in code you're implementing
 
 ## Completion Checklist
 

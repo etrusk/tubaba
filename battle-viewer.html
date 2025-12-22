@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battle Viewer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .battle-viewer {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      margin-bottom: 10px;
+    }
+
+    /* Three-panel layout */
+    .battle-arena {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 20px;
+      min-height: 400px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .panel h2 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      text-align: center;
+      color: #ffd700;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Character Cards */
+    .character-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .character-card {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 15px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .character-card.player {
+      border-color: #4caf50;
+    }
+
+    .character-card.enemy {
+      border-color: #f44336;
+    }
+
+    .character-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .hp-bar-container {
+      position: relative;
+      background: rgba(0, 0, 0, 0.3);
+      height: 24px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .hp-bar {
+      position: absolute;
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50, #8bc34a);
+      transition: width 0.5s ease;
+    }
+
+    .character-card.enemy .hp-bar {
+      background: linear-gradient(90deg, #f44336, #ff6b6b);
+    }
+
+    .hp-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      line-height: 24px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+
+    .ko-indicator {
+      background: #d32f2f;
+      color: #fff;
+      text-align: center;
+      padding: 4px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .status-effects {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+      min-height: 24px;
+    }
+
+    .status {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    .status.shielded { background: #2196f3; }
+    .status.poisoned { background: #9c27b0; }
+    .status.stunned { background: #ff9800; }
+    .status.defending { background: #607d8b; }
+    .status.enraged { background: #e91e63; }
+    .status.taunting { background: #ff5722; }
+
+    .action-display {
+      font-size: 0.9rem;
+      color: #ffd700;
+    }
+
+    .action-name {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    .ticks-remaining {
+      background: rgba(255, 215, 0, 0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* Controls Panel */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .tick-display {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #ffd700;
+      text-align: center;
+    }
+
+    .battle-status {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .battle-status.ongoing { color: #4caf50; }
+    .battle-status.victory { 
+      color: #ffd700;
+      background: rgba(76, 175, 80, 0.3);
+    }
+    .battle-status.defeat { 
+      color: #ff6b6b;
+      background: rgba(244, 67, 54, 0.3);
+    }
+
+    .control-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+    }
+
+    .control-buttons button {
+      padding: 12px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-buttons button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .control-buttons button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .control-buttons button.primary {
+      background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+    }
+
+    .control-buttons button.danger {
+      background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .speed-control label {
+      font-weight: bold;
+    }
+
+    .speed-control select {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* Debug Inspector */
+    .debug-inspector {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .debug-inspector h3 {
+      color: #ffd700;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+      padding-bottom: 5px;
+    }
+
+    .rule-evaluations, .targeting-decisions, .resolution-substeps {
+      margin-bottom: 20px;
+    }
+
+    .character-eval {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .character-eval h4 {
+      color: #64b5f6;
+      margin-bottom: 8px;
+    }
+
+    .rule {
+      padding: 5px 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .rule.matched {
+      background: rgba(76, 175, 80, 0.2);
+      color: #a5d6a7;
+    }
+
+    .rule.failed {
+      background: rgba(244, 67, 54, 0.2);
+      color: #ef9a9a;
+    }
+
+    .conditions {
+      font-size: 0.85rem;
+      color: #b0bec5;
+      margin-left: 20px;
+      font-family: monospace;
+    }
+
+    .selected-action {
+      color: #ffd700;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .decision {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      font-family: monospace;
+    }
+
+    .substep {
+      margin-bottom: 8px;
+      padding: 5px;
+      border-radius: 4px;
+    }
+
+    .substep.damage-calc { background: rgba(244, 67, 54, 0.2); }
+    .substep.healing-calc { background: rgba(76, 175, 80, 0.2); }
+    .substep.shield-absorption { background: rgba(33, 150, 243, 0.2); }
+    .substep.health-update { background: rgba(255, 152, 0, 0.2); }
+    .substep.status-application { background: rgba(156, 39, 176, 0.2); }
+    .substep.action-cancel { background: rgba(255, 87, 34, 0.2); }
+
+    /* Event Log */
+    .event-log {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .event-log h2 {
+      color: #ffd700;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    .event {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      border-left: 4px solid;
+      font-size: 0.9rem;
+    }
+
+    .event.action-queued { 
+      border-color: #2196f3;
+      background: rgba(33, 150, 243, 0.1);
+    }
+    .event.action-resolved { 
+      border-color: #9c27b0;
+      background: rgba(156, 39, 176, 0.1);
+    }
+    .event.damage { 
+      border-color: #f44336;
+      background: rgba(244, 67, 54, 0.1);
+    }
+    .event.healing { 
+      border-color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+    }
+    .event.status-applied { 
+      border-color: #ff9800;
+      background: rgba(255, 152, 0, 0.1);
+    }
+    .event.status-expired { 
+      border-color: #607d8b;
+      background: rgba(96, 125, 139, 0.1);
+    }
+    .event.knockout { 
+      border-color: #d32f2f;
+      background: rgba(211, 47, 47, 0.2);
+      font-weight: bold;
+    }
+    .event.victory { 
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.2);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    .event.defeat { 
+      border-color: #d32f2f;
+      background: rgba(211, 47, 47, 0.2);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .event .tick {
+      font-weight: bold;
+      color: #64b5f6;
+      margin-right: 8px;
+    }
+
+    .event .type {
+      font-weight: bold;
+      margin-right: 8px;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .event .message {
+      color: #fff;
+    }
+
+    .event .meta {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #b0bec5;
+      font-family: monospace;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="battle-viewer">
+    <h1>⚔️ Battle Viewer ⚔️</h1>
+    
+    <!-- Three-panel layout -->
+    <div class="battle-arena">
+      <!-- Players Panel -->
+      <div class="panel players-panel">
+        <h2>🛡️ Players</h2>
+        <div class="character-list" id="players-container"></div>
+      </div>
+      
+      <!-- Controls Panel -->
+      <div class="panel controls-panel">
+        <div class="tick-display" id="tick-display">Tick: 0</div>
+        <div class="battle-status ongoing" id="battle-status">Ongoing</div>
+        
+        <div class="control-buttons">
+          <button id="play-btn" class="primary">▶️ Play</button>
+          <button id="pause-btn" class="danger">⏸️ Pause</button>
+          <button id="step-btn">⏭️ Step</button>
+          <button id="step-back-btn">⏮️ Step Back</button>
+          <button id="reset-btn">🔄 Reset</button>
+        </div>
+        
+        <div class="speed-control">
+          <label for="speed-select">Speed:</label>
+          <select id="speed-select">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1x</option>
+            <option value="2">2x</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Enemies Panel -->
+      <div class="panel enemies-panel">
+        <h2>👹 Enemies</h2>
+        <div class="character-list" id="enemies-container"></div>
+      </div>
+    </div>
+    
+    <!-- Debug Inspector Panel -->
+    <div id="debug-container"></div>
+    
+    <!-- Event Log Panel -->
+    <div id="event-log-container"></div>
+  </div>
+
+  <script type="module">
+    import { BattleController } from './dist/ui/battle-controller.js';
+    import { renderCharacterCard } from './dist/ui/character-card.js';
+    import { renderDebugInspector } from './dist/ui/debug-inspector.js';
+    import { renderEventLog } from './dist/ui/event-log.js';
+    import { TickExecutor } from './dist/engine/tick-executor.js';
+    import { SkillLibrary } from './dist/engine/skill-library.js';
+
+    // Get DOM elements
+    const playersContainer = document.getElementById('players-container');
+    const enemiesContainer = document.getElementById('enemies-container');
+    const debugContainer = document.getElementById('debug-container');
+    const eventLogContainer = document.getElementById('event-log-container');
+    const tickDisplay = document.getElementById('tick-display');
+    const battleStatus = document.getElementById('battle-status');
+    
+    const playBtn = document.getElementById('play-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const stepBtn = document.getElementById('step-btn');
+    const stepBackBtn = document.getElementById('step-back-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const speedSelect = document.getElementById('speed-select');
+
+    // Load skills from library
+    const strike = SkillLibrary.getSkill('strike');
+    const heal = SkillLibrary.getSkill('heal');
+    const shield = SkillLibrary.getSkill('shield');
+    const poison = SkillLibrary.getSkill('poison');
+
+    // Create sample encounter
+    const sampleEncounter = {
+      players: [
+        {
+          id: 'player-1',
+          name: 'Hero',
+          maxHp: 100,
+          currentHp: 100,
+          skills: [strike, shield],
+          statusEffects: [],
+          currentAction: null,
+          isPlayer: true,
+        },
+        {
+          id: 'player-2',
+          name: 'Mage',
+          maxHp: 80,
+          currentHp: 80,
+          skills: [strike, heal, poison],
+          statusEffects: [],
+          currentAction: null,
+          isPlayer: true,
+        },
+      ],
+      enemies: [
+        {
+          id: 'enemy-1',
+          name: 'Goblin',
+          maxHp: 50,
+          currentHp: 50,
+          skills: [strike],
+          statusEffects: [],
+          currentAction: null,
+          isPlayer: false,
+        },
+        {
+          id: 'enemy-2',
+          name: 'Orc',
+          maxHp: 80,
+          currentHp: 80,
+          skills: [strike, shield],
+          statusEffects: [],
+          currentAction: null,
+          isPlayer: false,
+        },
+      ],
+      tickNumber: 0,
+      actionQueue: [
+        { skillId: 'strike', casterId: 'player-1', targets: ['enemy-1'], ticksRemaining: 2 },
+        { skillId: 'strike', casterId: 'enemy-1', targets: ['player-1'], ticksRemaining: 3 },
+        { skillId: 'heal', casterId: 'player-2', targets: ['player-1'], ticksRemaining: 5 },
+      ],
+      eventLog: [],
+      battleStatus: 'ongoing',
+    };
+
+    // Initialize battle controller
+    let battleController = new BattleController(sampleEncounter);
+    let lastDebugInfo = null;
+
+    // Render functions
+    function renderBattle() {
+      const state = battleController.getCurrentState();
+      
+      // Render players
+      playersContainer.innerHTML = state.players
+        .map(player => renderCharacterCard(player))
+        .join('');
+      
+      // Render enemies
+      enemiesContainer.innerHTML = state.enemies
+        .map(enemy => renderCharacterCard(enemy))
+        .join('');
+      
+      // Render tick display
+      tickDisplay.textContent = `Tick: ${state.tickNumber}`;
+      
+      // Render battle status
+      battleStatus.textContent = state.battleStatus.charAt(0).toUpperCase() + state.battleStatus.slice(1);
+      battleStatus.className = `battle-status ${state.battleStatus}`;
+      
+      // Render event log
+      eventLogContainer.innerHTML = renderEventLog(state.eventLog);
+      
+      // Render debug info if available
+      if (lastDebugInfo) {
+        debugContainer.innerHTML = renderDebugInspector(lastDebugInfo);
+      }
+      
+      // Update button states
+      updateButtonStates();
+    }
+
+    function updateButtonStates() {
+      const isPlaying = battleController.isPlaying();
+      const state = battleController.getCurrentState();
+      const battleEnded = state.battleStatus !== 'ongoing';
+      
+      playBtn.disabled = isPlaying || battleEnded;
+      pauseBtn.disabled = !isPlaying;
+      stepBtn.disabled = isPlaying || battleEnded;
+      stepBackBtn.disabled = isPlaying || state.tickNumber === 0;
+      resetBtn.disabled = isPlaying;
+    }
+
+    // Control button handlers
+    playBtn.addEventListener('click', () => {
+      battleController.play();
+      updateButtonStates();
+      
+      // Set up interval to check state and re-render
+      const interval = setInterval(() => {
+        if (!battleController.isPlaying()) {
+          clearInterval(interval);
+        }
+        
+        // Execute tick with debug to get debug info
+        const state = battleController.getCurrentState();
+        if (state.battleStatus === 'ongoing') {
+          const tickResult = TickExecutor.executeTickWithDebug(state);
+          lastDebugInfo = tickResult.debugInfo;
+        }
+        
+        renderBattle();
+      }, 100);
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      battleController.pause();
+      updateButtonStates();
+    });
+
+    stepBtn.addEventListener('click', () => {
+      // Execute tick with debug to get debug info
+      const state = battleController.getCurrentState();
+      if (state.battleStatus === 'ongoing') {
+        const tickResult = TickExecutor.executeTickWithDebug(state);
+        lastDebugInfo = tickResult.debugInfo;
+        
+        // Update controller's state manually
+        battleController.step();
+      }
+      
+      renderBattle();
+    });
+
+    stepBackBtn.addEventListener('click', () => {
+      battleController.stepBack();
+      // Clear debug info when stepping back (we don't save it in history)
+      lastDebugInfo = null;
+      renderBattle();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      battleController.reset();
+      lastDebugInfo = null;
+      renderBattle();
+    });
+
+    speedSelect.addEventListener('change', (e) => {
+      const speed = parseFloat(e.target.value);
+      battleController.setSpeed(speed);
+    });
+
+    // Initial render
+    renderBattle();
+  </script>
+</body>
+</html>

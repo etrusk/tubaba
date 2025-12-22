@@ -67,6 +67,35 @@ When you see these in requirements, push back:
 | "Microservices" | Distributed monolith risk | "Start monolith, extract services when boundaries clear" |
 | "Flexible plugin system" | Over-engineering | "Build the first three plugins, then generalize" |
 
+## SOLID Principle Violations to Flag
+
+When reviewing architecture, push back on these patterns:
+
+| Principle | Violation Sign | Example | Alternative |
+|-----------|---------------|---------|-------------|
+| **Single Responsibility** | Class doing >1 job | UserService handles auth AND email | Split into AuthService + EmailService |
+| **Open/Closed** | Switch statements on type | `if (type === 'A') else if (type === 'B')` | Use polymorphism or strategy pattern |
+| **Liskov Substitution** | Subclass breaks parent contract | Square extends Rectangle but breaks setWidth | Use composition, not inheritance |
+| **Interface Segregation** | Fat interfaces | IRepository with 20 methods, client uses 2 | Split into focused interfaces |
+| **Dependency Inversion** | Concrete imports | `import { MySQLDB } from './mysql'` | `import { Database } from './interfaces'` |
+
+### When to Apply SOLID
+
+- **Always apply:** Single Responsibility, Dependency Inversion
+- **Apply when extending:** Open/Closed, Liskov Substitution
+- **Apply when >3 implementations:** Interface Segregation
+
+Don't over-engineer small projects—SOLID is guidance, not law.
+
+## Complexity Budget Per Feature
+
+Before designing, allocate:
+- **New files:** Target ≤3 per feature
+- **New abstractions:** Target ≤1 per feature (interface, base class, factory)
+- **External dependencies:** Justify each one (why not built-in or existing?)
+
+If design exceeds these targets, split into smaller features or document why the complexity is essential.
+
 ## Confidence Language
 
 Use explicit uncertainty markers:

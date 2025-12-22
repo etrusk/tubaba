@@ -24,3 +24,25 @@ export type {
   TickResult,
   CombatEvent,
 } from './combat.js';
+
+// Run management types
+export type {
+  RunStatus,
+  Encounter,
+  SkillUnlockChoice,
+  RunState,
+} from './run.js';
+
+// Debug types
+export type {
+  ConditionType,
+  TickResultWithDebug,
+  DebugInfo,
+  RuleEvaluation,
+  RuleCheckResult,
+  ConditionCheckResult,
+  TargetingDecision,
+  TargetFilterResult,
+  ResolutionSubstep,
+  SubstepDetail,
+} from './debug.js';

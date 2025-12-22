@@ -69,36 +69,64 @@ This plan implements a deterministic auto-battler combat system using test-drive
 ### Segment 4: Run Management
 
 #### Component 4.1: RunStateManager
-- **Purpose:** Manages progression through encounters (battles), tracks victory/defeat
-- **Inputs:** Battle results, current run state
-- **Outputs:** Updated run state, next encounter, run completion status
-- **Dependencies:** CombatEngine (Segment 1)
+- **Purpose:** Manages run state machine (in-progress → awaiting-skill-selection → next encounter), tracks encounter progression
+- **Inputs:** `TickResult` from combat engine (for victory/defeat detection), `SkillUnlockChoice` from player
+- **Outputs:** Updated `RunState`, next `Encounter` loaded into `CombatState`, run completion signals
+- **Dependencies:** TickExecutor (consumes `TickResult.battleEnded` and `battleStatus`), CharacterProgression (for skill unlock application)
+- **State Transitions:**
+  - `in-progress` → (battle victory) → `awaiting-skill-selection`
+  - `awaiting-skill-selection` → (skill choice) → `in-progress` (next encounter)
+  - `in-progress` → (battle defeat) → `defeat`
+  - `in-progress` → (final encounter victory) → `victory`
 
 #### Component 4.2: CharacterProgression
-- **Purpose:** Handles unlocking new skills, managing skill loadouts (3 active skills)
-- **Inputs:** Victory events, skill unlock choices
-- **Outputs:** Updated character skill roster
-- **Dependencies:** SkillLibrary
+- **Purpose:** Applies skill unlocks to characters, enforces 3-skill active loadout constraint
+- **Inputs:** `SkillUnlockChoice` (character ID + skill ID), character's current skill pool
+- **Outputs:** Updated `Character.skills` array (max 3 active skills for battle)
+- **Dependencies:** SkillLibrary (validates skill IDs exist), RunState (checks skill is in `encounter.skillRewards`)
+- **Validation Rules:**
+  - Skill must be in current encounter's `skillRewards` list
+  - Skill cannot already be unlocked on that character
+  - Character can have many unlocked skills but only 3 active in loadout
+  - Loadout changes apply to next battle's `CombatState`
 
 ### Segment 5: UI Layer
 
-#### Component 5.1: CombatRenderer
-- **Purpose:** Renders combat state (HP bars, status icons, action timers, portraits)
-- **Inputs:** `CombatState`, tick events
-- **Outputs:** DOM updates (no direct HTML generation)
-- **Dependencies:** CombatEngine (read-only)
+#### Component 5.0: TickExecutor Debug Enhancement
+- **Purpose:** Instrument tick execution to capture rule evaluation, targeting decisions, and resolution substeps
+- **Inputs:** `CombatState`
+- **Outputs:** `TickResultWithDebug` (extends `TickResult` with `debugInfo`)
+- **Dependencies:** Existing TickExecutor
 
-#### Component 5.2: EventLogDisplay
-- **Purpose:** Displays combat event log with timestamps (tick numbers)
-- **Inputs:** Event log from `TickResult`
-- **Outputs:** Formatted log entries
-- **Dependencies:** None
+#### Component 5.1: BattleController
+- **Purpose:** Manages tick stepping (forward/back via state history), play/pause, speed control
+- **Inputs:** Initial `CombatState`, user controls (step/play/pause)
+- **Outputs:** Current state, tick history for step-back
+- **Dependencies:** TickExecutor
 
-#### Component 5.3: VictoryScreen
-- **Purpose:** Shows post-battle results and skill unlock choices
-- **Inputs:** Battle result, available skill unlocks
-- **Outputs:** User skill selection
-- **Dependencies:** CharacterProgression
+#### Component 5.2: CharacterCard
+- **Purpose:** Renders single character (HP bar, status icons, action progress)
+- **Inputs:** Character data from `CombatState`
+- **Outputs:** HTML element
+- **Dependencies:** None (pure view function)
+
+#### Component 5.3: DebugInspector (PRIMARY FEATURE)
+- **Purpose:** Shows WHY each action was chosen - rule evaluations, targeting decisions, resolution substeps
+- **Inputs:** `TickResultWithDebug.debugInfo`
+- **Outputs:** HTML panel showing decision details
+- **Dependencies:** None (pure view function)
+
+#### Component 5.4: EventLog
+- **Purpose:** Displays combat event log with tick numbers, newest at top
+- **Inputs:** `CombatEvent[]` from `TickResult`
+- **Outputs:** HTML list of events
+- **Dependencies:** None (pure view function)
+
+#### Component 5.5: BattleViewer (Integration)
+- **Purpose:** Single HTML file that assembles all components into working UI
+- **Inputs:** Encounter data
+- **Outputs:** Interactive battle visualization
+- **Dependencies:** All above components
 
 ## Data Structures
 
@@ -203,6 +231,102 @@ interface CombatEvent {
   statusType?: StatusType;       // Status applied/expired
   message: string;               // Human-readable description
 }
+
+// Run management state
+interface RunState {
+  runId: string;                 // Unique run identifier
+  currentEncounterIndex: number; // Which encounter is active (0-based)
+  encounters: Encounter[];       // All encounters in this run
+  playerParty: Character[];      // Player party with unlocked skills
+  runStatus: 'in-progress' | 'awaiting-skill-selection' | 'victory' | 'defeat';
+  encountersCleared: number;     // Number of victories
+  skillsUnlockedThisRun: string[]; // Skill IDs unlocked during this run
+}
+
+// Single encounter definition
+interface Encounter {
+  encounterId: string;           // Unique encounter identifier
+  name: string;                  // Display name (e.g., "Forest Ambush")
+  enemies: Character[];          // Enemy units for this battle
+  skillRewards: string[];        // Skill IDs available for unlock after victory
+}
+
+// Player skill selection after victory
+interface SkillUnlockChoice {
+  characterId: string;           // Which character unlocks the skill
+  skillId: string;               // Skill to unlock (must be from encounter rewards)
+}
+
+// Debug-enhanced tick result
+interface TickResultWithDebug extends TickResult {
+  debugInfo: DebugInfo;
+}
+
+// Debug information for DebugInspector
+interface DebugInfo {
+  ruleEvaluations: RuleEvaluation[];
+  targetingDecisions: TargetingDecision[];
+  resolutionSubsteps: ResolutionSubstep[];
+}
+
+// Rule evaluation details for a character
+interface RuleEvaluation {
+  characterId: string;
+  characterName: string;
+  rulesChecked: RuleCheckResult[];
+  selectedRule: string | null;
+  selectedSkill: string | null;
+  selectedTargets: string[];
+}
+
+// Individual rule check result
+interface RuleCheckResult {
+  ruleIndex: number;
+  priority: number;
+  conditions: ConditionCheckResult[];
+  matched: boolean;
+  reason: string;
+}
+
+// Condition evaluation result
+interface ConditionCheckResult {
+  type: ConditionType;
+  expected: string;
+  actual: string;
+  passed: boolean;
+}
+
+// Targeting decision details
+interface TargetingDecision {
+  casterId: string;
+  skillId: string;
+  targetingMode: TargetingMode;
+  candidates: string[];
+  filtersApplied: TargetFilterResult[];
+  finalTargets: string[];
+  tieBreaker?: string; // Explains deterministic choice if tied
+}
+
+// Target filter application result
+interface TargetFilterResult {
+  filterType: 'taunt' | 'dead-exclusion' | 'self-exclusion';
+  removed: string[];
+}
+
+// Resolution substep details
+interface ResolutionSubstep {
+  substep: 'damage-calc' | 'healing-calc' | 'shield-absorption' | 'health-update' | 'status-application' | 'action-cancel';
+  details: SubstepDetail[];
+}
+
+// Individual substep detail
+interface SubstepDetail {
+  actorId: string;
+  targetId: string;
+  skillId: string;
+  value?: number;
+  description: string;
+}
 ```
 
 ## Implementation Sequence
@@ -235,18 +359,25 @@ TDD order: Write tests first, implement to pass tests, validate with integration
 19. [ ] **Enemy AI integration tests** - Multi-turn AI scenarios (depends on: 18)
 
 ### Phase 4: Run Management (Segment 4)
-20. [ ] **RunStateManager tests** - Write tests for encounter progression (depends on: 10)
-21. [ ] **RunStateManager implementation** - Implement run logic (depends on: 20)
-22. [ ] **CharacterProgression tests** - Write tests for skill unlocks (depends on: 3)
-23. [ ] **CharacterProgression implementation** - Implement progression (depends on: 22)
+20. [ ] **RunStateManager tests** - Write tests for encounter progression (depends on: 10 - consumes TickResult.battleEnded and CombatState)
+21. [ ] **RunStateManager implementation** - Implement run state machine (depends on: 20)
+22. [ ] **CharacterProgression tests** - Write tests for skill unlocks (depends on: 3 - SkillLibrary skill definitions)
+23. [ ] **CharacterProgression implementation** - Implement loadout management (depends on: 22)
+24. [ ] **Run Management integration tests** - Full run scenarios with snapshots (depends on: 21, 23)
 
-### Phase 5: UI Layer (Segment 5 - Standard Coverage)
-24. [ ] **CombatRenderer tests** - Write tests for state rendering (depends on: 10)
-25. [ ] **CombatRenderer implementation** - Implement rendering (depends on: 24)
-26. [ ] **EventLogDisplay tests** - Write tests for log formatting (depends on: 10)
-27. [ ] **EventLogDisplay implementation** - Implement log display (depends on: 26)
-28. [ ] **VictoryScreen tests** - Write tests for skill selection UI (depends on: 23)
-29. [ ] **VictoryScreen implementation** - Implement victory screen (depends on: 28)
+### Phase 5: UI Layer (Segment 5 - Enhanced)
+25. [ ] **TickExecutor Debug Enhancement tests** - Write tests for debug info capture (AC45-AC47) (depends on: 9)
+26. [ ] **TickExecutor Debug Enhancement implementation** - Instrument existing TickExecutor (depends on: 25)
+27. [ ] **BattleController tests** - Write tests for tick stepping and play/pause (AC48-AC50) (depends on: 26)
+28. [ ] **BattleController implementation** - Implement state history and controls (depends on: 27)
+29. [ ] **CharacterCard tests** - Write tests for character rendering (depends on: 1)
+30. [ ] **CharacterCard implementation** - Pure render function for character (depends on: 29)
+31. [ ] **DebugInspector tests** - Write tests for decision visibility (AC51-AC53) (depends on: 26)
+32. [ ] **DebugInspector implementation** - Render rule/targeting/substep details (depends on: 31)
+33. [ ] **EventLog tests** - Write tests for event formatting (depends on: 10)
+34. [ ] **EventLog implementation** - Render event list, newest first (depends on: 33)
+35. [ ] **BattleViewer integration tests** - Full battle with all components (depends on: 34)
+36. [ ] **BattleViewer HTML** - Single file combining all components (depends on: 35)
 
 ## Technical Decisions
 
@@ -260,6 +391,8 @@ TDD order: Write tests first, implement to pass tests, validate with integration
 | **Tie-Breaking** | Hardcoded player order (A, B, C), enemy alphabetical sort | Spec-defined, no ambiguity |
 | **Event Logging** | Append-only array in `CombatState` | Full combat history for debugging and display |
 | **Targeting Validation** | Separate filter step | Status effects (Taunt, Stunned) can modify targets after selection |
+| **UI Framework** | Vanilla JavaScript | Prototype goal: tactile UX feedback with minimal complexity. Single HTML file, no build step, ES module imports. Deferred animations/polish. |
+| **Primary UI Feature** | Debug Inspector | Key UX requirement: see ALL decision-making (rule evaluations, targeting, resolution substeps) to validate game mechanics |
 
 ## Open Questions
 
@@ -439,28 +572,130 @@ Items explicitly not covered in this implementation plan:
 
 ### Segment 4: Run Management
 
-**Standard Coverage Tests** (not critical path for prototype):
+#### Component 4.1: RunStateManager
 
-- Run state tracks current encounter number
-- Victory advances to next encounter
-- Defeat ends run
-- Skill unlock adds to character skill pool
+**Critical Path Tests:**
 
-**Skip Testing**:
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC35: Run initialization** | Player party (3 characters), encounter list (5 encounters) | `RunState` with `currentEncounterIndex` = 0, `runStatus` = 'in-progress' | Empty party → validation error |
+| **AC36: Battle victory → skill selection** | `TickResult` with `battleEnded` = true, `battleStatus` = 'victory' | `runStatus` = 'awaiting-skill-selection', skill rewards available | No skill rewards → skip directly to next encounter |
+| **AC37: Skill selection → encounter progression** | `SkillUnlockChoice` submitted | `currentEncounterIndex` increments, new encounter loaded into `CombatState` | Final encounter completed → `runStatus` = 'victory' |
+| **AC38: Battle defeat handling** | `TickResult` with `battleStatus` = 'defeat' | `runStatus` = 'defeat', no encounter progression | Cannot call `loadNextEncounter()` after defeat |
+| **AC39: Run completion detection** | Encounter 4 (index 4) victory with 5 total encounters | `runStatus` = 'victory', `encountersCleared` = 5 | Run ends, no next encounter to load |
+| **AC40: Mid-run state tracking** | 2 encounters cleared, 1 skill unlocked | `encountersCleared` = 2, `skillsUnlockedThisRun` = ['strike'] | State persists across encounters |
 
-- UI components tested separately in Segment 5
-- Run persistence (out of scope - memory only)
+**Standard Coverage Tests:**
+
+- `RunState.encountersCleared` increments on each victory
+- `RunState.skillsUnlockedThisRun` appends skill IDs on unlock
+- Encounter enemies loaded into `CombatState.enemies` correctly
+- `runId` uniquely identifies each run attempt
+
+**Skip Testing:**
+
+- Run persistence to storage (out of scope - memory only)
+- Encounter generation algorithm (using fixed data for prototype)
+
+#### Component 4.2: CharacterProgression
+
+**Critical Path Tests:**
+
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC41: Skill unlock from rewards** | Character, `skillId` from `encounter.skillRewards` | Skill added to `character.skills` array | Skill already unlocked → validation error |
+| **AC42: Loadout enforcement (3 active skills)** | Character with 4 unlocked skills | Only 3 skills equipped in `character.skills` for battle | Must select which 3 are active before next battle |
+| **AC43: Skill unlock validation** | Attempt to unlock skill not in `skillRewards` | Validation error thrown | Cannot unlock arbitrary skills |
+| **AC44: Skill persistence across encounters** | Skill unlocked in encounter 1 | Skill available in character loadout for encounter 2+ | Unlocked skills persist in `RunState` |
+
+**Standard Coverage Tests:**
+
+- Unlocked skills remain in character's skill pool throughout run
+- Loadout changes apply to next battle's `CombatState`
+- Cannot unlock same skill twice on same character
+- Skill unlock choice recorded in `RunState.skillsUnlockedThisRun`
+
+**Skip Testing:**
+
+- Skill unlock UI animations (Segment 5 concern)
+- Skill tooltip descriptions (display-only data)
+- Reward pool balancing (game design, not system behavior)
 
 ### Segment 5: UI Layer
 
-**Standard Coverage Tests** (not critical path):
+#### Component 5.0: TickExecutor Debug Enhancement
 
-- Combat state renders HP bars with correct percentages
-- Event log displays newest events at top
-- Status icons appear for active statuses
-- Victory screen shows unlockable skills
+**Critical Path Tests:**
 
-**Skip Testing**:
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC45: Rule evaluation capture** | Character with 3 rules | `debugInfo` shows all 3 rules checked with pass/fail | Character stunned → no rules checked |
+| **AC46: Targeting decision capture** | Strike targeting lowest-HP | `debugInfo` shows candidates, filters, final selection | Taunt override documented |
+| **AC47: Resolution substep capture** | Damage + status skill | `debugInfo` shows damage-calc, health-update, status-application substeps | Shield absorption shown when applicable |
+
+**Standard Coverage Tests:**
+
+- Debug info captured for all characters that evaluate rules
+- Multiple targeting decisions captured per tick
+- Empty debug info when no actions occur
+
+**Skip Testing:**
+
+- Debug info formatting (DebugInspector concern)
+
+#### Component 5.1: BattleController
+
+**Critical Path Tests:**
+
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC48: Step forward** | Current tick 5, `step()` called | State advances to tick 6, tick 5 saved to history | Battle ended → `step()` no-ops |
+| **AC49: Step back** | History has ticks 1-5, `stepBack()` called | Returns to tick 4 state | At tick 0 → `stepBack()` no-ops |
+| **AC50: Play/pause** | `play()` then `pause()` after 3 ticks | 3 ticks executed, timer stopped | Play when already playing → no-op |
+
+**Standard Coverage Tests:**
+
+- History maintains full state snapshots
+- Speed control adjusts tick interval
+- Reset returns to initial state
+
+**Skip Testing:**
+
+- Timer implementation details (browser API)
+
+#### Component 5.3: DebugInspector
+
+**Critical Path Tests:**
+
+| Scenario | Input | Expected Output | Edge Case |
+|----------|-------|-----------------|-----------|
+| **AC51: Rule evaluation display** | `RuleEvaluation` with 3 rules (1 matched) | Shows all 3 rules with ✓/✗, highlights matched | No rules matched → shows "No action (waiting)" |
+| **AC52: Targeting display** | `TargetingDecision` with taunt filter | Shows candidates, taunt filter removed X targets, final | Tie-breaker explanation shown |
+| **AC53: Substep display** | 4 resolution substeps | Shows numbered list of substeps with details | Empty substeps → shows "No resolutions this tick" |
+
+**Standard Coverage Tests:**
+
+- Condition details displayed (expected vs actual)
+- Filter applications shown with removed target names
+- Substep values formatted correctly
+
+**Skip Testing:**
+
+- HTML structure (tested via integration)
+- CSS styling (visual concern)
+
+#### Component 5.2: CharacterCard & 5.4: EventLog & 5.5: BattleViewer
+
+**Standard Coverage Tests:**
+
+- CharacterCard renders HP bars with correct percentages
+- CharacterCard displays status icons for active statuses
+- CharacterCard shows action progress bars
+- EventLog displays newest events at top
+- EventLog formats tick numbers
+- BattleViewer integrates all components
+
+**Skip Testing:**
 
 - Visual styling (CSS, not behavior)
 - Animation timing (out of scope)
@@ -492,6 +727,48 @@ These integration tests validate:
 - Victory/defeat conditions trigger properly
 
 Snapshot changes indicate behavior changes (regression or intended update).
+
+### Run Management Integration Scenarios
+
+Because runs are deterministic sequences of battles, we can snapshot entire run progressions:
+
+**Example Integration Scenarios:**
+
+- **"Three Encounter Victory Run"** - Validates full run flow: encounter 0 victory → skill unlock → encounter 1 victory → skill unlock → encounter 2 victory → run completion
+  - **Tests:** Encounter progression, skill unlock persistence, run completion detection, `runStatus` state transitions
+  - **Snapshot:** Complete `RunState` history and all 3 battle event logs
+
+- **"Early Defeat Run"** - Validates defeat handling: encounter 0 → player party knockout → run ends with defeat
+  - **Tests:** Defeat detection, progression blocking (cannot advance), `runStatus` = 'defeat'
+  - **Snapshot:** `RunState` at defeat with `encountersCleared` = 0
+
+- **"Skill Persistence Across Encounters"** - Validates skill unlocks: unlock Strike in encounter 0 → verify Strike available in encounter 1 loadout
+  - **Tests:** Skill unlock application, persistence in `RunState.skillsUnlockedThisRun`, availability in subsequent battles
+  - **Snapshot:** Character skill arrays after each unlock
+
+- **"Loadout Swap Between Battles"** - Validates loadout management: unlock 4th skill after encounter 0 → change active 3 skills before encounter 1 → verify new loadout in battle
+  - **Tests:** Loadout enforcement (3 active skills), loadout changes apply to `CombatState`, skill swapping logic
+  - **Snapshot:** Character loadouts before/after swap, battle reflects new skills
+
+These integration tests validate:
+- `RunStateManager` correctly sequences encounters
+- `CharacterProgression` persists unlocks across battles
+- Victory/defeat correctly transition `runStatus`
+- Full run from start to victory/defeat works end-to-end
+
+### Test Count Estimates
+
+**By Phase:**
+- Phase 1 (Combat Engine): ~120-150 tests (critical path)
+- Phase 2 (Targeting System): ~40-50 tests
+- Phase 3 (Enemy AI): ~60-80 tests
+- Phase 4 (Run Management): ~80-100 tests
+- Phase 5 (UI Layer): ~70-95 tests (15-20 debug enhancement + 20-25 BattleController + 30-40 rendering + 5-10 integration)
+- Integration tests: ~85-95 tests (combat engine + AI + run management snapshots)
+
+**Total Project Estimate:** 525-550 tests
+
+The majority of tests are in critical path components (Phases 1-4), with Phase 5 focusing on standard coverage for UI rendering and debug tooling. Integration tests validate end-to-end scenarios using deterministic snapshot comparisons.
 
 ## Next Steps for Human Approval
 

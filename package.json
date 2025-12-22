@@ -6,7 +6,11 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsc --noEmit"
+    "test:critical": "vitest run --reporter=verbose",
+    "type-check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "standards:check": "echo 'Standards validation:' && npm run lint && npm run type-check",
+    "precommit": "npm run standards:check && npm run test:critical"
   },
   "repository": {
     "type": "git",
@@ -21,7 +25,11 @@
   "homepage": "https://github.com/etrusk/tubaba#readme",
   "devDependencies": {
     "@vitest/ui": "^4.0.16",
+    "linkedom": "^0.18.12",
     "typescript": "^5.9.3",
     "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "immer": "^11.1.0"
   }
 }
