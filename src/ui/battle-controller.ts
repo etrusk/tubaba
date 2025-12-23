@@ -18,6 +18,25 @@ function deepClone<T>(obj: T): T {
 }
 
 /**
+ * Deep freeze an object to make it immutable
+ * Recursively freezes all nested objects
+ */
+function deepFreeze<T>(obj: T): T {
+  // Freeze the object itself
+  Object.freeze(obj);
+
+  // Recursively freeze all properties
+  Object.getOwnPropertyNames(obj).forEach(prop => {
+    const value = (obj as any)[prop];
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      deepFreeze(value);
+    }
+  });
+
+  return obj;
+}
+
+/**
  * Time provider interface for dependency injection (testing)
  */
 export interface TimeProvider {
@@ -58,8 +77,8 @@ export class BattleController {
   private forecastCache: ActionForecast | null;
 
   constructor(initialState: CombatState, timeProvider: TimeProvider = defaultTimeProvider) {
-    // Deep clone the initial state to ensure immutability
-    this.initialState = deepClone(initialState);
+    // Deep clone and freeze the initial state to ensure immutability
+    this.initialState = deepFreeze(deepClone(initialState));
     this.currentState = this.initialState;
     this.history = [this.initialState];
     this.currentHistoryIndex = 0;
@@ -95,7 +114,7 @@ export class BattleController {
   }
 
   /**
-   * Get current combat state (safe to return directly - immutable via Immer)
+   * Get current combat state (frozen - immutable)
    */
   getCurrentState(): CombatState {
     return this.currentState;
@@ -129,7 +148,7 @@ export class BattleController {
     // Deep clone current state and execute tick
     const stateCopy = deepClone(this.currentState);
     const result = TickExecutor.executeTick(stateCopy);
-    const nextState = result.updatedState;
+    const nextState = deepFreeze(result.updatedState);
 
     this.currentState = nextState;
 

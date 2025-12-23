@@ -174,9 +174,9 @@ describe('SkillPriorityEditor - Skill List Rendering (AC56)', () => {
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Should have 3 <li> elements
-    const liMatches = html.match(/<li/g);
-    expect(liMatches).toHaveLength(3);
+    // Should have 3 <li> elements with class="skill-item"
+    const skillItemMatches = html.match(/<li[^>]*class="[^"]*skill-item[^"]*"/g);
+    expect(skillItemMatches).toHaveLength(3);
     expect(html).toContain('class="skill-item"');
   });
 });

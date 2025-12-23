@@ -81,3 +81,21 @@ Long sessions degrade context. Apply these checkpoints:
 - Architecture decision made → `01-decisions.md`
 - Subtask completed → `02-progress.md`
 - New requirement discovered → flag for human, update specs
+
+### Tool Selection Protocol
+
+**Shell commands are NOT a substitute for built-in tools.**
+
+The following are VIOLATIONS:
+- Using `cat` instead of `read_file`
+- Using `echo >> file` instead of `write_to_file`  
+- Using `sed` instead of `apply_diff`
+- Using `grep` instead of `search_files`
+
+Built-in tools provide:
+- Better error handling
+- Consistent output format
+- Integration with .rooignore
+- Proper permission checking
+
+Shell commands bypass these safeguards and create fragile workflows.

@@ -708,6 +708,102 @@
     ::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.5);
     }
+
+    /* Battle Arena Visualization */
+    .battle-arena-panel {
+      min-height: 550px;
+    }
+
+    #battle-arena-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .battle-arena-svg {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+
+    /* Character circles */
+    .character-circle .circle-border {
+      fill: none;
+      stroke-width: 3;
+    }
+
+    .character-circle .circle-border.player {
+      stroke: #4caf50;
+    }
+
+    .character-circle .circle-border.enemy {
+      stroke: #f44336;
+    }
+
+    .character-circle .circle-border.ko {
+      stroke-dasharray: 5,3;
+      stroke: #757575;
+    }
+
+    .character-circle .hp-fill.player {
+      fill: url(#player-fill-gradient);
+    }
+
+    .character-circle .hp-fill.enemy {
+      fill: url(#enemy-fill-gradient);
+    }
+
+    .character-circle .hp-fill.ko {
+      fill: #424242;
+    }
+
+    .character-circle .hp-text {
+      fill: white;
+      font-weight: bold;
+      font-size: 14px;
+      text-anchor: middle;
+      dominant-baseline: central;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    .character-circle .character-name {
+      fill: white;
+      font-size: 12px;
+      text-anchor: middle;
+      font-weight: bold;
+    }
+
+    .character-circle .status-effects {
+      fill: #b0bec5;
+      font-size: 10px;
+      text-anchor: middle;
+    }
+
+    .character-circle .action-display {
+      fill: #ffd700;
+      font-size: 11px;
+      text-anchor: middle;
+    }
+
+    /* Intent lines */
+    .intent-line {
+      fill: none;
+    }
+
+    .intent-line.executing {
+      stroke-width: 3;
+    }
+
+    .intent-line.queued {
+      stroke-dasharray: 8,4;
+      stroke-width: 2;
+    }
+
+    /* Selected character highlight */
+    .character-circle.selected .circle-border {
+      stroke: #ffd700 !important;
+      stroke-width: 4;
+      filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+    }
   </style>
 </head>
 <body>
@@ -716,18 +812,12 @@
     
     <!-- Two-column layout -->
     <div class="battle-arena">
-      <!-- Left column: Enemies + Players -->
+      <!-- Left column: Battle Arena -->
       <div class="battle-column-left">
-        <!-- Enemies Panel (Top) -->
-        <div class="panel enemies-panel">
-          <h2>👹 Enemies</h2>
-          <div class="character-list" id="enemies-container"></div>
-        </div>
-        
-        <!-- Players Panel (Bottom) -->
-        <div class="panel players-panel">
-          <h2>🛡️ Players</h2>
-          <div class="character-list" id="players-container"></div>
+        <!-- Battle Arena Panel -->
+        <div class="panel battle-arena-panel">
+          <h2>⚔️ Battle Arena</h2>
+          <div id="battle-arena-container"></div>
         </div>
       </div>
       
@@ -790,14 +880,15 @@
     import { renderConditionBuilder } from './dist/ui/condition-builder.js';
     import { renderTargetingOverrideSelector } from './dist/ui/targeting-override-selector.js';
     import { renderActionForecast } from './dist/ui/action-forecast.js';
+    import { analyzeVisualization } from './dist/ui/visualization-analyzer.js';
+    import { renderBattleVisualization } from './dist/ui/battle-visualization.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
 
     console.log('Imports loaded successfully');
 
     // Get DOM elements
-    const playersContainer = document.getElementById('players-container');
-    const enemiesContainer = document.getElementById('enemies-container');
+    const battleArenaContainer = document.getElementById('battle-arena-container');
     const instructionsContainer = document.getElementById('instructions-container');
     const forecastContainer = document.getElementById('forecast-container');
     const debugContainer = document.getElementById('debug-container');
@@ -884,25 +975,17 @@
       const instructionsState = battleController.getInstructionsState();
       const selectedCharacterId = instructionsState.selectedCharacterId;
       
-      // Render players
-      playersContainer.innerHTML = state.players
-        .map(player => {
-          const card = renderCharacterCard(player);
-          const isSelected = player.id === selectedCharacterId;
-          return card.replace('<div class="character-card player"', 
-            `<div class="character-card player${isSelected ? ' selected' : ''}" data-character-id="${player.id}"`);
-        })
-        .join('');
+      // Render battle arena (new circle visualization)
+      const visualization = analyzeVisualization(state);
+      battleArenaContainer.innerHTML = renderBattleVisualization(visualization);
       
-      // Render enemies
-      enemiesContainer.innerHTML = state.enemies
-        .map(enemy => {
-          const card = renderCharacterCard(enemy);
-          const isSelected = enemy.id === selectedCharacterId;
-          return card.replace('<div class="character-card enemy"', 
-            `<div class="character-card enemy${isSelected ? ' selected' : ''}" data-character-id="${enemy.id}"`);
-        })
-        .join('');
+      // After rendering, mark selected character
+      if (selectedCharacterId) {
+        const selectedCircle = document.querySelector(`.character-circle[data-character-id="${selectedCharacterId}"]`);
+        if (selectedCircle) {
+          selectedCircle.classList.add('selected');
+        }
+      }
       
       // Render instructions panel
       const selectedCharacter = battleController.getSelectedCharacter();
@@ -950,11 +1033,19 @@
       resetBtn.disabled = isPlaying;
     }
 
-    // Character selection handler
+    // Character selection handler (for both character cards and arena circles)
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.character-card');
+      const circle = e.target.closest('.character-circle');
+      
       if (card) {
         const characterId = card.dataset.characterId;
+        if (characterId) {
+          battleController.selectCharacter(characterId);
+          renderBattle();
+        }
+      } else if (circle) {
+        const characterId = circle.dataset.characterId;
         if (characterId) {
           battleController.selectCharacter(characterId);
           renderBattle();

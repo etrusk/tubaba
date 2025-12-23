@@ -54,3 +54,12 @@ export type {
   InstructionsBuilderState,
   InstructionsPanelData,
 } from './instructions.js';
+
+// Visualization types
+export type {
+  CharacterPosition,
+  CircleCharacterData,
+  IntentLine,
+  BattleVisualization,
+  SkillColorMap,
+} from './visualization.js';
