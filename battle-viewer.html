@@ -731,7 +731,7 @@
     }
 
     .battle-arena-svg {
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.5);
       border-radius: 8px;
     }
 
@@ -776,7 +776,6 @@
     }
 
     .character-circle .character-name {
-      fill: white;
       font-size: 12px;
       text-anchor: middle;
       font-weight: bold;
@@ -951,7 +950,7 @@
           currentHp: 100,
           skills: [strike, shield],
           statusEffects: [],
-          currentAction: { skillId: 'strike', targets: ['goblin'], ticksRemaining: 2 },
+          currentAction: null,
           isPlayer: true,
         },
         {
@@ -973,7 +972,7 @@
           currentHp: 50,
           skills: [strike],
           statusEffects: [],
-          currentAction: { skillId: 'strike', targets: ['hero'], ticksRemaining: 3 },
+          currentAction: null,
           isPlayer: false,
         },
         {

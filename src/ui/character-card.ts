@@ -1,4 +1,5 @@
 import type { Character } from '../types/character.js';
+import { formatCharacterName } from './character-name-formatter.js';
 
 /**
  * Renders a character card as HTML string
@@ -59,7 +60,7 @@ export function renderCharacterCard(character: Character): string {
   
   // Build complete HTML
   return `<div class="character-card ${typeClass}" data-character-id="${id}">
-  <div class="character-name">${name}</div>
+  <div class="character-name">${formatCharacterName(name, id)}</div>
   <div class="hp-bar-container">
     <div class="hp-bar" style="width: ${hpPercent}%"></div>
     <span class="hp-text">${currentHp}/${maxHp}</span>

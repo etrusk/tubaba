@@ -84,15 +84,12 @@ function renderCharacterForecasts(characters: CharacterForecast[], nameToIdMap: 
  * Renders a single character forecast
  */
 function renderCharacterForecast(character: CharacterForecast, nameToIdMap: Map<string, string>): string {
-  const roleIcon = character.isPlayer ? '🛡️' : '👹';
-  const roleLabel = character.isPlayer ? 'Player' : 'Enemy';
-  
   const currentActionSection = renderCurrentAction(character.currentAction, nameToIdMap);
   const nextActionSection = renderNextAction(character.nextAction, nameToIdMap);
   const rulesSection = renderRulesSummary(character.rulesSummary);
 
   return `<div class="character-forecast" data-character-id="${character.characterId}">
-      <h4>${roleIcon} ${character.characterName} (${roleLabel})</h4>
+      <h4>${formatCharacterName(character.characterName, character.characterId)}</h4>
       ${currentActionSection}
       ${nextActionSection}
       ${rulesSection}
@@ -162,6 +159,6 @@ function renderRuleSummaryItem(rule: RuleSummary): string {
   const tickCostText = rule.tickCost > 0 ? ` (${rule.tickCost} ticks)` : '';
   
   return `<li class="rule-item${disabledClass}">
-          [P${rule.priority}] ${rule.conditionsText}: <strong>${rule.skillName}${tickCostText}</strong> → ${rule.targetingMode}${disabledLabel}
+          ${rule.conditionsText}: <strong>${rule.skillName}${tickCostText}</strong> → ${rule.targetingMode}${disabledLabel}
         </li>`;
 }

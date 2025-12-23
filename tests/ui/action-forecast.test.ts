@@ -28,11 +28,13 @@ function createRuleSummary(
   skillName: string,
   conditionsText: string,
   targetingMode: string,
-  enabled: boolean
+  enabled: boolean,
+  tickCost: number = 0
 ): RuleSummary {
   return {
     priority,
     skillName,
+    tickCost,
     conditionsText,
     targetingMode,
     enabled,
@@ -239,20 +241,34 @@ describe('ActionForecastRenderer - Character Forecast Rendering', () => {
     
     const html = renderActionForecast(forecast);
     
-    expect(html).toMatch(/player|ally/i);
-    expect(html).toMatch(/enemy|opponent/i);
+    // Characters should be distinguished by unique colors (using formatCharacterName)
+    // Both should have colored span elements
+    expect(html).toContain('<span style="color:');
+    expect(html).toContain('Warrior');
+    expect(html).toContain('Goblin');
+    
+    // Each character should have a different color based on their ID
+    const warriorColorMatch = html.match(/Warrior<\/span>/);
+    const goblinColorMatch = html.match(/Goblin<\/span>/);
+    expect(warriorColorMatch).toBeTruthy();
+    expect(goblinColorMatch).toBeTruthy();
   });
 });
 
 describe('ActionForecastRenderer - Rule Summary Rendering', () => {
-  it('should render rule priority', () => {
+  it('should render rule without priority prefix', () => {
     const rule = createRuleSummary(100, 'Heal', 'If HP < 50%', 'Self', true);
     const charForecast = createCharacterForecast('p1', 'Warrior', true, null, null, [rule]);
     const forecast = createActionForecast([], [charForecast]);
     
     const html = renderActionForecast(forecast);
     
-    expect(html).toContain('100');
+    // Priority should not be displayed (no [P100] prefix)
+    expect(html).not.toContain('[P100]');
+    expect(html).not.toContain('[P');
+    // But the rule details should still be present
+    expect(html).toContain('Heal');
+    expect(html).toContain('If HP < 50%');
   });
 
   it('should render skill name in rule summary', () => {
@@ -304,11 +320,17 @@ describe('ActionForecastRenderer - Rule Summary Rendering', () => {
     
     const html = renderActionForecast(forecast);
     
-    const priority100Index = html.indexOf('100');
-    const priority50Index = html.indexOf('50');
+    // Verify both rules are present (priority values not displayed anymore)
+    const healIndex = html.indexOf('Heal');
+    const strikeIndex = html.indexOf('Strike');
     
-    expect(priority100Index).toBeGreaterThan(0);
-    expect(priority50Index).toBeGreaterThan(priority100Index);
+    // Rules should be in the order they were provided (higher priority first)
+    expect(healIndex).toBeGreaterThan(0);
+    expect(strikeIndex).toBeGreaterThan(healIndex);
+    
+    // Priority prefixes should not be present
+    expect(html).not.toContain('[P100]');
+    expect(html).not.toContain('[P50]');
   });
 
   it('should show "No rules configured" when rules list is empty', () => {

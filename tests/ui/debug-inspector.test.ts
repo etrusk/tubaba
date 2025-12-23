@@ -137,7 +137,6 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
     expect(html).toContain('✗');
     // Now shows skill name instead of rule-0/rule-1
     expect(html).toContain('heal');
-    expect(html).toContain('Priority');
   });
 
   it('should highlight matched rule distinctly from failed rules', () => {
@@ -211,25 +210,6 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
     expect(html).toContain('75%');
   });
 
-  it('should show rule priority', () => {
-    const highPriorityRule = createRuleCheckResult(0, 100, [], true, 'High priority');
-    const lowPriorityRule = createRuleCheckResult(1, 10, [], false, 'Low priority');
-    
-    const evaluation = createRuleEvaluation(
-      'enemy-1',
-      'Elite Guard',
-      [highPriorityRule, lowPriorityRule],
-      'rule-0',
-      'power-strike',
-      ['player-1']
-    );
-    
-    const debugInfo = createDebugInfo([evaluation], [], []);
-    const html = renderDebugInspector(debugInfo);
-    
-    expect(html).toContain('100');
-    expect(html).toContain('10');
-  });
 
   it('should handle multiple character evaluations', () => {
     const rule1 = createRuleCheckResult(0, 100, [], true, 'Matched');

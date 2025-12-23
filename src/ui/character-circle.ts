@@ -1,4 +1,5 @@
 import type { CircleCharacterData } from '../types/visualization.js';
+import { getCharacterColor } from './character-name-formatter.js';
 
 /**
  * Renders a character circle as SVG string
@@ -127,13 +128,14 @@ export function renderCharacterCircle(data: CircleCharacterData): string {
     font-weight="bold">${hpText}</text>
   
   <!-- Character name -->
-  <text 
-    x="${x}" 
-    y="${nameY}" 
+  <text
+    x="${x}"
+    y="${nameY}"
     class="character-name"
     text-anchor="middle"
-    fill="#ffffff"
-    font-size="12">${name}</text>
+    fill="${getCharacterColor(id)}"
+    font-size="12"
+    font-weight="bold">${name}</text>
   ${
     statusText
       ? `

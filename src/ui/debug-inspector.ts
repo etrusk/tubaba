@@ -56,11 +56,6 @@ function renderRuleEvaluations(evaluations: RuleEvaluation[]): string {
  * Renders a single character's rule evaluation
  */
 function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
-  // Determine character role icon and label
-  const isPlayer = evaluation.characterId.startsWith('player');
-  const roleIcon = isPlayer ? '🛡️' : '👹';
-  const roleLabel = isPlayer ? 'Player' : 'Enemy';
-  
   const rules = evaluation.rulesChecked
     .map((rule, index) => renderRuleCheck(rule, evaluation.selectedSkill, index))
     .join('\n      ');
@@ -70,7 +65,7 @@ function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
     : '<div class="selected-action">⏸ No action selected (waiting for conditions to be met)</div>';
 
   return `<div class="character-eval" data-character-id="${evaluation.characterId}">
-      <h4>${roleIcon} ${evaluation.characterName} (${roleLabel})</h4>
+      <h4>${formatCharacterName(evaluation.characterName, evaluation.characterId)}</h4>
       ${rules}
       ${selectedAction}
     </div>`;
@@ -107,7 +102,7 @@ function renderRuleCheck(rule: RuleCheckResult, selectedSkill: string | null, ru
         .join(' AND ')}</div>`
     : '';
 
-  return `<div class="rule ${cssClass}">${icon} <strong>${skillName}</strong> (Priority: ${rule.priority})${statusText}</div>${conditionDetails}`;
+  return `<div class="rule ${cssClass}">${icon} <strong>${skillName}</strong>${statusText}</div>${conditionDetails}`;
 }
 
 /**

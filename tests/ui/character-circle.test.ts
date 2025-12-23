@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { CircleCharacterData, CharacterPosition } from '../../src/types/index.js';
 import type { StatusEffect, Action } from '../../src/types/index.js';
 import { renderCharacterCircle } from '../../src/ui/character-circle.js';
+import { getCharacterColor } from '../../src/ui/character-name-formatter.js';
 
 /**
  * CharacterCircle Test Suite
@@ -233,7 +234,7 @@ describe('CharacterCircle - Current Action Display', () => {
 });
 
 describe('CharacterCircle - Character Name and HP Text', () => {
-  it('should display character name above circle', () => {
+  it('should display character name above circle with unique color', () => {
     const position = createPosition('player-1', 100, 100, 40);
     const data = createCircleCharacterData('player-1', 'Valiant Hero', 100, 100, 100, true, [], null, position);
     const svg = renderCharacterCircle(data);
@@ -244,6 +245,10 @@ describe('CharacterCircle - Character Name and HP Text', () => {
     // Positioned above circle (y - radius - offset)
     const expectedY = position.y - position.radius - 10;
     expect(svg).toContain(`y="${expectedY}"`);
+    
+    // Should use unique color from getCharacterColor
+    const expectedColor = getCharacterColor('player-1');
+    expect(svg).toContain(`fill="${expectedColor}"`);
   });
 
   it('should display HP text centered in circle', () => {

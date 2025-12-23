@@ -4,6 +4,71 @@ New sessions go at the top.
 
 ---
 
+## Session: 2025-12-23 Character Name Color Consistency & UI Polish
+
+### Context
+Comprehensive UI cleanup session that started with fixing character name color inconsistency and expanded to address multiple visual and functional issues discovered during testing. Fixed architectural inconsistency where character names in Battle Arena were hardcoded white, while Event Log and Action Forecast used unique per-character colors.
+
+### Completed
+
+#### Phase 1: Character Name Colors
+- [x] **Architecture Analysis** - Identified root cause: `character-circle.ts` used hardcoded `fill="#ffffff"` instead of `getCharacterColor(id)`
+- [x] **Implementation** - Updated character name text to use unique colors from character-name-formatter
+- [x] **Extended Fix** - Applied unique colors to character names in Action Forecast headers, Debug Inspector headers, and Character Cards
+- [x] **Role Label Cleanup** - Removed redundant "(Player)" and "(Enemy)" role labels and icons from Action Forecast and Debug Inspector headers
+
+#### Phase 2: CSS & Visual Polish
+- [x] **CSS Override Fix** - Removed `fill: white;` from `.character-circle .character-name` CSS rule in battle-viewer.html that was overriding inline SVG fill colors
+- [x] **Background Darkening** - Changed arena background from `rgba(0,0,0,0.2)` to `rgba(0,0,0,0.5)` for better contrast with colored character names
+- [x] **Priority Display Removal** - Removed `[P10]` prefix from Action Forecast rule summaries (line 162) and `(Priority: 10)` from Debug Inspector rule evaluations (line 105)
+
+#### Phase 3: Functional Fixes
+- [x] **"No valid action" Bug Fix** - Removed guard in action-forecast-analyzer.ts (lines 177-180) that was blocking next action predictions for characters with active actions
+- [x] **Consistent Starting State** - Updated battle-viewer.html sample encounter data to set all characters `currentAction: null` for consistent tick 0 idle state
+
+#### Phase 4: Future Improvements
+- [x] **Rule Evaluation Redesign Spec** - Created [`specs/rule-evaluation-display-redesign.md`](../specs/rule-evaluation-display-redesign.md) for improved decision reasoning display
+
+### Files Modified
+- [`src/ui/character-circle.ts`](../src/ui/character-circle.ts) - Added import, changed name text fill to `getCharacterColor(id)`, added font-weight bold
+- [`src/ui/action-forecast.ts`](../src/ui/action-forecast.ts) - Applied formatCharacterName to headers, removed role labels, removed priority prefix
+- [`src/ui/action-forecast-analyzer.ts`](../src/ui/action-forecast-analyzer.ts) - Removed guard blocking predictions for active characters
+- [`src/ui/debug-inspector.ts`](../src/ui/debug-inspector.ts) - Applied formatCharacterName to headers, removed role labels, removed priority display
+- [`src/ui/character-card.ts`](../src/ui/character-card.ts) - Applied formatCharacterName to name div
+- [`battle-viewer.html`](../battle-viewer.html) - Fixed CSS override, darkened arena background, fixed starting state
+- [`tests/ui/character-circle.test.ts`](../tests/ui/character-circle.test.ts) - Updated color assertions
+- [`tests/ui/action-forecast.test.ts`](../tests/ui/action-forecast.test.ts) - Updated for role label removal, fixed tickCost parameter
+- [`tests/ui/debug-inspector.test.ts`](../tests/ui/debug-inspector.test.ts) - Removed priority display test, updated assertions
+
+### Test Results
+- **All Tests Pass:** 1063/1063 tests passing
+- **Snapshots Updated:** Multiple snapshots updated for visual changes
+- **No regressions:** Circle borders and HP fills remain team-based (green/red)
+
+### Visual Improvements Summary
+- ✅ Unique character colors consistent across all panels (Battle Arena, Action Forecast, Debug Inspector, Character Cards)
+- ✅ No more "(Player)"/"(Enemy)" role labels
+- ✅ No more priority display clutter (`[P10]` or `(Priority: 10)`)
+- ✅ CSS override fixed - Battle Arena names now show unique colors
+- ✅ Darkened backgrounds for better color contrast
+- ✅ "No valid action" forecast bug resolved
+- ✅ All characters start idle at tick 0
+
+### Key Decisions
+- **Team colors for visuals**: Circle borders and HP fills use red (enemies) / green (players)
+- **Unique colors for names**: Character names use `getCharacterColor(id)` across all panels for identity consistency
+- **Role labels removed**: Character headers no longer need "(Player)"/"(Enemy)" since unique colors provide sufficient distinction
+- **Priority hidden**: Priority values hidden from UI since they add clutter without user value (still used internally)
+
+### Archived Specs
+- `memory-bank/archive/specs/character-color-architecture-issue.md`
+- `memory-bank/archive/specs/character-name-color-fix.md`
+
+### Next Session
+- Implement Rule Evaluation Display Redesign from [`specs/rule-evaluation-display-redesign.md`](../specs/rule-evaluation-display-redesign.md) to show decision reasoning ("Why Mage chose Strike over Heal")
+
+---
+
 ## Session: 2025-12-23 Battle Simulation Bug Fixes
 
 ### Context

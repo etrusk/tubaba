@@ -174,11 +174,6 @@ function predictNextAction(
     return null;
   }
   
-  // No prediction if already acting
-  if (character.currentAction) {
-    return null;
-  }
-  
   // Check if stunned
   const isStunned = character.statusEffects.some(se => se.type === 'stunned');
   if (isStunned) {
