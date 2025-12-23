@@ -4,6 +4,43 @@ New sessions go at the top.
 
 ---
 
+## 2025-12-23 3-Column Layout Redesign
+
+### Context
+Restructured [`battle-viewer.html`](../battle-viewer.html) from 2-column layout (40%/60%) to 3-column layout (30%/35%/35%) to provide dedicated space for Action Forecast and Debug Inspector. Moved Rule Evaluations from bottom section to dedicated right column for better visibility during battles.
+
+### Completed
+
+- [x] **Feature Branch** - Created `feature/3-column-layout`
+- [x] **CSS Grid Update** - Modified `.battle-container` grid from 2-column to 3-column layout
+- [x] **Column Sizing** - Left (Battle Arena): ~30%, Middle (Action Forecast): ~35%, Right (Rule Evaluations): ~35%
+- [x] **Debug Inspector Move** - Relocated from bottom section to dedicated right column
+- [x] **Middle Column CSS** - Added `.battle-column-middle` class for Action Forecast
+- [x] **Event Log Optimization** - Reduced max-height from 400px to 200px for compact bottom section
+- [x] **Full-Width Bottom** - Event Log spans all 3 columns
+
+### New Layout
+
+```
+┌──────────────────┬────────────────────┬────────────────────┐
+│  Battle Arena    │  Action Forecast   │  Rule Evaluations  │
+│  + Tick Controls │  (timeline,        │  (Debug Inspector) │
+│  (~30%)          │  predictions)      │  (~35%)            │
+│                  │  (~35%)            │                    │
+├──────────────────┴────────────────────┴────────────────────┤
+│  Event Log (compact, full width, max-height: 200px)        │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Files Modified
+- [`battle-viewer.html`](../battle-viewer.html) - Layout restructure and CSS grid changes
+
+### Next Session
+- Feature branch ready for merge to master
+- Action Forecast implementation (Phase 9) can begin with dedicated UI space
+
+---
+
 ## 2025-12-23 Phase 8 Complete - Circle-Based Character Visualization
 
 ### Context

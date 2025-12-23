@@ -24,6 +24,8 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      max-width: 100vw;
+      width: 100%;
     }
 
     h1 {
@@ -33,10 +35,10 @@
       margin-bottom: 10px;
     }
 
-    /* Two-column layout */
+    /* Three-column layout */
     .battle-arena {
       display: grid;
-      grid-template-columns: 40% 60%;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 20px;
       min-height: 500px;
     }
@@ -48,7 +50,14 @@
       gap: 20px;
     }
 
-    /* Right column: stacked controls and instructions */
+    /* Middle column: Action Forecast */
+    .battle-column-middle {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Right column: Rule Evaluations (Debug Inspector) */
     .battle-column-right {
       display: flex;
       flex-direction: column;
@@ -565,7 +574,7 @@
       padding: 20px;
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      max-height: 400px;
+      max-height: 200px;
       overflow-y: auto;
     }
 
@@ -803,72 +812,6 @@
       filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
     }
     
-    /* Modal styles */
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-    }
-    
-    .modal-content {
-      position: relative;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-      border-radius: 12px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      z-index: 1001;
-    }
-    
-    .modal-close {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      background: rgba(255, 255, 255, 0.1);
-      border: none;
-      font-size: 28px;
-      cursor: pointer;
-      color: #fff;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-    
-    .modal-close:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: rotate(90deg);
-    }
-    
-    .modal-content h2 {
-      margin-bottom: 20px;
-      color: #ffd700;
-      text-align: center;
-    }
-    
     /* Tick Controls Panel (simplified) */
     .tick-controls-panel {
       padding: 15px 20px;
@@ -911,7 +854,7 @@
   <div class="battle-viewer">
     <h1>⚔️ Battle Viewer ⚔️</h1>
     
-    <!-- Two-column layout -->
+    <!-- Three-column layout -->
     <div class="battle-arena">
       <!-- Left column: Battle Arena + Tick Controls -->
       <div class="battle-column-left">
@@ -934,33 +877,26 @@
         </div>
       </div>
       
-      <!-- Right column: Action Forecast Only -->
-      <div class="battle-column-right">
+      <!-- Middle column: Action Forecast -->
+      <div class="battle-column-middle">
         <!-- Action Forecast Panel (fills entire column) -->
         <div class="panel forecast-panel">
           <h2>🔮 Action Forecast</h2>
           <div id="forecast-container"></div>
         </div>
       </div>
+      
+      <!-- Right column: Rule Evaluations (Debug Inspector) OR Instructions Builder -->
+      <div class="battle-column-right">
+        <!-- Container that switches between Debug Inspector and Instructions Builder -->
+        <div id="right-column-container"></div>
+      </div>
     </div>
     
-    <!-- Full-width bottom section: Debug + Event Log -->
+    <!-- Full-width bottom section: Event Log -->
     <div class="bottom-section">
-      <!-- Debug Inspector Panel -->
-      <div id="debug-container"></div>
-      
       <!-- Event Log Panel -->
       <div id="event-log-container"></div>
-    </div>
-  </div>
-  
-  <!-- Floating Modal: Instructions Builder -->
-  <div id="instructions-modal" class="modal" style="display: none;">
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <button class="modal-close" id="modal-close-btn">×</button>
-      <h2>🎮 Character Instructions</h2>
-      <div id="instructions-container"></div>
     </div>
   </div>
 
@@ -986,9 +922,8 @@
 
     // Get DOM elements
     const battleArenaContainer = document.getElementById('battle-arena-container');
-    const instructionsContainer = document.getElementById('instructions-container');
+    const rightColumnContainer = document.getElementById('right-column-container');
     const forecastContainer = document.getElementById('forecast-container');
-    const debugContainer = document.getElementById('debug-container');
     const eventLogContainer = document.getElementById('event-log-container');
     const tickDisplay = document.getElementById('tick-display');
     const battleStatus = document.getElementById('battle-status');
@@ -996,11 +931,6 @@
     const stepBtn = document.getElementById('step-btn');
     const stepBackBtn = document.getElementById('step-back-btn');
     const resetBtn = document.getElementById('reset-btn');
-    
-    // Modal elements
-    const instructionsModal = document.getElementById('instructions-modal');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
-    const modalOverlay = instructionsModal.querySelector('.modal-overlay');
 
     // Load skills from library
     const strike = SkillLibrary.getSkill('strike');
@@ -1085,22 +1015,30 @@
         }
       }
       
-      // Show/hide modal based on selection
+      // Render right column: Instructions Builder (if character selected) OR Debug Inspector
       if (selectedCharacterId) {
-        instructionsModal.style.display = 'flex';
-        
-        // Render instructions in modal
+        // Render instructions in right column
         const selectedCharacter = battleController.getSelectedCharacter();
         const selectedInstructions = battleController.getSelectedCharacterInstructions();
         
-        instructionsContainer.innerHTML = renderInstructionsBuilder(
-          selectedCharacter,
-          selectedInstructions,
-          battleController.getEditingSkillId(),
-          instructionsState.isDirty
-        );
+        rightColumnContainer.innerHTML = `
+          <div class="panel instructions-panel">
+            <h2>🎮 Character Instructions</h2>
+            ${renderInstructionsBuilder(
+              selectedCharacter,
+              selectedInstructions,
+              battleController.getEditingSkillId(),
+              instructionsState.isDirty
+            )}
+          </div>
+        `;
       } else {
-        instructionsModal.style.display = 'none';
+        // Render debug info if available, clear if not
+        if (lastDebugInfo) {
+          rightColumnContainer.innerHTML = renderDebugInspector(lastDebugInfo);
+        } else {
+          rightColumnContainer.innerHTML = '';
+        }
       }
       
       // Render tick display
@@ -1116,13 +1054,6 @@
       // Render forecast (already obtained above for visualization)
       forecastContainer.innerHTML = renderActionForecast(forecast);
       
-      // Render debug info if available, clear if not
-      if (lastDebugInfo) {
-        debugContainer.innerHTML = renderDebugInspector(lastDebugInfo);
-      } else {
-        debugContainer.innerHTML = '';
-      }
-      
       // Update button states
       updateButtonStates();
     }
@@ -1136,35 +1067,20 @@
       resetBtn.disabled = false;
     }
 
-    // Character selection handler (for arena circles - opens modal)
+    // Character selection handler (for arena circles - shows Instructions in right column)
     document.addEventListener('click', (e) => {
       const circle = e.target.closest('.character-circle');
       
       if (circle) {
         const characterId = circle.dataset.characterId;
         if (characterId) {
-          battleController.selectCharacter(characterId);
-          renderBattle();
-        }
-      }
-    });
-    
-    // Modal close handlers
-    modalCloseBtn.addEventListener('click', () => {
-      battleController.selectCharacter(null);
-      renderBattle();
-    });
-    
-    modalOverlay.addEventListener('click', () => {
-      battleController.selectCharacter(null);
-      renderBattle();
-    });
-    
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const instructionsState = battleController.getInstructionsState();
-        if (instructionsState.selectedCharacterId) {
-          battleController.selectCharacter(null);
+          const instructionsState = battleController.getInstructionsState();
+          // Toggle selection: if clicking the same character, deselect
+          if (instructionsState.selectedCharacterId === characterId) {
+            battleController.selectCharacter(null);
+          } else {
+            battleController.selectCharacter(characterId);
+          }
           renderBattle();
         }
       }
@@ -1259,6 +1175,7 @@
           
         case 'cancel':
           battleController.discardChanges();
+          battleController.selectCharacter(null);
           renderBattle();
           break;
       }
