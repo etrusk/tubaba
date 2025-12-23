@@ -42,26 +42,18 @@ If Reviewer reports drift:
 
 When a phase completes (all phase tasks done, tests passing):
 
-### Step 1: Archive Progress
+### Step 1: Archive Decisions
 
 Delegate to 🏗️ Architect or 💻 Code:
 
 ```
-**Task:** Archive Phase [N] progress
+**Task:** Archive Phase [N] decisions
 
-1. Create `memory-bank/archive/phase-[N]-progress.md`
-2. Move all Phase [N] session entries from `memory-bank/02-progress.md` to archive
-3. Leave only:
-   - Current phase section
-   - "Phase [N] Complete" summary line (date, test count, key artifacts)
+In `memory-bank/01-decisions.md`:
+- Collapse Phase [N] decisions to summary block
+- Keep only decisions still relevant to future phases
 
-4. In `memory-bank/01-decisions.md`:
-   - Collapse Phase [N] decisions to summary block
-   - Keep only decisions still relevant to future phases
-
-**Acceptance:** 
-- 02-progress.md contains only current/next phase
-- Archive file exists with full history
+**Acceptance:**
 - 01-decisions.md has Phase [N] summary, not full entries
 ```
 

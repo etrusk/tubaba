@@ -34,8 +34,7 @@ Match linguistic confidence to actual certainty:
 Never say "certainly" or "definitely" below 95% confidence.
 
 ### Context Management
-- Read memory-bank/ files at session start for continuity
-- Update memory-bank/02-progress.md after significant work
+- Read memory-bank/01-decisions.md at session start for continuity
 - Keep individual messages focused; don't dump entire context
 - If context seems stale, ask: "Should I re-read the current state?"
 
@@ -74,12 +73,10 @@ Long sessions degrade context. Apply these checkpoints:
 - Confirm previous subtask is complete
 
 **When uncertain or output feels "off":**
-- Re-read `memory-bank/02-progress.md` for session context
 - Ask: "Should I re-read the current project state?"
 
 **Checkpoint triggers (log to memory-bank/):**
 - Architecture decision made → `01-decisions.md`
-- Subtask completed → `02-progress.md`
 - New requirement discovered → flag for human, update specs
 
 ### Tool Selection Protocol

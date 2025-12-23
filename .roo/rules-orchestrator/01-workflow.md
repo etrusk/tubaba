@@ -36,39 +36,8 @@ Every subtask MUST be:
 
 ## Progress Tracking
 
-After each completed subtask, update memory-bank/02-progress.md:
-
-```markdown
-## [Date] Session
-
-### Completed
-- [x] Task description (delegated to Mode)
-
-### In Progress
-- [ ] Next task
-
-### Blocked/Questions
-- Item needing clarification
-```
-
-## Progress Update Delegation
-
-Orchestrator has **read-only** access. To update progress:
-
-After task completion, delegate to Architect or Code:
-
-```
-Update memory-bank/02-progress.md:
-
-## [Date] Session Update
-### Completed
-- [x] [Description of completed task]
-
-### Next
-- [ ] [Next planned task]
-```
-
-Do NOT attempt to edit files directly—delegate the update as a subtask.
+Track task completion through git commits and the specs/tasks.md file.
+For architectural decisions, delegate updates to memory-bank/01-decisions.md.
 
 ## Handoff Protocol
 

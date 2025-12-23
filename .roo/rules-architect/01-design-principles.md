@@ -40,6 +40,11 @@ Explicitly state what this plan does NOT cover.
 
 ### For Decisions (memory-bank/01-decisions.md)
 
+**When making architectural decisions, update `memory-bank/01-decisions.md`:**
+- Add new decisions at the top using the template below
+- Keep decisions concise (1-2 sentences each)
+- Historical decisions go in the summary table
+
 ```markdown
 ## [Date] [Decision Title]
 
