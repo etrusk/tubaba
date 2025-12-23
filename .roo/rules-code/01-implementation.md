@@ -4,8 +4,8 @@
 
 Before writing any code:
 
-1. [ ] Read specs/plan.md for this task
-2. [ ] Check specs/tasks.md for acceptance criteria
+1. [ ] For production: Read specs/plan.md for this task
+2. [ ] For prototypes: Understand goal and success criteria from handoff
 3. [ ] Understand existing patterns in the codebase
 4. [ ] Identify files that will be modified
 

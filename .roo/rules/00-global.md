@@ -64,13 +64,13 @@ memory-bank/     → Project context and decisions (read at session start)
 Long sessions degrade context. Apply these checkpoints:
 
 **Every 5 substantive messages or 30 minutes:**
-- Re-read `specs/plan.md` if implementing
+- Re-read `specs/plan.md` if implementing production work
 - Verify current work aligns with requirements
 - Check if decisions should be logged to `memory-bank/01-decisions.md`
 
 **Before starting new subtask:**
-- Re-read `specs/tasks.md` for current priorities
 - Confirm previous subtask is complete
+- Check current task scope and acceptance criteria
 
 **When uncertain or output feels "off":**
 - Ask: "Should I re-read the current project state?"
