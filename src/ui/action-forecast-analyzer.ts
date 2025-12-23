@@ -4,7 +4,6 @@ import type { CharacterInstructions, SkillInstruction } from '../types/instructi
 import type { ActionForecast, ActionTimelineEntry, CharacterForecast, RuleSummary } from '../types/forecast.js';
 import type { Condition, TargetingMode } from '../types/skill.js';
 import { selectAction } from '../ai/enemy-brain.js';
-import { applyInstructionsToCharacter } from './instructions-converter.js';
 
 /**
  * Forecast next actions for all characters
@@ -186,9 +185,6 @@ function predictNextAction(
     return null;
   }
   
-  // Apply instructions to get character with rules
-  const characterWithRules = applyInstructionsToCharacter(character, instructions);
-  
   // selectAction expects enemies perspective (enemies array = allies, players array = enemies)
   // For player characters, we need to swap the arrays
   const adjustedState = character.isPlayer
@@ -199,8 +195,8 @@ function predictNextAction(
       }
     : state;
   
-  // Use actual selectAction logic
-  const selection = selectAction(characterWithRules, adjustedState);
+  // Use actual selectAction logic with instructions
+  const selection = selectAction(character, adjustedState, instructions);
   
   if (!selection) {
     return null;

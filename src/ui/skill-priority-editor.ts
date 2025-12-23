@@ -110,7 +110,7 @@ export function renderSkillPriorityEditor(
         <button class="move-btn" data-action="move-down"${downDisabled} title="Move down: This skill will be tried AFTER the skill below it">↓</button>
       </div>
       <input type="checkbox" class="skill-enable"${checked} data-action="toggle-skill" data-skill-id="${instruction.skillId}" title="Enable/Disable: When disabled, this skill will not be used by the AI" />
-      <span class="skill-name">${skill.name}</span>
+      <span class="skill-name">${skill.name} <span style="color: #64b5f6; font-size: 0.85em;">(${skill.baseDuration} ticks)</span></span>
       <span class="skill-priority">${instruction.priority}</span>
     </li>`;
     })

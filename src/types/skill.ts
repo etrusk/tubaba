@@ -7,6 +7,7 @@ import type { StatusType } from './status.js';
  * - single-enemy-highest-hp: Single enemy with highest HP
  * - all-enemies: All living enemies
  * - ally-lowest-hp: Ally with lowest HP (excluding caster)
+ * - ally-lowest-hp-damaged: Ally with lowest HP who is damaged (currentHp < maxHp)
  * - ally-dead: Dead ally (for Revive)
  * - all-allies: All living allies
  */
@@ -16,6 +17,7 @@ export type TargetingMode =
   | 'single-enemy-highest-hp'
   | 'all-enemies'
   | 'ally-lowest-hp'
+  | 'ally-lowest-hp-damaged'
   | 'ally-dead'
   | 'all-allies';
 

@@ -441,6 +441,223 @@ describe('TargetSelector', () => {
 
       expect(targets).toHaveLength(0);
     });
+
+    it('should select ally with lowest HP even if at full HP', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Full HP Ally', 100, 100, true), // At max HP
+        createTestCharacter('p3', 'Injured Ally', 60, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p3'); // Selects lowest HP regardless of full HP
+      expect(targets[0]!.currentHp).toBe(60);
+    });
+
+    it('should select ally when all allies are at full HP', () => {
+      const caster = createTestCharacter('p1', 'Caster', 120, 120, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Full HP 1', 100, 100, true),
+        createTestCharacter('p3', 'Full HP 2', 80, 80, true), // Different max but at full
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p3'); // Selects lowest HP even when all at full HP
+      expect(targets[0]!.currentHp).toBe(80);
+    });
+  });
+
+  describe('ally-lowest-hp-damaged targeting', () => {
+    it('should select damaged ally with lowest HP', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Player 2', 80, 100, true),
+        createTestCharacter('p3', 'Player 3', 30, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p3');
+      expect(targets[0]!.currentHp).toBe(30);
+    });
+
+    it('should exclude the caster from selection', () => {
+      const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Player 2', 50, 100, true),
+        createTestCharacter('p3', 'Player 3', 75, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p2'); // Should NOT select caster despite lowest HP
+    });
+
+    it('should break ties by selecting leftmost in array', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Player 2', 50, 100, true),
+        createTestCharacter('p3', 'Player 3', 50, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p2'); // Leftmost with 50 HP (excluding caster)
+    });
+
+    it('should exclude knocked-out allies', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Dead Ally', 0, 100, true),
+        createTestCharacter('p3', 'Alive Ally', 60, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p3');
+    });
+
+    it('should exclude allies at full HP', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Full HP Ally', 100, 100, true), // At max HP
+        createTestCharacter('p3', 'Injured Ally', 60, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p3'); // Should NOT select full HP ally
+      expect(targets[0]!.currentHp).toBe(60);
+    });
+
+    it('should return empty array when all allies are at full HP', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Full HP 1', 100, 100, true),
+        createTestCharacter('p3', 'Full HP 2', 80, 80, true), // Different max but at full
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(0); // No valid targets when all at full HP
+    });
+
+    it('should return empty array when no valid allies exist (only caster alive)', () => {
+      const caster = createTestCharacter('p1', 'Solo Caster', 100, 100, true);
+      const players = [caster];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(0); // No allies other than caster
+    });
+
+    it('should return empty array when all other allies are dead', () => {
+      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Dead 1', 0, 100, true),
+        createTestCharacter('p3', 'Dead 2', 0, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(0);
+    });
+
+    it('should select damaged caster if caster is damaged (edge case)', () => {
+      const caster = createTestCharacter('p1', 'Damaged Caster', 50, 100, true);
+      const players = [
+        caster,
+        createTestCharacter('p2', 'Full HP Ally', 100, 100, true),
+      ];
+      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'ally-lowest-hp-damaged',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(0); // Caster excluded even when damaged, only ally at full HP
+    });
   });
 
   describe('ally-dead targeting', () => {

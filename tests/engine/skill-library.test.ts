@@ -173,9 +173,9 @@ describe('SkillLibrary', () => {
       expect(heal.baseDuration).toBe(3);
     });
 
-    it('should target ally with lowest HP', () => {
+    it('should target ally with lowest HP (damaged only)', () => {
       heal = SkillLibrary.getSkill('heal');
-      expect(heal.targeting).toBe('ally-lowest-hp');
+      expect(heal.targeting).toBe('ally-lowest-hp-damaged');
     });
 
     it('should be capped at max HP (tested in ActionResolver)', () => {

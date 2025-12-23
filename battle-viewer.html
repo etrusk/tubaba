@@ -716,6 +716,9 @@
       background: rgba(255, 255, 255, 0.5);
     }
 
+    /* Character name color coding - now handled with inline styles for unique colors per character */
+    /* Colors are assigned dynamically based on character ID for unique identification */
+
     /* Battle Arena Visualization */
     .battle-arena-panel {
       min-height: 550px;
@@ -942,39 +945,39 @@
     const sampleEncounter = {
       players: [
         {
-          id: 'player-1',
+          id: 'hero',
           name: 'Hero',
           maxHp: 100,
           currentHp: 100,
           skills: [strike, shield],
           statusEffects: [],
-          currentAction: { skillId: 'strike', targets: ['enemy-1'], ticksRemaining: 2 },
+          currentAction: { skillId: 'strike', targets: ['goblin'], ticksRemaining: 2 },
           isPlayer: true,
         },
         {
-          id: 'player-2',
+          id: 'mage',
           name: 'Mage',
           maxHp: 80,
           currentHp: 80,
           skills: [strike, heal, poison],
           statusEffects: [],
-          currentAction: { skillId: 'heal', targets: ['player-1'], ticksRemaining: 5 },
+          currentAction: null,
           isPlayer: true,
         },
       ],
       enemies: [
         {
-          id: 'enemy-1',
+          id: 'goblin',
           name: 'Goblin',
           maxHp: 50,
           currentHp: 50,
           skills: [strike],
           statusEffects: [],
-          currentAction: { skillId: 'strike', targets: ['player-1'], ticksRemaining: 3 },
+          currentAction: { skillId: 'strike', targets: ['hero'], ticksRemaining: 3 },
           isPlayer: false,
         },
         {
-          id: 'enemy-2',
+          id: 'orc',
           name: 'Orc',
           maxHp: 80,
           currentHp: 80,
@@ -1048,8 +1051,8 @@
       battleStatus.textContent = state.battleStatus.charAt(0).toUpperCase() + state.battleStatus.slice(1);
       battleStatus.className = `battle-status ${state.battleStatus}`;
       
-      // Render event log
-      eventLogContainer.innerHTML = renderEventLog(state.eventLog);
+      // Render event log with combat state for character name colorization
+      eventLogContainer.innerHTML = renderEventLog(state.eventLog, state);
       
       // Render forecast (already obtained above for visualization)
       forecastContainer.innerHTML = renderActionForecast(forecast);

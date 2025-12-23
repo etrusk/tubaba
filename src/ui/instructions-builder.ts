@@ -4,6 +4,7 @@ import type { Skill } from '../types/skill.js';
 import { renderSkillPriorityEditor, calculatePriority } from './skill-priority-editor.js';
 import { renderConditionBuilder } from './condition-builder.js';
 import { renderTargetingOverrideSelector } from './targeting-override-selector.js';
+import { formatCharacterName } from './character-name-formatter.js';
 
 /**
  * Create default skill instructions from available skills
@@ -122,8 +123,9 @@ function renderCharacterHeader(
   character: Character,
   _controlMode: 'human' | 'ai'
 ): string {
+  const formattedName = formatCharacterName(character.name, character.id);
   return `<div class="character-header">
-  <h3>Configuring: ${character.name}</h3>
+  <h3>Configuring: ${formattedName}</h3>
 </div>`;
 }
 

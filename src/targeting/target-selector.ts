@@ -63,6 +63,21 @@ export function selectTargets(
       return [lowest];
     }
 
+    case 'ally-lowest-hp-damaged': {
+      const damagedAllies = players.filter(
+        (p) => p.currentHp > 0 && p.id !== caster.id && p.currentHp < p.maxHp
+      );
+      if (damagedAllies.length === 0) return [];
+      
+      let lowest = damagedAllies[0]!;
+      for (const ally of damagedAllies) {
+        if (ally.currentHp < lowest.currentHp) {
+          lowest = ally;
+        }
+      }
+      return [lowest];
+    }
+
     case 'ally-dead': {
       const deadAllies = players.filter((p) => p.currentHp <= 0);
       if (deadAllies.length === 0) return [];

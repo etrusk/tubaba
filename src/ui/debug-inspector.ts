@@ -7,6 +7,7 @@ import type {
   ResolutionSubstep,
   SubstepDetail,
 } from '../types/debug.js';
+import { formatCharacterName } from './character-name-formatter.js';
 
 /**
  * Renders the debug inspector panel showing rule evaluations, targeting decisions,
@@ -136,8 +137,17 @@ function renderTargetingDecisions(decisions: TargetingDecision[], characterNameM
  */
 function renderTargetingDecision(decision: TargetingDecision, characterNameMap: Map<string, string>): string {
   const casterName = characterNameMap.get(decision.casterId) || decision.casterId;
-  const candidateNames = decision.candidates.map(id => characterNameMap.get(id) || id);
-  const finalTargetNames = decision.finalTargets.map(id => characterNameMap.get(id) || id);
+  const formattedCasterName = formatCharacterName(casterName, decision.casterId);
+  
+  const candidateNames = decision.candidates.map(id => {
+    const name = characterNameMap.get(id) || id;
+    return formatCharacterName(name, id);
+  });
+  
+  const finalTargetNames = decision.finalTargets.map(id => {
+    const name = characterNameMap.get(id) || id;
+    return formatCharacterName(name, id);
+  });
   
   // Explain targeting mode in human-readable terms
   const modeExplanations: Record<string, string> = {
@@ -156,7 +166,10 @@ function renderTargetingDecision(decision: TargetingDecision, characterNameMap: 
     ? decision.filtersApplied
         .map(
           (filter) => {
-            const removedNames = filter.removed.map(id => characterNameMap.get(id) || id);
+            const removedNames = filter.removed.map(id => {
+              const name = characterNameMap.get(id) || id;
+              return formatCharacterName(name, id);
+            });
             return `<div>  → Filter applied: <strong>${filter.filterType}</strong> removed [${removedNames.join(', ')}]</div>`;
           }
         )
@@ -168,7 +181,7 @@ function renderTargetingDecision(decision: TargetingDecision, characterNameMap: 
     : '';
 
   return `<div class="decision">
-      <div><strong>${casterName}</strong> uses <strong>${decision.skillId}</strong> ${modeExplanation}</div>
+      <div>${formattedCasterName} uses <strong>${decision.skillId}</strong> ${modeExplanation}</div>
       <div>  → Initial candidates: [${candidateNames.join(', ')}]</div>
       ${filters}
       <div>  → <strong>Final targets:</strong> [${finalTargetNames.join(', ')}]</div>
@@ -208,7 +221,10 @@ function renderSubstep(substep: ResolutionSubstep, stepNumber: number, character
  */
 function renderSubstepDetail(substepType: string, detail: SubstepDetail, characterNameMap: Map<string, string>): string {
   const actorName = characterNameMap.get(detail.actorId) || detail.actorId;
+  const formattedActorName = formatCharacterName(actorName, detail.actorId);
+  
   const targetName = characterNameMap.get(detail.targetId) || detail.targetId;
+  const formattedTargetName = formatCharacterName(targetName, detail.targetId);
   
   // Create verbose, descriptive output based on substep type
   const typeLabels: Record<string, string> = {
@@ -224,5 +240,5 @@ function renderSubstepDetail(substepType: string, detail: SubstepDetail, charact
   const value = detail.value !== undefined ? ` (${detail.value})` : '';
   
   // Enhanced description with before/after context where applicable
-  return `<strong>${typeLabel}:</strong> ${actorName}'s <strong>${detail.skillId}</strong> → ${targetName}${value} - ${detail.description}`;
+  return `<strong>${typeLabel}:</strong> ${formattedActorName}'s <strong>${detail.skillId}</strong> → ${formattedTargetName}${value} - ${detail.description}`;
 }

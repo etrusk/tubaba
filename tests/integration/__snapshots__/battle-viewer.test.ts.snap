@@ -5,20 +5,20 @@ exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for b
   <div class="players"><div class="character-card player" data-character-id="player-1">
   <div class="character-name">Hero</div>
   <div class="hp-bar-container">
-    <div class="hp-bar" style="width: 100%"></div>
-    <span class="hp-text">100/100</span>
+    <div class="hp-bar" style="width: 85%"></div>
+    <span class="hp-text">85/100</span>
   </div>
   <div class="status-effects"></div>
-  <div class="action-display"><span class="action-name">Idle</span></div>
+  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">2</span></div>
 </div></div>
   <div class="enemies"><div class="character-card enemy" data-character-id="enemy-1">
   <div class="character-name">Goblin</div>
   <div class="hp-bar-container">
-    <div class="hp-bar" style="width: 70%"></div>
-    <span class="hp-text">35/50</span>
+    <div class="hp-bar" style="width: 40%"></div>
+    <span class="hp-text">20/50</span>
   </div>
   <div class="status-effects"><span class="status poisoned" data-duration="3">Poisoned (3)</span></div>
-  <div class="action-display"><span class="action-name">Idle</span></div>
+  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">2</span></div>
 </div></div>
   <div class="event-log">
   <div class="event damage" data-tick="5">
@@ -38,6 +38,30 @@ exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for b
     <span class="type">action-resolved</span>
     <span class="message">Hero used Poison</span>
     <span class="meta">Actor: player-1 | Skill: Poison</span>
+  </div>
+  <div class="event action-resolved" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">action-resolved</span>
+    <span class="message">Hero used Strike</span>
+    <span class="meta">Actor: player-1 | Skill: Strike</span>
+  </div>
+  <div class="event damage" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">damage</span>
+    <span class="message">Goblin takes 15 damage</span>
+    <span class="meta">Actor: player-1 | Target: enemy-1 | Value: 15</span>
+  </div>
+  <div class="event action-resolved" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">action-resolved</span>
+    <span class="message">Goblin used Strike</span>
+    <span class="meta">Actor: enemy-1 | Skill: Strike</span>
+  </div>
+  <div class="event damage" data-tick="3">
+    <span class="tick">Tick 3</span>
+    <span class="type">damage</span>
+    <span class="message">Hero takes 15 damage</span>
+    <span class="meta">Actor: enemy-1 | Target: player-1 | Value: 15</span>
   </div>
   <div class="event status-applied" data-tick="3">
     <span class="tick">Tick 3</span>

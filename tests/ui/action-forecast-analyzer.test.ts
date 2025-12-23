@@ -374,6 +374,7 @@ describe('ActionForecastAnalyzer', () => {
       expect(p1Forecast?.rulesSummary[0]).toEqual({
         priority: 100,
         skillName: 'Heal',
+        tickCost: 3,
         conditionsText: 'If HP < 50%',
         targetingMode: 'Self',
         enabled: true,

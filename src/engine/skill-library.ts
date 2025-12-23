@@ -80,7 +80,7 @@ const skills: Skill[] = [
     id: 'heal',
     name: 'Heal',
     baseDuration: 3,
-    targeting: 'ally-lowest-hp',
+    targeting: 'ally-lowest-hp-damaged',
     effects: [
       {
         type: 'heal',

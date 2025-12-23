@@ -142,9 +142,10 @@ describe('SkillPriorityEditor - Skill List Rendering (AC56)', () => {
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     expect(html).toContain('class="skill-name"');
-    expect(html).toContain('>Heal<');
-    expect(html).toContain('>Strike<');
-    expect(html).toContain('>Shield<');
+    // Check skill names appear within skill-name spans (with tick cost appended)
+    expect(html).toContain('skill-name">Heal');
+    expect(html).toContain('skill-name">Strike');
+    expect(html).toContain('skill-name">Shield');
   });
 
   it('should show calculated priority number for each skill', () => {

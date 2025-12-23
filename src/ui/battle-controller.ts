@@ -76,8 +76,30 @@ export class BattleController {
   private forecastCache: ActionForecast | null;
 
   constructor(initialState: CombatState, timeProvider: TimeProvider = defaultTimeProvider) {
+    // Initialize instructions for all characters (players AND enemies) BEFORE freezing state
+    const instructions = new Map<string, CharacterInstructions>();
+    for (const player of initialState.players) {
+      instructions.set(player.id, createDefaultInstructions(player));
+    }
+    for (const enemy of initialState.enemies) {
+      instructions.set(enemy.id, createDefaultInstructions(enemy));
+    }
+    
+    // Apply default instructions to initial state
+    const stateWithInstructions = {
+      ...initialState,
+      players: initialState.players.map(player => {
+        const inst = instructions.get(player.id);
+        return inst ? applyInstructionsToCharacter(player, inst) : player;
+      }),
+      enemies: initialState.enemies.map(enemy => {
+        const inst = instructions.get(enemy.id);
+        return inst ? applyInstructionsToCharacter(enemy, inst) : enemy;
+      })
+    };
+    
     // Deep clone and freeze the initial state to ensure immutability
-    this.initialState = deepFreeze(deepClone(initialState));
+    this.initialState = deepFreeze(deepClone(stateWithInstructions));
     this.currentState = this.initialState;
     this.history = [this.initialState];
     this.currentHistoryIndex = 0;
@@ -86,15 +108,6 @@ export class BattleController {
     this.playing = false;
     this.timeProvider = timeProvider;
     this.forecastCache = null;
-    
-    // Initialize instructions for all characters (players AND enemies)
-    const instructions = new Map<string, CharacterInstructions>();
-    for (const player of initialState.players) {
-      instructions.set(player.id, createDefaultInstructions(player));
-    }
-    for (const enemy of initialState.enemies) {
-      instructions.set(enemy.id, createDefaultInstructions(enemy));
-    }
     
     this.instructionsState = {
       selectedCharacterId: null,
@@ -146,7 +159,7 @@ export class BattleController {
 
     // Deep clone current state and execute tick
     const stateCopy = deepClone(this.currentState);
-    const result = TickExecutor.executeTick(stateCopy);
+    const result = TickExecutor.executeTick(stateCopy, this.instructionsState.instructions);
     const nextState = deepFreeze(result.updatedState);
 
     this.currentState = nextState;
@@ -284,6 +297,9 @@ export class BattleController {
     this.currentState = this.initialState;
     this.history = [this.initialState];
     this.currentHistoryIndex = 0;
+    
+    // Clear forecast cache
+    this.forecastCache = null;
   }
 
   // ===== Instructions Management Methods =====

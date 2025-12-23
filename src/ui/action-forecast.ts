@@ -1,11 +1,15 @@
 import type { ActionForecast, ActionTimelineEntry, CharacterForecast, RuleSummary } from '../types/forecast.js';
+import { formatCharacterName } from './character-name-formatter.js';
 
 /**
  * Renders the action forecast panel showing timeline, character predictions, and AI rules.
  */
 export function renderActionForecast(forecast: ActionForecast): string {
-  const timelineSection = renderTimeline(forecast.timeline);
-  const characterSection = renderCharacterForecasts(forecast.characterForecasts);
+  // Build character name to ID map for colorizing names with unique colors
+  const nameToIdMap = buildCharacterNameToIdMap(forecast.characterForecasts);
+  
+  const timelineSection = renderTimeline(forecast.timeline, nameToIdMap);
+  const characterSection = renderCharacterForecasts(forecast.characterForecasts, nameToIdMap);
 
   return `<div class="action-forecast">
   ${timelineSection}
@@ -14,11 +18,22 @@ export function renderActionForecast(forecast: ActionForecast): string {
 }
 
 /**
+ * Builds a map of character names to their IDs for color assignment
+ */
+function buildCharacterNameToIdMap(characters: CharacterForecast[]): Map<string, string> {
+  const nameToIdMap = new Map<string, string>();
+  for (const character of characters) {
+    nameToIdMap.set(character.characterName, character.characterId);
+  }
+  return nameToIdMap;
+}
+
+/**
  * Renders the action timeline section
  */
-function renderTimeline(timeline: ActionTimelineEntry[]): string {
+function renderTimeline(timeline: ActionTimelineEntry[], nameToIdMap: Map<string, string>): string {
   const content = timeline.length > 0
-    ? timeline.map(renderTimelineEntry).join('\n    ')
+    ? timeline.map(entry => renderTimelineEntry(entry, nameToIdMap)).join('\n    ')
     : '<div class="empty-timeline">No actions in timeline</div>';
 
   return `<div class="timeline-section">
@@ -30,16 +45,23 @@ function renderTimeline(timeline: ActionTimelineEntry[]): string {
 /**
  * Renders a single timeline entry
  */
-function renderTimelineEntry(entry: ActionTimelineEntry): string {
+function renderTimelineEntry(entry: ActionTimelineEntry, nameToIdMap: Map<string, string>): string {
   const statusClass = entry.isQueued ? 'queued' : 'predicted';
   const statusLabel = entry.isQueued ? '[Queued]' : '[Predicted]';
-  const targetText = entry.targetNames.join(', ');
+  
+  // Color code character name and targets using unique colors
+  const characterId = entry.characterId;
+  const formattedCharacterName = formatCharacterName(entry.characterName, characterId);
+  const formattedTargets = entry.targetNames.map(name => {
+    const targetId = nameToIdMap.get(name) ?? name; // Fallback to name as ID if not found
+    return formatCharacterName(name, targetId);
+  }).join(', ');
   
   return `<div class="timeline-entry ${statusClass}">
       <span class="tick-number">Tick ${entry.tickNumber}:</span>
-      <span class="character-name">${entry.characterName}</span> →
+      ${formattedCharacterName} →
       <span class="skill-name">${entry.skillName}</span> →
-      <span class="target-names">${targetText}</span>
+      ${formattedTargets}
       <span class="status-label">${statusLabel}</span>
     </div>`;
 }
@@ -47,9 +69,9 @@ function renderTimelineEntry(entry: ActionTimelineEntry): string {
 /**
  * Renders all character forecasts
  */
-function renderCharacterForecasts(characters: CharacterForecast[]): string {
+function renderCharacterForecasts(characters: CharacterForecast[], nameToIdMap: Map<string, string>): string {
   const content = characters.length > 0
-    ? characters.map(renderCharacterForecast).join('\n    ')
+    ? characters.map(character => renderCharacterForecast(character, nameToIdMap)).join('\n    ')
     : '<div>No character forecasts</div>';
 
   return `<div class="character-forecasts-section">
@@ -61,12 +83,12 @@ function renderCharacterForecasts(characters: CharacterForecast[]): string {
 /**
  * Renders a single character forecast
  */
-function renderCharacterForecast(character: CharacterForecast): string {
+function renderCharacterForecast(character: CharacterForecast, nameToIdMap: Map<string, string>): string {
   const roleIcon = character.isPlayer ? '🛡️' : '👹';
   const roleLabel = character.isPlayer ? 'Player' : 'Enemy';
   
-  const currentActionSection = renderCurrentAction(character.currentAction);
-  const nextActionSection = renderNextAction(character.nextAction);
+  const currentActionSection = renderCurrentAction(character.currentAction, nameToIdMap);
+  const nextActionSection = renderNextAction(character.nextAction, nameToIdMap);
   const rulesSection = renderRulesSummary(character.rulesSummary);
 
   return `<div class="character-forecast" data-character-id="${character.characterId}">
@@ -80,28 +102,36 @@ function renderCharacterForecast(character: CharacterForecast): string {
 /**
  * Renders current action info
  */
-function renderCurrentAction(currentAction: CharacterForecast['currentAction']): string {
+function renderCurrentAction(currentAction: CharacterForecast['currentAction'], nameToIdMap: Map<string, string>): string {
   if (!currentAction) {
     return '<div class="current-action">Current: <em>Idle</em></div>';
   }
 
-  const targetText = currentAction.targetNames.join(', ');
+  const formattedTargets = currentAction.targetNames.map(name => {
+    const targetId = nameToIdMap.get(name) ?? name; // Fallback to name as ID if not found
+    return formatCharacterName(name, targetId);
+  }).join(', ');
+  
   return `<div class="current-action">
-      Current: <strong>${currentAction.skillName}</strong> → ${targetText} (${currentAction.ticksRemaining} ticks remaining)
+      Current: <strong>${currentAction.skillName}</strong> → ${formattedTargets} (${currentAction.ticksRemaining} ticks remaining)
     </div>`;
 }
 
 /**
  * Renders next action prediction
  */
-function renderNextAction(nextAction: CharacterForecast['nextAction']): string {
+function renderNextAction(nextAction: CharacterForecast['nextAction'], nameToIdMap: Map<string, string>): string {
   if (!nextAction) {
     return '<div class="next-action">Next: <em>No valid action</em></div>';
   }
 
-  const targetText = nextAction.targetNames.join(', ');
+  const formattedTargets = nextAction.targetNames.map(name => {
+    const targetId = nameToIdMap.get(name) ?? name; // Fallback to name as ID if not found
+    return formatCharacterName(name, targetId);
+  }).join(', ');
+  
   return `<div class="next-action">
-      Next: <strong>${nextAction.skillName}</strong> → ${targetText} (${nextAction.reason})
+      Next: <strong>${nextAction.skillName}</strong> → ${formattedTargets} (${nextAction.reason})
     </div>`;
 }
 

@@ -52,15 +52,15 @@ describe('TargetingOverrideSelector - Basic Rendering (AC59)', () => {
 });
 
 describe('TargetingOverrideSelector - Dropdown Options (AC59)', () => {
-  it('should render select with all 7 targeting modes', () => {
+  it('should render select with all 8 targeting modes', () => {
     const html = renderTargetingOverrideSelector(undefined, 'single-enemy-lowest-hp');
 
-    // Count option elements (7 targeting modes + 1 default = 8 total)
+    // Count option elements (8 targeting modes + 1 default = 9 total)
     const optionMatches = html.match(/<option/g);
-    expect(optionMatches).toHaveLength(8);
+    expect(optionMatches).toHaveLength(9);
   });
 
-  it('should render all 7 targeting mode options', () => {
+  it('should render all 8 targeting mode options', () => {
     const html = renderTargetingOverrideSelector(undefined, 'single-enemy-lowest-hp');
 
     expect(html).toContain('value="self"');
@@ -68,6 +68,7 @@ describe('TargetingOverrideSelector - Dropdown Options (AC59)', () => {
     expect(html).toContain('value="single-enemy-highest-hp"');
     expect(html).toContain('value="all-enemies"');
     expect(html).toContain('value="ally-lowest-hp"');
+    expect(html).toContain('value="ally-lowest-hp-damaged"');
     expect(html).toContain('value="ally-dead"');
     expect(html).toContain('value="all-allies"');
   });
@@ -80,6 +81,7 @@ describe('TargetingOverrideSelector - Dropdown Options (AC59)', () => {
     expect(html).toContain('>Single Enemy (Highest HP)<');
     expect(html).toContain('>All Enemies<');
     expect(html).toContain('>Ally (Lowest HP)<');
+    expect(html).toContain('>Ally (Lowest HP - Damaged)<');
     expect(html).toContain('>Ally (Dead - for Revive)<');
     expect(html).toContain('>All Allies<');
   });
@@ -159,6 +161,7 @@ describe('TargetingOverrideSelector - Current Selection (AC59)', () => {
       'single-enemy-highest-hp',
       'all-enemies',
       'ally-lowest-hp',
+      'ally-lowest-hp-damaged',
       'ally-dead',
       'all-allies',
     ];
@@ -194,13 +197,14 @@ describe('TargetingOverrideSelector - Help Text', () => {
     expect(allEnemiesHtml).toContain('Targets all enemies in the battle');
   });
 
-  it('should update help text for all 7 targeting modes', () => {
+  it('should update help text for all 8 targeting modes', () => {
     const modes: TargetingMode[] = [
       'self',
       'single-enemy-lowest-hp',
       'single-enemy-highest-hp',
       'all-enemies',
       'ally-lowest-hp',
+      'ally-lowest-hp-damaged',
       'ally-dead',
       'all-allies',
     ];
@@ -313,6 +317,7 @@ describe('TargetingOverrideSelector - Edge Cases', () => {
       'single-enemy-highest-hp',
       'all-enemies',
       'ally-lowest-hp',
+      'ally-lowest-hp-damaged',
       'ally-dead',
       'all-allies',
     ];

@@ -4,6 +4,47 @@ New sessions go at the top.
 
 ---
 
+## Session: 2025-12-23 Battle Simulation Bug Fixes
+
+### Context
+Fixed three critical bugs in the battle simulation system that prevented proper action execution and forecasting.
+
+### Bugs Fixed
+
+**Bug 1: Actions Not Executing (CRITICAL)**
+- **Location:** [`src/engine/tick-executor.ts`](../src/engine/tick-executor.ts)
+- **Problem:** Phase 1 "Rule Evaluation" was a placeholder - idle characters never got new actions queued
+- **Fix:** Added actual rule evaluation and action queuing in both [`executeTick()`](../src/engine/tick-executor.ts) and [`executeTickWithDebug()`](../src/engine/tick-executor.ts):
+  - Import [`selectAction`](../src/ai/enemy-brain.ts) from enemy-brain
+  - For idle characters: call `selectAction()`, create action, set `currentAction`, add to queue
+  - For player characters: swap players/enemies arrays when calling selectAction
+
+**Bug 2: Heal Targeting Full HP**
+- **Location:** [`src/targeting/target-selector.ts`](../src/targeting/target-selector.ts)
+- **Problem:** `ally-lowest-hp` returned lowest HP ally even at full HP
+- **Fix:** Added filter to exclude full HP allies: `p.currentHp < p.maxHp`
+
+**Bug 3: Forecast/Lines Not Updating**
+- **Root Cause:** Consequence of Bug 1 - forecast predicted correctly but tick executor never queued actions
+- **Fix:** Automatically resolved when Bug 1 was fixed
+
+### Files Modified
+- [`src/engine/tick-executor.ts`](../src/engine/tick-executor.ts) - Added action queuing to Phase 1
+- [`src/targeting/target-selector.ts`](../src/targeting/target-selector.ts) - Filter full HP allies from heal targets
+
+### Test Results
+- All 1,046 tests passing
+- Updated 15 snapshots to reflect new action execution behavior
+- Fixed 1 test assertion to include `tickCost` in rule summaries
+
+### Verification
+- Idle characters now queue actions (Orc queued Strike on Tick 1)
+- Actions execute correctly (damage applied on action resolution)
+- Heal skills skip full HP allies
+- Intent lines update dynamically (solid for queued, dashed for predicted)
+
+---
+
 ## 2025-12-23 3-Column Layout Redesign
 
 ### Context

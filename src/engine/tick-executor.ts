@@ -11,9 +11,10 @@ import type {
   SubstepDetail,
   ConditionType,
 } from '../types/index.js';
+import type { CharacterInstructions } from '../types/instructions.js';
 import { ActionResolver } from './action-resolver.js';
 import { StatusEffectProcessor } from './status-effect-processor.js';
-import { selectAction as _selectAction } from '../ai/enemy-brain.js';
+import { selectAction } from '../ai/enemy-brain.js';
 import { evaluateCondition } from '../ai/rule-condition-evaluator.js';
 import { selectTargets } from '../targeting/target-selector.js';
 import _TargetFilter from '../targeting/target-filter.js';
@@ -21,7 +22,7 @@ import { SkillLibrary } from './skill-library.js';
 
 /**
  * TickExecutor - Orchestrates the 5-phase tick cycle
- * 
+ *
  * Phase 1: Rule Evaluation (idle units check rules and queue actions)
  * Phase 2: Action Progress (decrement ticksRemaining)
  * Phase 3: Action Resolution (resolve actions at 0 ticks)
@@ -29,7 +30,10 @@ import { SkillLibrary } from './skill-library.js';
  * Phase 5: Cleanup (knockouts, victory/defeat detection)
  */
 
-function executeTick(state: CombatState): TickResult {
+function executeTick(
+  state: CombatState,
+  instructions?: Map<string, CharacterInstructions>
+): TickResult {
   // Increment tick counter
   const newTickNumber = state.tickNumber + 1;
   
@@ -52,8 +56,60 @@ function executeTick(state: CombatState): TickResult {
   // PHASE 1: Rule Evaluation
   // For idle units (no currentAction, not knocked out, not stunned)
   // evaluate their rules and queue new actions
-  // NOTE: RuleEvaluator not yet implemented - placeholder for future
-  // Tests verify we skip stunned/KO'd/busy units
+  const allCharacters = [...workingPlayers, ...workingEnemies];
+  const currentState: CombatState = {
+    players: workingPlayers,
+    enemies: workingEnemies,
+    tickNumber: state.tickNumber,
+    actionQueue: workingActionQueue,
+    eventLog: state.eventLog,
+    battleStatus: state.battleStatus,
+  };
+  
+  for (const character of allCharacters) {
+    // Check if character is idle (can evaluate rules)
+    const isKnockedOut = character.currentHp <= 0;
+    const isStunned = character.statusEffects.some(s => s.type === 'stunned' && s.duration > 0);
+    const hasPendingAction = character.currentAction !== null;
+    
+    const isIdle = !isKnockedOut && !isStunned && !hasPendingAction;
+    
+    if (!isIdle) {
+      continue;
+    }
+    
+    // For player characters, swap arrays when calling selectAction
+    // selectAction expects enemies perspective: enemies array = allies, players array = enemies
+    const adjustedState = character.isPlayer
+      ? {
+          ...currentState,
+          players: currentState.enemies,  // Player's enemies become the "players" param
+          enemies: currentState.players,  // Player's allies become the "enemies" param
+        }
+      : currentState;
+    
+    // Get character instructions if available
+    const characterInstructions = instructions?.get(character.id);
+    
+    // Use selectAction to get skill and targets
+    const selection = selectAction(character, adjustedState, characterInstructions);
+    
+    if (selection) {
+      const skill = selection.skill;
+      const targetIds = selection.targets.map(t => t.id);
+      
+      // Create action and set on character
+      const action: Action = {
+        casterId: character.id,
+        skillId: skill.id,
+        targets: targetIds,
+        ticksRemaining: skill.baseDuration,
+      };
+      
+      character.currentAction = action;
+      workingActionQueue.push(action);
+    }
+  }
   
   // PHASE 2: Action Progress
   // Collect actions that are ALREADY at 0 before decrement (will resolve this tick)
@@ -198,7 +254,10 @@ function executeTick(state: CombatState): TickResult {
  * Execute a tick with debug instrumentation
  * Captures detailed debug information about rule evaluations, targeting decisions, and resolution substeps
  */
-function executeTickWithDebug(state: CombatState): TickResultWithDebug {
+function executeTickWithDebug(
+  state: CombatState,
+  instructions?: Map<string, CharacterInstructions>
+): TickResultWithDebug {
   // Debug info collectors
   const ruleEvaluations: RuleEvaluation[] = [];
   const targetingDecisions: TargetingDecision[] = [];
@@ -451,6 +510,17 @@ function executeTickWithDebug(state: CombatState): TickResultWithDebug {
           evaluation.selectedRule = `rule-${ruleIndex}`;
           evaluation.selectedSkill = skillId;
           evaluation.selectedTargets = finalTargetIds;
+          
+          // Actually queue the action (not just capture debug info)
+          const action: Action = {
+            casterId: character.id,
+            skillId: skillId,
+            targets: finalTargetIds,
+            ticksRemaining: skill.baseDuration,
+          };
+          
+          character.currentAction = action;
+          workingActionQueue.push(action);
         }
       }
     }
