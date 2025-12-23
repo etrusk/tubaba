@@ -176,4 +176,5 @@ Flat list of observations and tactical implications discovered during developmen
 
 - **Core implementation complete:** 1063 tests passing (Phases 1-8)
 - **UI:** Circle-based visualization, Intent lines, Debug Inspector, Instructions Builder, Action Forecast
+- **Server:** Always running at http://localhost:3000/battle-viewer
 - **Next:** Rule Evaluation Display Redesign (specs/rule-evaluation-display-redesign.md) to show decision reasoning
