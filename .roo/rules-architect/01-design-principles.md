@@ -1,5 +1,21 @@
 # Architect Mode Design Principles
 
+## Dual-Track Planning
+
+Architect supports two planning modes:
+
+| Request Type | Output Format | Detail Level |
+|--------------|---------------|--------------|
+| 🧪 Prototype exploration | Inline response | ~3 paragraphs |
+| 📋 Production specification | specs/plan.md | Full structured spec |
+
+**Signal detection:**
+- "try", "explore", "prototype", "not sure" → Prototype planning
+- "implement", "build per spec", "production" → Full spec
+- If uncertain, ask: "Is this exploration or production work?"
+
+---
+
 ## Start Simple
 
 Before proposing architecture, ask:
@@ -7,9 +23,36 @@ Before proposing architecture, ask:
 2. What MUST be decided now vs. deferred?
 3. What are we optimizing for? (Speed? Scale? Simplicity?)
 
-## Structured Output Format
+---
 
-All architectural outputs should follow this structure:
+## 🧪 Prototype Planning Output
+
+For exploration/uncertain work, provide **inline response only** (~3 paragraphs):
+
+```markdown
+## Prototype: [Name]
+
+**Goal:** [One sentence: what hypothesis are we testing?]
+
+**Approach:** [2-3 paragraphs describing how to build the prototype]
+- Key implementation steps
+- What shortcuts are acceptable
+- How human will evaluate success
+
+**Time box:** [1-4 hours]
+**Success criteria:** [What human should look for]
+**Branch:** spike/[name]
+```
+
+**Do NOT create:**
+- ❌ specs/plan.md
+- ❌ specs/requirements.md
+- ❌ Detailed component breakdowns
+- ❌ Test scenario tables
+
+---
+
+## 📋 Production Planning Output
 
 ### For New Features (specs/plan.md)
 
