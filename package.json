@@ -9,6 +9,8 @@
     "test:critical": "vitest run --reporter=verbose",
     "type-check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
     "standards:check": "echo 'Standards validation:' && npm run lint && npm run type-check",
     "precommit": "npm run standards:check && npm run test:critical"
   },
@@ -24,9 +26,12 @@
   },
   "homepage": "https://github.com/etrusk/tubaba#readme",
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@vitest/ui": "^4.0.16",
+    "eslint": "^9.39.2",
     "linkedom": "^0.18.12",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.1",
     "vitest": "^4.0.16"
   },
   "dependencies": {

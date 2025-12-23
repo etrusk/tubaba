@@ -463,7 +463,7 @@ describe('RunStateManager - AC38: Battle Defeat Handling', () => {
     let runState = manager.initializeRun('run-034', playerParty, encounters);
     
     // Win first encounter
-    let victoryResult = createTickResult(true, 'victory', playerParty, []);
+    const victoryResult = createTickResult(true, 'victory', playerParty, []);
     runState = manager.handleBattleResult(runState, victoryResult);
     const choice: SkillUnlockChoice = {
       characterId: 'player-1',
@@ -728,7 +728,7 @@ describe('RunStateManager - Standard Coverage: encountersCleared', () => {
     let runState = manager.initializeRun('run-061', playerParty, encounters);
     
     // Win first
-    let victoryResult = createTickResult(true, 'victory', playerParty, []);
+    const victoryResult = createTickResult(true, 'victory', playerParty, []);
     runState = manager.handleBattleResult(runState, victoryResult);
     expect(runState.encountersCleared).toBe(1);
     runState = manager.loadNextEncounter(runState);

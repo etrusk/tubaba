@@ -1,8 +1,7 @@
 import type { CombatState, Character } from '../types/index.js';
 import type {
   InstructionsBuilderState,
-  CharacterInstructions,
-  SkillInstruction
+  CharacterInstructions
 } from '../types/instructions.js';
 import type { Condition, TargetingMode } from '../types/skill.js';
 import type { ActionForecast } from '../types/forecast.js';

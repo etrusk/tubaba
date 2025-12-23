@@ -120,7 +120,7 @@ function renderEmptyState(): string {
  */
 function renderCharacterHeader(
   character: Character,
-  controlMode: 'human' | 'ai'
+  _controlMode: 'human' | 'ai'
 ): string {
   return `<div class="character-header">
   <h3>Configuring: ${character.name}</h3>

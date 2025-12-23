@@ -5,23 +5,29 @@ import type {
   IntentLine,
   CharacterPosition,
 } from '../types/visualization.js';
+import type { ActionForecast } from '../types/forecast.js';
 import { calculateCharacterPositions } from './battle-arena-layout.js';
 import { SKILL_COLORS } from './intent-line.js';
 
 /**
  * Transform CombatState into BattleVisualization data structure
  * Based on spec lines 334-360
- * 
+ *
  * Algorithm:
  * 1. Calculate character positions using layout algorithm
  * 2. Build CircleCharacterData[] from players + enemies
  * 3. Build IntentLine[] from character actions
- * 4. Return complete BattleVisualization
- * 
+ * 4. Build predicted IntentLine[] from forecast (if provided)
+ * 5. Return complete BattleVisualization
+ *
  * @param state - Current combat state
+ * @param forecast - Optional action forecast for predicted intent lines
  * @returns Battle visualization data ready for rendering
  */
-export function analyzeVisualization(state: CombatState): BattleVisualization {
+export function analyzeVisualization(
+  state: CombatState,
+  forecast?: ActionForecast
+): BattleVisualization {
   const arenaDimensions = { width: 800, height: 500 };
   
   // Step 1: Calculate character positions
@@ -84,7 +90,7 @@ export function analyzeVisualization(state: CombatState): BattleVisualization {
     [...state.players, ...state.enemies].map(char => [char.id, char])
   );
   
-  // Process all characters with actions
+  // Process all characters with current actions (solid/dashed lines based on ticksRemaining)
   for (const character of [...state.players, ...state.enemies]) {
     // Skip if no action
     if (character.currentAction === null) continue;
@@ -130,6 +136,66 @@ export function analyzeVisualization(state: CombatState): BattleVisualization {
         startPos: edgePositions.start,
         endPos: edgePositions.end,
       });
+    }
+  }
+  
+  // Step 4: Build predicted IntentLine[] from forecast (dashed lines for next actions)
+  if (forecast) {
+    for (const characterForecast of forecast.characterForecasts) {
+      // Only show predicted lines for characters without current actions
+      const character = characterMap.get(characterForecast.characterId);
+      if (!character || character.currentAction !== null) continue;
+      
+      // Skip dead characters
+      if (character.currentHp === 0) continue;
+      
+      // Skip if no predicted next action
+      if (!characterForecast.nextAction) continue;
+      
+      const casterPosition = positionMap.get(characterForecast.characterId);
+      if (!casterPosition) continue;
+      
+      // Find skill ID from character's skills by matching name
+      const skill = character.skills.find(s => s.name === characterForecast.nextAction!.skillName);
+      const skillId = skill?.id ?? 'default';
+      
+      // Create predicted intent lines for each target
+      for (const targetName of characterForecast.nextAction.targetNames) {
+        // Find target by name
+        const target = [...state.players, ...state.enemies].find(c => c.name === targetName);
+        if (!target) continue;
+        
+        const targetPosition = positionMap.get(target.id);
+        if (!targetPosition) continue;
+        
+        // Skip dead targets UNLESS skill is 'revive'
+        if (target.currentHp === 0 && skillId !== 'revive') {
+          continue;
+        }
+        
+        // Predicted actions are always dashed
+        const lineStyle = 'dashed';
+        
+        // Map skill to color (with fallback to default)
+        const color = SKILL_COLORS[skillId] ?? SKILL_COLORS['default'] ?? '#ffd700';
+        
+        // Calculate edge positions
+        const edgePositions = calculateEdgePositions(
+          casterPosition,
+          targetPosition
+        );
+        
+        intentLines.push({
+          casterId: characterForecast.characterId,
+          targetId: target.id,
+          skillId,
+          ticksRemaining: 1, // Predicted actions will happen next tick
+          lineStyle,
+          color,
+          startPos: edgePositions.start,
+          endPos: edgePositions.end,
+        });
+      }
     }
   }
   

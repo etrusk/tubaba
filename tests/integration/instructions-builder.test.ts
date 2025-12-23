@@ -381,8 +381,8 @@ describe('Instructions Builder Integration', () => {
       controller.applyInstructions();
 
       // Verify condition is attached
-      let state = controller.getCurrentState();
-      let healSkillOnPlayer = state.players.find(p => p.id === 'player-1')!.skills.find(s => s.id === 'heal');
+      const state = controller.getCurrentState();
+      const healSkillOnPlayer = state.players.find(p => p.id === 'player-1')!.skills.find(s => s.id === 'heal');
       expect(healSkillOnPlayer?.rules?.[0]?.conditions).toEqual([
         { type: 'hp-below', threshold: 50 },
       ]);

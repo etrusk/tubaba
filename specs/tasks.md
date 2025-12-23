@@ -8,174 +8,6 @@
 
 <!-- Tasks ready to start, in priority order -->
 
-### Phase 8: Circle-Based Character Visualization & Intent Signaling
-
-**Overview:** Replace rectangular character cards with circular visualizations showing HP depletion via "liquid draining" effect, and add SVG intent lines connecting casters to targets showing action flow.
-
-**Dependencies:** Phase 6 (Instructions Builder) complete, BattleController with state management
-
-**Estimated Tests:** ~80-100 tests (15 circle renderer + 20 line renderer + 10 layout + 15 analyzer + 10 main renderer + 15 integration)
-
-**Acceptance Criteria:** AC66-AC73 (Circle Visualization, HP Drain Effect, Intent Lines, Line Styles, Multi-Target, Layout, Dead Characters, Real-time Updates)
-
-**Full Specification:** See [`specs/circle-characters-spec.md`](../specs/circle-characters-spec.md)
-
-1. **Define Visualization Type Definitions**
-   - Create `src/types/visualization.ts`
-   - Define: `CharacterPosition`, `CircleCharacterData`, `IntentLine`, `BattleVisualization`, `SkillColorMap`
-   - Depends on: Existing type definitions
-   - Estimated: 30 minutes, no tests (type definitions)
-
-2. **Write CharacterCircle Test Suite** (AC66-AC67)
-   - Tests for `renderCharacterCircle()` - SVG circle generation
-   - Tests for HP fill calculation (0%, 25%, 50%, 75%, 100%)
-   - Tests for HP "liquid drain" effect (fill anchored bottom, empties top)
-   - Tests for player vs enemy border colors
-   - Tests for HP text centering ("75/100")
-   - Tests for status effects display below circle
-   - Tests for current action display
-   - Tests for KO state (gray fill, dashed border)
-   - Edge cases: overheal (>100% HP), zero HP, long names, multiple statuses
-   - Depends on: Visualization type definitions
-   - Estimated: ~15 tests
-
-3. **Implement CharacterCircle Renderer**
-   - Pure function `renderCharacterCircle(data: CircleCharacterData): string`
-   - SVG structure: circle border + clipped HP fill rect + HP text + name + statuses + action
-   - HP fill algorithm: bottom-anchored rect with height = `radius * 2 * (hpPercent / 100)`
-   - clipPath to constrain fill within circle
-   - Color scheme: green for players, red for enemies
-   - KO styling: dashed border, gray fill, opacity reduction
-   - Depends on: CharacterCircle tests
-   - Files: `src/ui/character-circle.ts`
-
-4. **Write IntentLine Test Suite** (AC68-AC70)
-   - Tests for `renderIntentLine()` - SVG line generation
-   - Tests for solid line style (ticksRemaining = 0)
-   - Tests for dashed line style (ticksRemaining > 0)
-   - Tests for skill color mapping (damage=red, heal=green, buff=blue)
-   - Tests for default color fallback (unknown skills)
-   - Tests for arrowhead marker positioning
-   - Tests for line width (3px executing, 2px queued)
-   - Tests for start/end position at circle edges (not centers)
-   - Edge cases: self-targeting (loopback), multiple targets, dead caster/target
-   - Depends on: Visualization type definitions
-   - Estimated: ~20 tests
-
-5. **Implement IntentLine Renderer**
-   - Pure function `renderIntentLine(line: IntentLine): string`
-   - SVG structure: line element with marker-end for arrowhead
-   - Skill color map: 12 skills + default color
-   - Line style: solid (stroke-dasharray: none) or dashed (8,4)
-   - Line width: 3px for executing, 2px for queued
-   - Arrowhead marker definition with color matching
-   - Edge calculation: circle edge points using trigonometry
-   - Depends on: IntentLine tests
-   - Files: `src/ui/intent-line.ts`
-
-6. **Write BattleArenaLayout Test Suite** (AC71)
-   - Tests for `calculateCharacterPositions()` - position calculation
-   - Tests for 1v1 layout (centered)
-   - Tests for 2v2 layout (evenly spaced)
-   - Tests for 3v3 layout (full width utilization)
-   - Tests for asymmetric layouts (1v3, 3v1)
-   - Tests for minimum spacing enforcement (80px apart)
-   - Tests for padding from arena edges (60px)
-   - Edge cases: zero enemies, zero players, position collision
-   - Depends on: Visualization type definitions
-   - Estimated: ~10 tests
-
-7. **Implement BattleArenaLayout**
-   - Pure function `calculateCharacterPositions(players, enemies, dimensions): CharacterPosition[]`
-   - Arena dimensions: 800px × 500px
-   - Circle radius: 40px
-   - Enemy row: Y = 100px (top)
-   - Player row: Y = 400px (bottom)
-   - Horizontal spacing: evenly distributed across width with padding
-   - Formula: `x[i] = padding + (width - 2*padding) * (i / max(N-1, 1))`
-   - Depends on: BattleArenaLayout tests
-   - Files: `src/ui/battle-arena-layout.ts`
-
-8. **Write VisualizationAnalyzer Test Suite**
-   - Tests for `analyzeVisualization()` - state transformation
-   - Tests for idle battle (no intent lines)
-   - Tests for single action with single target
-   - Tests for multiple casters with different targets
-   - Tests for multi-target actions (line per target)
-   - Tests for mixed queue states (dashed + solid lines)
-   - Tests for self-buff actions (loopback handling)
-   - Tests for dead character filtering (no lines from/to dead)
-   - Tests for all skill color mapping
-   - Edge cases: position collision, empty state
-   - Depends on: Layout implementation
-   - Estimated: ~15 tests
-
-9. **Implement VisualizationAnalyzer**
-   - Function `analyzeVisualization(state: CombatState): BattleVisualization`
-   - Calculate positions using `calculateCharacterPositions()`
-   - Build `CircleCharacterData[]` from state characters
-   - Build `IntentLine[]` from character currentAction fields
-   - Filter out lines from/to dead characters (except revive)
-   - Calculate line start/end positions at circle edges
-   - Map skill IDs to colors using SKILL_COLORS constant
-   - Depends on: VisualizationAnalyzer tests
-   - Files: `src/ui/visualization-analyzer.ts`
-
-10. **Write BattleVisualization Test Suite** (AC73)
-    - Tests for `renderBattleVisualization()` - complete SVG rendering
-    - Tests for SVG structure (intent lines layer + characters layer)
-    - Tests for layering (lines below, circles above)
-    - Tests for arena dimensions in viewBox
-    - Tests for empty battle (no characters)
-    - Tests for typical 3v3 battle
-    - Edge cases: all dead, victory state, defeat state
-    - Depends on: Visualization type definitions
-    - Estimated: ~10 tests
-
-11. **Implement BattleVisualization Renderer**
-    - Pure function `renderBattleVisualization(visualization: BattleVisualization): string`
-    - SVG wrapper with viewBox matching arena dimensions
-    - Two layers: intent-lines-layer (background), characters-layer (foreground)
-    - Call `renderIntentLine()` for each line
-    - Call `renderCharacterCircle()` for each character
-    - Proper SVG structure with defs for markers
-    - Depends on: BattleVisualization tests
-    - Files: `src/ui/battle-visualization.ts`
-
-12. **Update battle-viewer.html with Arena Panel**
-    - Replace character-list divs with battle-arena-container
-    - Add SVG container element
-    - Wire up visualization rendering in renderBattle()
-    - Add CSS styling for SVG, circles, lines
-    - Maintain two-column layout (arena left, controls right)
-    - Optional: Add toggle between card view and arena view
-    - Depends on: BattleVisualization implementation
-    - Files: `battle-viewer.html` (extend existing layout)
-
-13. **Write Circle Visualization Integration Tests** (AC66-AC73)
-    - Full battle with circle rendering at each tick
-    - Verify HP fill updates when damage/healing occurs
-    - Verify intent lines appear/disappear with actions
-    - Verify line style transitions (dashed → solid on execute)
-    - Verify multi-target lines (fan-out from caster)
-    - Verify dead character handling (gray out, remove lines)
-    - Verify victory/defeat end states
-    - Snapshot tests capturing complete arena state
-    - Depends on: All visualization implementations
-    - Estimated: ~15 tests
-
-**Phase 8 Success Criteria:**
-- All 80-100 tests passing
-- AC66-AC73 acceptance criteria met
-- Initial render <50ms
-- Re-render on tick <16ms (60fps)
-- Circle HP "liquid drain" effect visually intuitive
-- Intent lines clearly show queued (dashed) vs executing (solid)
-- Multi-target actions show separate line per target
-- Dead characters grayed out with no intent lines
-
----
-
 ### Phase 7: Action Forecast Feature
 
 **Overview:** Add "see the future" feature showing action timeline, next action predictions, and complete AI rule summaries for all characters.
@@ -351,6 +183,26 @@
 ## Completed
 
 <!-- Recently completed tasks for reference -->
+
+### Phase 8: Circle-Based Character Visualization & Intent Signaling - Completed 2025-12-23
+
+- [x] **Define Visualization Type Definitions** - 5 new types in [`src/types/visualization.ts`](src/types/visualization.ts)
+- [x] **Write CharacterCircle Test Suite** - 20 tests (AC66-AC67)
+- [x] **Implement CharacterCircle Renderer** - [`src/ui/character-circle.ts`](src/ui/character-circle.ts) - SVG circle with HP liquid drain
+- [x] **Write IntentLine Test Suite** - 23 tests (AC68-AC70)
+- [x] **Implement IntentLine Renderer** - [`src/ui/intent-line.ts`](src/ui/intent-line.ts) - SVG lines with skill color mapping
+- [x] **Write BattleArenaLayout Test Suite** - 13 tests (AC71)
+- [x] **Implement BattleArenaLayout** - [`src/ui/battle-arena-layout.ts`](src/ui/battle-arena-layout.ts) - Position calculator
+- [x] **Write VisualizationAnalyzer Test Suite** - 16 tests
+- [x] **Implement VisualizationAnalyzer** - [`src/ui/visualization-analyzer.ts`](src/ui/visualization-analyzer.ts) - CombatState transformer
+- [x] **Write BattleVisualization Test Suite** - 12 tests (AC73)
+- [x] **Implement BattleVisualization Renderer** - [`src/ui/battle-visualization.ts`](src/ui/battle-visualization.ts) - Main SVG renderer
+- [x] **Update battle-viewer.html with Arena Panel** - Replaced character cards with SVG arena
+- [x] **Write Circle Visualization Integration Tests** - Integration with full battle flow
+
+**Phase 8 Summary:** 84/84 tests passing (20 CharacterCircle + 23 IntentLine + 13 BattleArenaLayout + 16 VisualizationAnalyzer + 12 BattleVisualization). Total project: 1046/1046 tests.
+
+---
 
 ### Phase 6: Instructions Builder UI (Segment 6) - Completed 2025-12-22
 

@@ -717,7 +717,7 @@ describe('StatusEffectProcessor - Multiple Statuses', () => {
   });
 
   it('should handle multiple poison ticks reducing HP gradually', () => {
-    let character = createTestCharacter('char-1', 100, 100, [
+    const character = createTestCharacter('char-1', 100, 100, [
       createStatus('poisoned', 3, 5),
     ]);
 

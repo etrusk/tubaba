@@ -1,9 +1,9 @@
 import type { CombatState, TickResult, CombatEvent, Character, Action } from '../types/index.js';
 import type {
   TickResultWithDebug,
-  DebugInfo,
+  DebugInfo as _DebugInfo,
   RuleEvaluation,
-  RuleCheckResult,
+  RuleCheckResult as _RuleCheckResult,
   ConditionCheckResult,
   TargetingDecision,
   TargetFilterResult,
@@ -13,10 +13,10 @@ import type {
 } from '../types/index.js';
 import { ActionResolver } from './action-resolver.js';
 import { StatusEffectProcessor } from './status-effect-processor.js';
-import { selectAction } from '../ai/enemy-brain.js';
+import { selectAction as _selectAction } from '../ai/enemy-brain.js';
 import { evaluateCondition } from '../ai/rule-condition-evaluator.js';
 import { selectTargets } from '../targeting/target-selector.js';
-import TargetFilter from '../targeting/target-filter.js';
+import _TargetFilter from '../targeting/target-filter.js';
 import { SkillLibrary } from './skill-library.js';
 
 /**
@@ -47,7 +47,7 @@ function executeTick(state: CombatState): TickResult {
     skills: [...e.skills],
   }));
   let workingActionQueue = state.actionQueue.map(a => ({ ...a }));
-  let allEvents: CombatEvent[] = [];
+  const allEvents: CombatEvent[] = [];
   
   // PHASE 1: Rule Evaluation
   // For idle units (no currentAction, not knocked out, not stunned)
@@ -221,7 +221,7 @@ function executeTickWithDebug(state: CombatState): TickResultWithDebug {
     skills: [...e.skills],
   }));
   let workingActionQueue = state.actionQueue.map(a => ({ ...a }));
-  let allEvents: CombatEvent[] = [];
+  const allEvents: CombatEvent[] = [];
   
   // PHASE 1: Rule Evaluation (with debug instrumentation)
   const allCharacters = [...workingPlayers, ...workingEnemies];
@@ -675,11 +675,11 @@ function resolveActionsWithDebug(
   const actionCancelDetails: SubstepDetail[] = [];
   
   // Create immutable copies
-  let workingPlayers = players.map(p => ({ 
+  const workingPlayers = players.map(p => ({ 
     ...p, 
     statusEffects: [...p.statusEffects.map(s => ({ ...s }))]
   }));
-  let workingEnemies = enemies.map(e => ({ 
+  const workingEnemies = enemies.map(e => ({ 
     ...e, 
     statusEffects: [...e.statusEffects.map(s => ({ ...s }))]
   }));

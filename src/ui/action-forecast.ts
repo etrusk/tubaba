@@ -129,8 +129,9 @@ function renderRulesSummary(rules: RuleSummary[]): string {
 function renderRuleSummaryItem(rule: RuleSummary): string {
   const disabledClass = rule.enabled ? '' : ' disabled';
   const disabledLabel = rule.enabled ? '' : ' <span class="disabled-label">[Disabled]</span>';
+  const tickCostText = rule.tickCost > 0 ? ` (${rule.tickCost} ticks)` : '';
   
   return `<li class="rule-item${disabledClass}">
-          [P${rule.priority}] ${rule.conditionsText}: <strong>${rule.skillName}</strong> → ${rule.targetingMode}${disabledLabel}
+          [P${rule.priority}] ${rule.conditionsText}: <strong>${rule.skillName}${tickCostText}</strong> → ${rule.targetingMode}${disabledLabel}
         </li>`;
 }

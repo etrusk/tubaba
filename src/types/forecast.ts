@@ -52,6 +52,7 @@ export interface CharacterForecast {
 export interface RuleSummary {
   priority: number;
   skillName: string;
+  tickCost: number;             // Skill's baseDuration (tick cost)
   conditionsText: string;       // "If HP < 50% AND Ally Count > 1"
   targetingMode: string;        // "Lowest HP Enemy"
   enabled: boolean;

@@ -44,11 +44,11 @@ function resolveActions(
   tickNumber: number
 ): ResolverResult {
   // Create immutable copies
-  let workingPlayers = players.map(p => ({ 
+  const workingPlayers = players.map(p => ({ 
     ...p, 
     statusEffects: [...p.statusEffects.map(s => ({ ...s }))]
   }));
-  let workingEnemies = enemies.map(e => ({ 
+  const workingEnemies = enemies.map(e => ({ 
     ...e, 
     statusEffects: [...e.statusEffects.map(s => ({ ...s }))]
   }));

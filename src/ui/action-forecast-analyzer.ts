@@ -168,7 +168,7 @@ function predictNextAction(
   character: Character,
   instructions: CharacterInstructions | undefined,
   state: CombatState,
-  allCharacters: Character[]
+  _allCharacters: Character[]
 ): NonNullable<CharacterForecast['nextAction']> | null {
   // No prediction for human mode
   if (!instructions || instructions.controlMode === 'human') {
@@ -300,6 +300,7 @@ function buildRuleSummaries(
     return {
       priority: instruction.priority,
       skillName: skill?.name ?? 'Unknown',
+      tickCost: skill?.baseDuration ?? 0,
       conditionsText,
       targetingMode: formatTargetingMode(targetingMode),
       enabled: instruction.enabled,
