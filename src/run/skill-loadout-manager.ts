@@ -6,27 +6,18 @@ import { SkillLibrary } from '../engine/skill-library.js';
  *
  * Prototype implementation for skill inventory system.
  * Skills are stored in a shared pool and manually distributed to characters.
+ * All skills (including starting skills) are in the pool at run start.
  */
 
 const MAX_SKILLS_PER_CHARACTER = 4;
 
 /**
- * Get innate (starting) skills for a character that cannot be unequipped
- * For now, hardcode: first skill of each character is innate
- */
-export function getInnateSkillIds(character: Character): string[] {
-  if (character.skills.length === 0) {
-    return [];
-  }
-  return [character.skills[0]!.id];
-}
-
-/**
  * Check if a character can receive more skills
- * (4 skill cap per character)
+ * (4 skill cap per character, excluding innate Strike)
  */
 export function canReceiveSkill(character: Character): boolean {
-  return character.skills.length < MAX_SKILLS_PER_CHARACTER;
+  const nonInnateSkills = character.skills.filter(s => s.id !== 'strike');
+  return nonInnateSkills.length < MAX_SKILLS_PER_CHARACTER;
 }
 
 /**
@@ -86,7 +77,7 @@ export function distributeSkill(
 
 /**
  * Unequip a skill from character back to pool
- * (Cannot unequip "innate" starting skills)
+ * Strike cannot be unequipped (it's innate)
  * @returns Updated RunState or throws if invalid
  */
 export function unequipSkill(
@@ -94,6 +85,11 @@ export function unequipSkill(
   skillId: string,
   characterId: string
 ): RunState {
+  // Strike is innate and cannot be unequipped
+  if (skillId === 'strike') {
+    throw new Error('Strike is an innate skill and cannot be unequipped');
+  }
+
   // Find character
   const characterIndex = runState.playerParty.findIndex(c => c.id === characterId);
   if (characterIndex === -1) {
@@ -106,12 +102,6 @@ export function unequipSkill(
   const skillIndex = character.skills.findIndex(s => s.id === skillId);
   if (skillIndex === -1) {
     throw new Error(`Character ${characterId} does not have skill ${skillId}`);
-  }
-
-  // Check if skill is innate
-  const innateSkillIds = getInnateSkillIds(character);
-  if (innateSkillIds.includes(skillId)) {
-    throw new Error(`Cannot unequip innate skill ${skillId} from character ${characterId}`);
   }
 
   // Create updated character with skill removed

@@ -938,6 +938,112 @@
       flex: 1;
       overflow-y: auto;
     }
+    
+    /* Skill Loadout UI (Prototype) */
+    .loadout-panel {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .loadout-panel h2 {
+      color: #ffd700;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .skill-pool {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .skill-pool h3 {
+      color: #64b5f6;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    
+    .pool-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 40px;
+    }
+    
+    .pool-skill {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    
+    .pool-skill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    .pool-skill.selected {
+      border-color: #ffd700;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+    }
+    
+    .character-loadouts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    
+    .character-loadout {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #4caf50;
+    }
+    
+    .character-loadout h4 {
+      color: #4caf50;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+    
+    .character-loadout .skill-count {
+      font-size: 0.85rem;
+      color: #b0bec5;
+      margin-bottom: 8px;
+    }
+    
+    .loadout-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+    }
+    
+    .loadout-skill {
+      padding: 6px 12px;
+      background: rgba(76, 175, 80, 0.3);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .loadout-skill:hover {
+      background: rgba(244, 67, 54, 0.5);
+      transform: scale(1.05);
+    }
+    
+    .empty-loadout {
+      color: #888;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -998,6 +1104,8 @@
     import { renderBattleVisualization } from './dist/ui/battle-visualization.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
+    import { RunStateManager } from './dist/run/run-state-manager.js';
+    import { distributeSkill, unequipSkill, canReceiveSkill } from './dist/run/skill-loadout-manager.js';
 
     console.log('Imports loaded successfully');
 
@@ -1070,9 +1178,100 @@
       battleStatus: 'ongoing',
     };
 
-    // Initialize battle controller
+    // Initialize RunState for skill loadout management
+    // Create a dummy encounter to satisfy RunStateManager
+    const dummyEncounter = {
+      enemies: sampleEncounter.enemies,
+      skillRewards: []
+    };
+    
+    let runState = RunStateManager.initializeRun(
+      'demo-run',
+      sampleEncounter.players,
+      [dummyEncounter]
+    );
+    
+    let selectedSkillId = null; // Track selected skill from pool
+    
+    // Initialize battle controller (will update when skills are distributed)
     let battleController = new BattleController(sampleEncounter);
     let lastDebugInfo = null;
+    
+    // Skill color mapping
+    function getSkillColor(skillId) {
+      const colors = {
+        strike: '#e74c3c',    // Red
+        heal: '#2ecc71',      // Green
+        shield: '#3498db',    // Blue
+        poison: '#9b59b6',    // Purple
+      };
+      return colors[skillId] || '#95a5a6'; // Default gray
+    }
+    
+    // Select skill from pool
+    window.selectSkillFromPool = function(skillId) {
+      if (selectedSkillId === skillId) {
+        selectedSkillId = null; // Deselect
+      } else {
+        selectedSkillId = skillId;
+      }
+      renderBattle();
+    };
+    
+    // Assign skill to character when clicking on inventory panel (handled in renderBattle right column)
+    window.assignSkillToCharacter = function(characterId, skillId) {
+      const character = runState.playerParty.find(c => c.id === characterId);
+      
+      if (character && canReceiveSkill(character) && skillId) {
+        try {
+          runState = distributeSkill(runState, skillId, characterId);
+          selectedSkillId = null;
+          
+          // Update battle controller with new skills
+          updateBattleWithLoadout();
+        } catch (error) {
+          console.error('Failed to distribute skill:', error.message);
+        }
+      }
+    };
+    
+    // Unequip skill from character back to pool
+    window.unequipSkillFromCharacter = function(characterId, skillId) {
+      try {
+        runState = unequipSkill(runState, skillId, characterId);
+        updateBattleWithLoadout();
+      } catch (error) {
+        console.error('Failed to unequip skill:', error.message);
+      }
+    };
+    
+    // Update battle controller with current loadout
+    function updateBattleWithLoadout() {
+      // Preserve selected character across controller recreation
+      const previousSelectedCharacterId = battleController.getInstructionsState().selectedCharacterId;
+      
+      const updatedPlayers = runState.playerParty.map(char => ({
+        ...char,
+        currentHp: char.maxHp, // Reset HP
+        statusEffects: [],
+        currentAction: null,
+      }));
+      
+      const updatedEncounter = {
+        ...sampleEncounter,
+        players: updatedPlayers,
+      };
+      
+      battleController = new BattleController(updatedEncounter);
+      
+      // Restore selected character
+      if (previousSelectedCharacterId) {
+        battleController.selectCharacter(previousSelectedCharacterId);
+      }
+      
+      refreshDebugInfo();
+      renderBattle();
+    }
 
     // Refresh debug info with current instructions (for when instructions change)
     function refreshDebugInfo() {
@@ -1115,17 +1314,66 @@
         ruleEvaluationsContainer.innerHTML = '';
       }
       
-      // Render right column: Instructions Builder (if character selected)
+      // Render right column: Available Skills + Character Inventory + Instructions (if character selected)
       if (selectedCharacterId) {
-        // Render instructions in right column
+        // Render skill pool, character inventory and instructions in right column
         const selectedCharacter = battleController.getSelectedCharacter();
         const selectedInstructions = battleController.getSelectedCharacterInstructions();
         
+        // Get character from runState to show equipped skills
+        const runStateCharacter = runState.playerParty.find(c => c.id === selectedCharacterId);
+        
         rightColumnContainer.innerHTML = `
+          <div class="panel" style="margin-bottom: 15px; padding: 15px;">
+            <h3 style="color: #64b5f6; margin-bottom: 10px; font-size: 1rem;">Available Skills</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
+              ${runState.skillPool.length === 0
+                ? '<div class="empty-loadout">All skills assigned!</div>'
+                : runState.skillPool.map(skillId => `
+                    <div class="pool-skill ${selectedSkillId === skillId ? 'selected' : ''}"
+                         style="background: ${getSkillColor(skillId)};"
+                         data-skill-id="${skillId}"
+                         onclick="selectSkillFromPool('${skillId}')">
+                      ${SkillLibrary.getSkill(skillId).name}
+                    </div>
+                  `).join('')
+              }
+            </div>
+          </div>
+          
+          <div class="panel" style="margin-bottom: 15px; padding: 15px; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
+               ${selectedSkillId ? `onclick="assignSkillToCharacter('${selectedCharacterId}', '${selectedSkillId}')"` : ''}>
+            <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 1rem;">🎒 ${selectedCharacter.name}'s Equipped Skills ${selectedSkillId ? '(Click to assign)' : ''}</h3>
+            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);">
+              <div style="font-size: 0.85rem; color: #888; margin-bottom: 4px;">Innate:</div>
+              <div class="loadout-skill"
+                   style="background: ${getSkillColor('strike')}; opacity: 0.7; cursor: not-allowed; display: inline-block;"
+                   data-skill-id="strike">
+                Strike (innate)
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
+              ${runStateCharacter && runStateCharacter.skills.filter(s => s.id !== 'strike').length > 0
+                ? runStateCharacter.skills.filter(s => s.id !== 'strike').map(skill => `
+                    <div class="loadout-skill"
+                         style="background: ${getSkillColor(skill.id)};"
+                         data-skill-id="${skill.id}"
+                         onclick="event.stopPropagation(); unequipSkillFromCharacter('${selectedCharacterId}', '${skill.id}')">
+                      ${skill.name}
+                    </div>
+                  `).join('')
+                : `<div class="empty-loadout">${selectedSkillId ? 'Click here to assign selected skill' : 'Select a skill above to equip'}</div>`
+              }
+            </div>
+            <div style="margin-top: 8px; font-size: 0.85rem; color: #b0bec5;">
+              ${runStateCharacter ? `${runStateCharacter.skills.filter(s => s.id !== 'strike').length}/4 skills` : ''}
+            </div>
+          </div>
+          
           <div class="panel instructions-panel">
-            <h2>🎮 Character Instructions</h2>
+            <h2 style="font-size: 1.2rem;">🎮 Instructions</h2>
             ${renderInstructionsBuilder(
-              selectedCharacter,
+              runStateCharacter || selectedCharacter,
               selectedInstructions,
               battleController.getEditingSkillId(),
               instructionsState.isDirty
@@ -1329,21 +1577,18 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      battleController.reset();
-      // Get debug info for step 0 after reset
-      const state = battleController.getCurrentState();
-      const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
-      lastDebugInfo = tickResult.debugInfo;
-      renderBattle();
+      // Reset both battle controller and run state
+      runState = RunStateManager.initializeRun(
+        'demo-run',
+        sampleEncounter.players.map(p => ({ ...p, currentHp: p.maxHp })),
+        [dummyEncounter]
+      );
+      selectedSkillId = null;
+      updateBattleWithLoadout();
     });
 
-    // Get debug info for initial step 0
-    const initialState = battleController.getCurrentState();
-    const initialTickResult = TickExecutor.executeTickWithDebug(initialState, battleController.getInstructionsState().instructions);
-    lastDebugInfo = initialTickResult.debugInfo;
-
-    // Initial render
-    renderBattle();
+    // Initial sync: update battle controller with runState skills
+    updateBattleWithLoadout();
   </script>
 </body>
 </html>

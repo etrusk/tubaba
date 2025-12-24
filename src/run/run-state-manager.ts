@@ -5,6 +5,7 @@ import type {
   Encounter,
   SkillUnlockChoice,
 } from '../types/index.js';
+import { SkillLibrary } from '../engine/skill-library.js';
 
 /**
  * RunStateManager - Manages run state machine and encounter progression
@@ -18,6 +19,8 @@ import type {
 export const RunStateManager = {
   /**
    * Initialize a new run with player party and encounters
+   * Strike is innate (all characters start with it)
+   * Other starting skills are moved to skillPool
    */
   initializeRun(
     runId: string,
@@ -31,15 +34,34 @@ export const RunStateManager = {
       throw new Error('Encounter list cannot be empty');
     }
 
+    // Collect non-Strike starting skills into the pool
+    const startingSkillIds: string[] = [];
+    for (const character of playerParty) {
+      for (const skill of character.skills) {
+        if (skill.id !== 'strike') {
+          startingSkillIds.push(skill.id);
+        }
+      }
+    }
+
+    // Get Strike skill from library
+    const strikeSkill = SkillLibrary.getSkill('strike');
+
+    // Create party with Strike as innate skill
+    const partyWithInnateStrike = playerParty.map(character => ({
+      ...character,
+      skills: [strikeSkill],
+    }));
+
     return {
       runId,
       currentEncounterIndex: 0,
       encounters,
-      playerParty,
+      playerParty: partyWithInnateStrike,
       runStatus: 'in-progress',
       encountersCleared: 0,
       skillsUnlockedThisRun: [],
-      skillPool: [],
+      skillPool: startingSkillIds,
     };
   },
 

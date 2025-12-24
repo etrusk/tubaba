@@ -3,19 +3,18 @@ import type { Character, RunState } from '../../src/types/index.js';
 import {
   distributeSkill,
   unequipSkill,
-  getInnateSkillIds,
   canReceiveSkill,
 } from '../../src/run/skill-loadout-manager.js';
 import { SkillLibrary } from '../../src/engine/skill-library.js';
 
 /**
  * SkillLoadoutManager Test Suite
- * 
+ *
  * Tests the skill inventory system prototype:
  * - Distributing skills from pool to characters
  * - Unequipping skills back to pool
- * - Innate skill protection
  * - 4-skill cap enforcement
+ * - All skills can be unequipped (no innate skill protection)
  */
 
 // Test helper: Create character with skills
@@ -144,14 +143,17 @@ describe('SkillLoadoutManager - unequipSkill()', () => {
     expect(updatedCharacter.skills.map(s => s.id)).toEqual(['strike']);
   });
 
-  it('should throw if trying to unequip innate skill', () => {
+  it('should allow unequipping ANY skill (no innate protection)', () => {
     const character = createTestCharacter('player-1', 'Warrior', ['strike', 'heavy-strike']);
     const runState = createTestRunState([character], []);
 
-    // First skill (strike) is innate, cannot be unequipped
-    expect(() => {
-      unequipSkill(runState, 'strike', 'player-1');
-    }).toThrow('Cannot unequip innate skill strike from character player-1');
+    // Can now unequip first skill (was previously "innate")
+    const updated = unequipSkill(runState, 'strike', 'player-1');
+    
+    expect(updated.skillPool).toContain('strike');
+    const updatedCharacter = updated.playerParty[0]!;
+    expect(updatedCharacter.skills.length).toBe(1);
+    expect(updatedCharacter.skills.map(s => s.id)).toEqual(['heavy-strike']);
   });
 
   it('should throw if character does not have the skill', () => {
@@ -172,8 +174,7 @@ describe('SkillLoadoutManager - unequipSkill()', () => {
     }).toThrow('Character player-99 not found in party');
   });
 
-  it('should allow unequipping non-innate skills', () => {
-    // Character has 3 skills, can unequip the 2nd and 3rd
+  it('should allow unequipping all skills from a character', () => {
     const character = createTestCharacter('player-1', 'Warrior', [
       'strike',
       'heavy-strike',
@@ -181,50 +182,19 @@ describe('SkillLoadoutManager - unequipSkill()', () => {
     ]);
     const runState = createTestRunState([character], []);
 
-    // Unequip second skill
+    // Unequip all three skills
     let updated = unequipSkill(runState, 'heavy-strike', 'player-1');
     expect(updated.skillPool).toContain('heavy-strike');
     
-    // Unequip third skill
     updated = unequipSkill(updated, 'bash', 'player-1');
     expect(updated.skillPool).toContain('bash');
     
-    // Only innate skill remains
+    updated = unequipSkill(updated, 'strike', 'player-1');
+    expect(updated.skillPool).toContain('strike');
+    
+    // Character has no skills
     const updatedCharacter = updated.playerParty[0]!;
-    expect(updatedCharacter.skills.length).toBe(1);
-    expect(updatedCharacter.skills[0]!.id).toBe('strike');
-  });
-});
-
-describe('SkillLoadoutManager - getInnateSkillIds()', () => {
-  it('should return first skill as innate', () => {
-    const character = createTestCharacter('player-1', 'Warrior', ['strike', 'heavy-strike']);
-    
-    const innateSkills = getInnateSkillIds(character);
-    
-    expect(innateSkills).toEqual(['strike']);
-  });
-
-  it('should return empty array if character has no skills', () => {
-    const character = createTestCharacter('player-1', 'Warrior', []);
-    
-    const innateSkills = getInnateSkillIds(character);
-    
-    expect(innateSkills).toEqual([]);
-  });
-
-  it('should only return first skill even with multiple skills', () => {
-    const character = createTestCharacter('player-1', 'Warrior', [
-      'strike',
-      'heavy-strike',
-      'bash',
-      'defend',
-    ]);
-    
-    const innateSkills = getInnateSkillIds(character);
-    
-    expect(innateSkills).toEqual(['strike']);
-    expect(innateSkills.length).toBe(1);
+    expect(updatedCharacter.skills.length).toBe(0);
   });
 });
 

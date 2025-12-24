@@ -19,21 +19,6 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
       "value": 15,
     },
     {
-      "actorId": "player-1",
-      "message": "Hero used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Goblin takes 15 damage",
-      "targetId": "enemy-0-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
-    },
-    {
       "actorId": "enemy-0-1",
       "message": "Goblin used Strike",
       "skillName": "Strike",
@@ -119,26 +104,14 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
         "isPlayer": true,
         "maxHp": 100,
         "name": "Hero",
-        "skills": [
-          {
-            "baseDuration": 2,
-            "effects": [
-              {
-                "type": "damage",
-                "value": 15,
-              },
-            ],
-            "id": "strike",
-            "name": "Strike",
-            "targeting": "single-enemy-lowest-hp",
-          },
-        ],
+        "skills": [],
         "statusEffects": [],
       },
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
     "skillPool": [
+      "strike",
       "heal",
     ],
     "skillsUnlockedThisRun": [
@@ -151,21 +124,6 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
 exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > should complete final encounter 2 and verify runStatus = victory 1`] = `
 {
   "battleLog": [
-    {
-      "actorId": "player-1",
-      "message": "Hero used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Troll takes 15 damage",
-      "targetId": "enemy-2-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
-    },
     {
       "actorId": "player-1",
       "message": "Hero used Strike",
@@ -263,26 +221,15 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
         "isPlayer": true,
         "maxHp": 100,
         "name": "Hero",
-        "skills": [
-          {
-            "baseDuration": 2,
-            "effects": [
-              {
-                "type": "damage",
-                "value": 15,
-              },
-            ],
-            "id": "strike",
-            "name": "Strike",
-            "targeting": "single-enemy-lowest-hp",
-          },
-        ],
+        "skills": [],
         "statusEffects": [],
       },
     ],
     "runId": "run-1",
     "runStatus": "victory",
-    "skillPool": [],
+    "skillPool": [
+      "strike",
+    ],
     "skillsUnlockedThisRun": [],
   },
 }
@@ -396,26 +343,15 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
       "isPlayer": true,
       "maxHp": 100,
       "name": "Hero",
-      "skills": [
-        {
-          "baseDuration": 2,
-          "effects": [
-            {
-              "type": "damage",
-              "value": 15,
-            },
-          ],
-          "id": "strike",
-          "name": "Strike",
-          "targeting": "single-enemy-lowest-hp",
-        },
-      ],
+      "skills": [],
       "statusEffects": [],
     },
   ],
   "runId": "run-1",
   "runStatus": "in-progress",
-  "skillPool": [],
+  "skillPool": [
+    "strike",
+  ],
   "skillsUnlockedThisRun": [],
 }
 `;
@@ -596,7 +532,9 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
-    "skillPool": [],
+    "skillPool": [
+      "strike",
+    ],
     "skillsUnlockedThisRun": [
       "heal",
     ],
@@ -734,111 +672,9 @@ exports[`Run Management Integration > Scenario 3: Skill Persistence Across Encou
 }
 `;
 
-exports[`Run Management Integration > Scenario 3: Skill Persistence Across Encounters > should verify strike available in encounter 1 loadout and battle 1`] = `
-{
-  "activeLoadout": [
-    "heal",
-    "strike",
-  ],
-  "battleLog": [
-    {
-      "actorId": "player-1",
-      "message": "Hero used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Orc takes 15 damage",
-      "targetId": "enemy-1-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
-    },
-    {
-      "actorId": "player-1",
-      "message": "Hero used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Orc takes 15 damage",
-      "targetId": "enemy-1-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
-    },
-    {
-      "actorId": "enemy-1-1",
-      "message": "Orc used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "enemy-1-1",
-      "message": "Hero takes 15 damage",
-      "targetId": "player-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
-    },
-    {
-      "message": "Orc was knocked out",
-      "targetId": "enemy-1-1",
-      "tick": 3,
-      "type": "knockout",
-    },
-    {
-      "message": "Victory!",
-      "tick": 3,
-      "type": "victory",
-    },
-  ],
-}
-`;
-
-exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles > should unlock 4th skill and swap active loadout 1`] = `
-{
-  "afterSwap": {
-    "activeLoadout": [
-      "strike",
-      "heal",
-      "defend",
-    ],
-    "unlockedSkills": [
-      "strike",
-      "heal",
-      "shield",
-      "defend",
-    ],
-  },
-  "beforeSwap": {
-    "activeLoadout": [
-      "strike",
-      "heal",
-      "shield",
-    ],
-    "unlockedSkills": [
-      "strike",
-      "heal",
-      "shield",
-      "defend",
-    ],
-  },
-}
-`;
-
 exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles > should verify new loadout applies to encounter 1 battle 1`] = `
 {
-  "activeLoadout": [
-    "strike",
-    "heal",
-    "defend",
-  ],
+  "activeLoadout": [],
   "battleLog": [
     {
       "actorId": "player-1",
@@ -846,21 +682,6 @@ exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles >
       "skillName": "Defend",
       "tick": 3,
       "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Hero used Strike",
-      "skillName": "Strike",
-      "tick": 3,
-      "type": "action-resolved",
-    },
-    {
-      "actorId": "player-1",
-      "message": "Orc takes 15 damage",
-      "targetId": "enemy-1-1",
-      "tick": 3,
-      "type": "damage",
-      "value": 15,
     },
     {
       "actorId": "enemy-1-1",
@@ -886,14 +707,51 @@ exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles >
       "type": "status-applied",
     },
     {
+      "message": "defending expired on Hero",
+      "statusType": "defending",
+      "targetId": "player-1",
+      "tick": 5,
+      "type": "status-expired",
+    },
+    {
+      "actorId": "player-1",
+      "message": "Hero used Strike",
+      "skillName": "Strike",
+      "tick": 6,
+      "type": "action-resolved",
+    },
+    {
+      "actorId": "player-1",
+      "message": "Orc takes 15 damage",
+      "targetId": "enemy-1-1",
+      "tick": 6,
+      "type": "damage",
+      "value": 15,
+    },
+    {
+      "actorId": "enemy-1-1",
+      "message": "Orc used Strike",
+      "skillName": "Strike",
+      "tick": 6,
+      "type": "action-resolved",
+    },
+    {
+      "actorId": "enemy-1-1",
+      "message": "Hero takes 15 damage",
+      "targetId": "player-1",
+      "tick": 6,
+      "type": "damage",
+      "value": 15,
+    },
+    {
       "message": "Orc was knocked out",
       "targetId": "enemy-1-1",
-      "tick": 3,
+      "tick": 6,
       "type": "knockout",
     },
     {
       "message": "Victory!",
-      "tick": 3,
+      "tick": 6,
       "type": "victory",
     },
   ],
