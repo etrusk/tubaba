@@ -4,6 +4,62 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-24 Skill Labels Under Characters (Spike Accepted)
+
+**Status:** Accepted
+
+**Context:** Explored two approaches for displaying action labels in the battle arena:
+1. Labels on intent lines (spike/intent-line-labels) - DECLINED
+2. Labels under character circles (spike/skill-labels-under-character) - ACCEPTED
+
+**Decisions:**
+
+### 1. Action Labels Placement
+**Decision:** Display skill action labels under character circles, not on intent lines.
+
+**Rationale:** Under-character labels are cleaner and don't clutter the arena. Intent line labels created visual noise and competed with the intent lines themselves for attention.
+
+**Alternative Rejected:** `spike/intent-line-labels` placed labels along or near intent lines, which:
+- Cluttered the visual space between characters
+- Made overlapping lines harder to distinguish
+- Required complex positioning logic to avoid label collisions
+
+### 2. Consistent Skill Colors
+**Decision:** Action labels use `SKILL_COLORS` map matching intent line colors.
+
+| Skill Type | Color |
+|------------|-------|
+| Strike | Red |
+| Heal | Green |
+| Shield | Blue |
+
+**Rationale:** Visual consistency across the battle UI - the label color matches the intent line color, reinforcing the connection between character and their action.
+
+### 3. Debug Panel Simplification
+**Decision:** Removed "Targeting Decisions" and "Resolution Substeps" from debug panel.
+
+**What remains:** Rule Evaluations section only.
+
+**Rationale:** Reduced noise, focused on essential debug info. The removed sections duplicated information available elsewhere or were rarely useful during debugging.
+
+### 4. Tick Countdown Sync Fix
+**Decision:** Fixed `ticksRemaining` synchronization to `character.currentAction`.
+
+**Before (bug):** Countdown display was stale, didn't update between ticks.
+
+**After (fix):** Properly shows countdown progression:
+- "Strike (2)" → "Strike (1)" → "Strike - Executing!"
+
+**Root cause:** `ticksRemaining` wasn't being synced from the engine state to the character's `currentAction` object during tick processing.
+
+**Consequences:**
+- Cleaner battle arena visualization
+- Consistent color language for skills throughout UI
+- Leaner debug panel with higher signal-to-noise ratio
+- Accurate countdown display for pending actions
+
+---
+
 ## 2025-12-24 Intent Line Overlap - Curved Lines (Quadratic Bezier)
 
 **Status:** Proposed
