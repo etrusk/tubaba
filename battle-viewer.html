@@ -980,11 +980,6 @@
       </div>
     </div>
     
-    <!-- Full-width bottom section: Event Log -->
-    <div class="bottom-section">
-      <!-- Event Log Panel -->
-      <div id="event-log-container"></div>
-    </div>
   </div>
 
   <script type="module">
@@ -993,7 +988,6 @@
     import { BattleController } from './dist/ui/battle-controller.js';
     import { renderCharacterCard } from './dist/ui/character-card.js';
     import { renderDebugInspector } from './dist/ui/debug-inspector.js';
-    import { renderEventLog } from './dist/ui/event-log.js';
     import { renderInstructionsBuilder } from './dist/ui/instructions-builder.js';
     import { renderControlModeToggle } from './dist/ui/control-mode-toggle.js';
     import { renderSkillPriorityEditor } from './dist/ui/skill-priority-editor.js';
@@ -1011,7 +1005,6 @@
     const battleArenaContainer = document.getElementById('battle-arena-container');
     const rightColumnContainer = document.getElementById('right-column-container');
     const ruleEvaluationsContainer = document.getElementById('rule-evaluations-container');
-    const eventLogContainer = document.getElementById('event-log-container');
     const tickDisplay = document.getElementById('tick-display');
     const battleStatus = document.getElementById('battle-status');
     
@@ -1030,7 +1023,7 @@
       players: [
         {
           id: 'hero',
-          name: 'Hero',
+          name: 'Alice',
           maxHp: 100,
           currentHp: 100,
           skills: [strike, shield],
@@ -1040,9 +1033,9 @@
         },
         {
           id: 'mage',
-          name: 'Mage',
-          maxHp: 80,
-          currentHp: 80,
+          name: 'Bob',
+          maxHp: 100,
+          currentHp: 100,
           skills: [strike, heal, poison],
           statusEffects: [],
           currentAction: null,
@@ -1149,9 +1142,6 @@
       // Render battle status
       battleStatus.textContent = state.battleStatus.charAt(0).toUpperCase() + state.battleStatus.slice(1);
       battleStatus.className = `battle-status ${state.battleStatus}`;
-      
-      // Render event log with combat state for character name colorization
-      eventLogContainer.innerHTML = renderEventLog(state.eventLog, state);
       
       // Update button states
       updateButtonStates();
@@ -1312,23 +1302,29 @@
 
     // Control button handlers
     stepBtn.addEventListener('click', () => {
-      // Execute tick with debug to get debug info
       const state = battleController.getCurrentState();
       if (state.battleStatus === 'ongoing') {
+        // Execute the actual tick
         const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
         lastDebugInfo = tickResult.debugInfo;
-        
-        // Update controller's state manually
         battleController.step();
+        
+        // After step, refresh debug info to show NEXT intents for idle characters
+        const newState = battleController.getCurrentState();
+        if (newState.battleStatus === 'ongoing') {
+          const previewResult = TickExecutor.executeTickWithDebug(newState, battleController.getInstructionsState().instructions);
+          lastDebugInfo = previewResult.debugInfo;
+        }
       }
-      
       renderBattle();
     });
 
     stepBackBtn.addEventListener('click', () => {
       battleController.stepBack();
-      // Clear debug info when stepping back (we don't save it in history)
-      lastDebugInfo = null;
+      // Get debug info for the state we stepped back to
+      const state = battleController.getCurrentState();
+      const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
+      lastDebugInfo = tickResult.debugInfo;
       renderBattle();
     });
 

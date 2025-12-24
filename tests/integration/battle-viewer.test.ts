@@ -169,8 +169,6 @@ describe('BattleViewer Integration', () => {
       // Verify debug inspector is present
       expect(html).toContain('debug-inspector');
       expect(html).toContain('Rule Evaluations');
-      expect(html).toContain('Targeting Decisions');
-      expect(html).toContain('Resolution Substeps');
     });
 
     it('should accumulate events in EventLog across ticks', () => {
@@ -700,71 +698,5 @@ describe('BattleViewer Integration', () => {
       expect(html).toContain('Smart Goblin');
     });
 
-    it('should display targeting decisions in debug panel', () => {
-      const strike = SkillLibrary.getSkill('strike');
-      
-      const player = createCharacter({
-        id: 'player-1',
-        name: 'Hero',
-        skills: [strike],
-      });
-      
-      const enemy = createCharacter({
-        id: 'enemy-1',
-        name: 'Goblin',
-        skills: [strike],
-        isPlayer: false,
-      });
-      
-      const initialActions = [
-        createAction('strike', 'player-1', ['enemy-1'], 0),
-      ];
-      
-      const state = createCombatState([player], [enemy], initialActions);
-      
-      // Execute with debug
-      const tickResult = TickExecutor.executeTickWithDebug(state);
-      const html = renderBattleViewer(tickResult.updatedState, tickResult.debugInfo);
-      
-      // Verify targeting decisions shown with new verbose format
-      expect(html).toContain('Targeting Decisions');
-      expect(html).toContain('Hero'); // Character name instead of "Caster"
-      expect(html).toContain('strike');
-      expect(html).toMatch(/uses|targeting/i); // Verbose targeting description
-    });
-
-    it('should display resolution substeps in debug panel', () => {
-      const strike = SkillLibrary.getSkill('strike');
-      
-      const player = createCharacter({
-        id: 'player-1',
-        name: 'Hero',
-        skills: [strike],
-      });
-      
-      const enemy = createCharacter({
-        id: 'enemy-1',
-        name: 'Goblin',
-        maxHp: 50,
-        currentHp: 50,
-        skills: [strike],
-        isPlayer: false,
-      });
-      
-      const initialActions = [
-        createAction('strike', 'player-1', ['enemy-1'], 0),
-      ];
-      
-      const state = createCombatState([player], [enemy], initialActions);
-      
-      // Execute with debug
-      const tickResult = TickExecutor.executeTickWithDebug(state);
-      const html = renderBattleViewer(tickResult.updatedState, tickResult.debugInfo);
-      
-      // Verify resolution substeps shown
-      expect(html).toContain('Resolution Substeps');
-      expect(html).toContain('damage-calc');
-      expect(html).toContain('health-update');
-    });
   });
 });

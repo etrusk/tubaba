@@ -4,6 +4,34 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-24 Debug System Simplification - Remove Targeting Decisions and Resolution Substeps
+
+**Status:** Accepted
+
+**Context:** The debug system had three sections:
+1. Rule Evaluations - Shows which rules were checked and why actions were selected
+2. Targeting Decisions - Showed targeting candidate filtering details
+3. Resolution Substeps - Showed damage-calc, healing-calc, shield-absorption, health-update, status-application, action-cancel steps
+
+The Targeting Decisions and Resolution Substeps sections duplicated information already present in Rule Evaluations (which now shows candidates and target selection) and the event log (which shows resolution outcomes).
+
+**Decision:** Remove Targeting Decisions and Resolution Substeps from the debug system, keeping only Rule Evaluations.
+
+**Changes Made:**
+- Removed types: `TargetingDecision`, `TargetFilterResult`, `ResolutionSubstep`, `SubstepDetail`
+- Updated `DebugInfo` interface to only contain `ruleEvaluations`
+- Removed capture logic from `tick-executor.ts`
+- Removed render functions from `debug-inspector.ts`
+- Removed related tests (AC46, AC47)
+
+**Consequences:**
+- Simplified debug output - one focused section instead of three
+- Reduced code complexity (~300 lines removed)
+- Rule Evaluations section already shows targeting info via `candidatesConsidered` and `targetChosen`
+- Event log already shows resolution outcomes
+
+---
+
 ## 2025-12-24 Intent Line Overlap - Curved Lines (Quadratic Bezier)
 
 **Status:** Proposed

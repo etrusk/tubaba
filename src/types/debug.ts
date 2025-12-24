@@ -36,8 +36,6 @@ export interface TickResultWithDebug {
 /** Complete debug information for a tick */
 export interface DebugInfo {
   ruleEvaluations: RuleEvaluation[];
-  targetingDecisions: TargetingDecision[];
-  resolutionSubsteps: ResolutionSubstep[];
 }
 
 /** Rule evaluation details for a character */
@@ -77,36 +75,4 @@ export interface ConditionCheckResult {
   expected: string;
   actual: string;
   passed: boolean;
-}
-
-/** Targeting decision details */
-export interface TargetingDecision {
-  casterId: string;
-  skillId: string;
-  targetingMode: TargetingMode;
-  candidates: string[];
-  filtersApplied: TargetFilterResult[];
-  finalTargets: string[];
-  tieBreaker?: string;
-}
-
-/** Target filter application result */
-export interface TargetFilterResult {
-  filterType: 'taunt' | 'dead-exclusion' | 'self-exclusion';
-  removed: string[];
-}
-
-/** Resolution substep details */
-export interface ResolutionSubstep {
-  substep: 'damage-calc' | 'healing-calc' | 'shield-absorption' | 'health-update' | 'status-application' | 'action-cancel';
-  details: SubstepDetail[];
-}
-
-/** Individual substep detail */
-export interface SubstepDetail {
-  actorId: string;
-  targetId: string;
-  skillId: string;
-  value?: number;
-  description: string;
 }

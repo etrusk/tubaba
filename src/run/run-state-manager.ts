@@ -39,6 +39,7 @@ export const RunStateManager = {
       runStatus: 'in-progress',
       encountersCleared: 0,
       skillsUnlockedThisRun: [],
+      skillPool: [],
     };
   },
 
@@ -98,12 +99,13 @@ export const RunStateManager = {
 
   /**
    * Apply skill unlock choice and update run state
+   * Now adds skills to skillPool instead of directly to character
    */
   applySkillUnlock(
     runState: RunState,
     choice: SkillUnlockChoice
   ): RunState {
-    // Validate character exists
+    // Validate character exists (for backward compatibility)
     const character = runState.playerParty.find(c => c.id === choice.characterId);
     if (!character) {
       throw new Error(`Character ${choice.characterId} not found in party`);
@@ -120,6 +122,7 @@ export const RunStateManager = {
     return {
       ...runState,
       skillsUnlockedThisRun: [...runState.skillsUnlockedThisRun, choice.skillId],
+      skillPool: [...runState.skillPool, choice.skillId],
       runStatus: isLastEncounter ? 'victory' : runState.runStatus,
     };
   },

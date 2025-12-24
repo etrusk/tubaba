@@ -47,4 +47,6 @@ export interface RunState {
   encountersCleared: number;
   /** Skill IDs unlocked during this run */
   skillsUnlockedThisRun: string[];
+  /** Shared pool of skill IDs available for distribution */
+  skillPool: string[];
 }

@@ -138,6 +138,9 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
+    "skillPool": [
+      "heal",
+    ],
     "skillsUnlockedThisRun": [
       "heal",
     ],
@@ -279,6 +282,7 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
     ],
     "runId": "run-1",
     "runStatus": "victory",
+    "skillPool": [],
     "skillsUnlockedThisRun": [],
   },
 }
@@ -411,6 +415,7 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
   ],
   "runId": "run-1",
   "runStatus": "in-progress",
+  "skillPool": [],
   "skillsUnlockedThisRun": [],
 }
 `;
@@ -591,6 +596,7 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
+    "skillPool": [],
     "skillsUnlockedThisRun": [
       "heal",
     ],
@@ -706,6 +712,7 @@ exports[`Run Management Integration > Scenario 2: Early Defeat Run > should hand
     ],
     "runId": "run-1",
     "runStatus": "defeat",
+    "skillPool": [],
     "skillsUnlockedThisRun": [],
   },
 }

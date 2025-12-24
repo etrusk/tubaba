@@ -1,14 +1,10 @@
-import type { CombatState, TickResult, CombatEvent, Character, Action } from '../types/index.js';
+import type { CombatState, TickResult, CombatEvent, Action } from '../types/index.js';
 import type {
   TickResultWithDebug,
   DebugInfo as _DebugInfo,
   RuleEvaluation,
   RuleCheckResult as _RuleCheckResult,
   ConditionCheckResult,
-  TargetingDecision,
-  TargetFilterResult,
-  ResolutionSubstep,
-  SubstepDetail,
   ConditionType,
 } from '../types/index.js';
 import type { CharacterInstructions } from '../types/instructions.js';
@@ -17,8 +13,6 @@ import { StatusEffectProcessor } from './status-effect-processor.js';
 import { selectAction } from '../ai/enemy-brain.js';
 import { evaluateCondition } from '../ai/rule-condition-evaluator.js';
 import { selectTargets } from '../targeting/target-selector.js';
-import _TargetFilter from '../targeting/target-filter.js';
-import { SkillLibrary } from './skill-library.js';
 
 /**
  * TickExecutor - Orchestrates the 5-phase tick cycle
@@ -122,6 +116,14 @@ function executeTick(
     }
     return action;
   });
+  
+  // Sync decremented ticksRemaining back to characters' currentAction
+  for (const action of workingActionQueue) {
+    const character = [...workingPlayers, ...workingEnemies].find(c => c.id === action.casterId);
+    if (character?.currentAction) {
+      character.currentAction.ticksRemaining = action.ticksRemaining;
+    }
+  }
   
   // PHASE 3: Action Resolution
   // Resolve actions that were at 0 BEFORE decrement
@@ -260,8 +262,6 @@ function executeTickWithDebug(
 ): TickResultWithDebug {
   // Debug info collectors
   const ruleEvaluations: RuleEvaluation[] = [];
-  const targetingDecisions: TargetingDecision[] = [];
-  const resolutionSubsteps: ResolutionSubstep[] = [];
   
   // Increment tick counter
   const newTickNumber = state.tickNumber + 1;
@@ -481,18 +481,8 @@ function executeTickWithDebug(
           ? selectTargets(targetingMode, character, currentState.players, currentState.enemies)
           : selectTargets(targetingMode, character, currentState.enemies, currentState.players);
         
-        // Apply filters and track them
-        const filtersApplied: TargetFilterResult[] = [];
-        
-        // Dead exclusion filter
+        // Apply filters
         const aliveCandidates = candidates.filter(c => c.currentHp > 0);
-        const deadRemoved = candidates.filter(c => c.currentHp <= 0).map(c => c.id);
-        if (deadRemoved.length > 0) {
-          filtersApplied.push({
-            filterType: 'dead-exclusion',
-            removed: deadRemoved,
-          });
-        }
         
         // Taunt filter (only for enemy attackers targeting players)
         let finalTargets = aliveCandidates;
@@ -502,27 +492,13 @@ function executeTickWithDebug(
             p.currentHp > 0 && p.statusEffects.some(s => s.type === 'taunting' && s.duration > 0)
           );
           if (taunter) {
-            const nonTaunters = aliveCandidates.filter(c => c.id !== taunter.id).map(c => c.id);
-            if (nonTaunters.length > 0) {
-              filtersApplied.push({
-                filterType: 'taunt',
-                removed: nonTaunters,
-              });
-            }
             finalTargets = [taunter];
           }
         }
         
         // Self-exclusion filter (for ally targeting)
         if (targetingMode === 'ally-lowest-hp' || targetingMode === 'all-allies') {
-          const selfRemoved = finalTargets.find(t => t.id === character.id);
-          if (selfRemoved) {
-            filtersApplied.push({
-              filterType: 'self-exclusion',
-              removed: [character.id],
-            });
-            finalTargets = finalTargets.filter(t => t.id !== character.id);
-          }
+          finalTargets = finalTargets.filter(t => t.id !== character.id);
         }
         
         // Build candidate list for debug
@@ -530,6 +506,26 @@ function executeTickWithDebug(
         
         // No valid targets - skipped
         if (finalTargets.length === 0) {
+          // Build specific reason based on targeting mode
+          let reason: string;
+          if (candidates.length === 0) {
+            // No initial candidates - provide specific reason based on targeting mode
+            if (targetingMode === 'single-enemy-lowest-hp' || targetingMode === 'single-enemy-highest-hp' || targetingMode === 'all-enemies') {
+              reason = 'No enemies alive';
+            } else if (targetingMode === 'ally-lowest-hp' || targetingMode === 'all-allies') {
+              reason = 'No allies available (excluding self)';
+            } else if (targetingMode === 'ally-dead') {
+              reason = 'No dead allies to revive';
+            } else if (targetingMode === 'self') {
+              reason = 'Character is dead';
+            } else {
+              reason = 'No valid targets available';
+            }
+          } else {
+            // Candidates filtered out
+            reason = `All ${candidates.length} candidates filtered out`;
+          }
+          
           evaluation.rulesChecked.push({
             ruleIndex,
             skillId,
@@ -537,9 +533,7 @@ function executeTickWithDebug(
             priority: rule.priority,
             conditions: conditionResults,
             status: 'skipped',
-            reason: candidates.length === 0
-              ? 'No valid targets available'
-              : `All ${candidates.length} candidates filtered out`,
+            reason,
             candidatesConsidered: candidateList.length > 0 ? candidateList : undefined,
           });
           continue;
@@ -605,17 +599,6 @@ function executeTickWithDebug(
           targetChosen: targetReason,
         });
         
-        // Record targeting decision
-        targetingDecisions.push({
-          casterId: character.id,
-          skillId: skillId,
-          targetingMode: targetingMode as any,
-          candidates: candidates.map(c => c.id),
-          filtersApplied,
-          finalTargets: finalTargetIds,
-          tieBreaker: undefined,
-        });
-        
         evaluation.selectedRule = `rule-${ruleIndex}`;
         evaluation.selectedSkill = skillId;
         evaluation.selectedTargets = finalTargetIds;
@@ -646,6 +629,14 @@ function executeTickWithDebug(
     return action;
   });
   
+  // Sync decremented ticksRemaining back to characters' currentAction
+  for (const action of workingActionQueue) {
+    const character = [...workingPlayers, ...workingEnemies].find(c => c.id === action.casterId);
+    if (character?.currentAction) {
+      character.currentAction.ticksRemaining = action.ticksRemaining;
+    }
+  }
+  
   // PHASE 3: Action Resolution (with debug instrumentation)
   if (actionsToResolve.length > 0) {
     const sortedActions = [...actionsToResolve].sort((a, b) => {
@@ -660,82 +651,12 @@ function executeTickWithDebug(
       return a.casterId.localeCompare(b.casterId);
     });
     
-    // Capture targeting decisions for resolving actions
-    for (const action of sortedActions) {
-      const skill = SkillLibrary.getSkill(action.skillId);
-      const caster = [...workingPlayers, ...workingEnemies].find(c => c.id === action.casterId);
-      
-      if (caster) {
-        // Get all potential candidates (before any filtering/selection)
-        const allCandidates = caster.isPlayer
-          ? (skill.targeting.includes('enemy') ? workingEnemies : (skill.targeting === 'self' ? [caster] : workingPlayers))
-          : (skill.targeting.includes('enemy') ? workingPlayers : (skill.targeting === 'self' ? [caster] : workingEnemies));
-        
-        const candidateIds = allCandidates.map(c => c.id);
-        const filtersApplied: TargetFilterResult[] = [];
-        
-        // Track dead exclusion
-        const deadRemoved = allCandidates.filter(c => c.currentHp <= 0).map(c => c.id);
-        if (deadRemoved.length > 0) {
-          filtersApplied.push({
-            filterType: 'dead-exclusion',
-            removed: deadRemoved,
-          });
-        }
-        
-        // Track taunt (applies when targeting enemy team)
-        if (skill.targeting.includes('enemy')) {
-          const targetTeam = caster.isPlayer ? workingEnemies : workingPlayers;
-          const taunter = targetTeam.find(t =>
-            t.currentHp > 0 && t.statusEffects.some(s => s.type === 'taunting' && s.duration > 0)
-          );
-          if (taunter) {
-            const aliveCandidates = allCandidates.filter(c => c.currentHp > 0);
-            const nonTaunters = aliveCandidates.filter(c => c.id !== taunter.id).map(c => c.id);
-            if (nonTaunters.length > 0) {
-              filtersApplied.push({
-                filterType: 'taunt',
-                removed: nonTaunters,
-              });
-            }
-          }
-        }
-        
-        // Check for tie-breaker
-        let tieBreaker: string | undefined = undefined;
-        if (skill.targeting === 'single-enemy-lowest-hp' || skill.targeting === 'ally-lowest-hp' ||
-            skill.targeting === 'single-enemy-highest-hp') {
-          const aliveCandidates = allCandidates.filter(c => c.currentHp > 0);
-          if (aliveCandidates.length > 1 && action.targets.length > 0) {
-            const selectedTarget = aliveCandidates.find(c => c.id === action.targets[0]);
-            if (selectedTarget) {
-              const tieCandidates = aliveCandidates.filter(c => c.currentHp === selectedTarget.currentHp);
-              if (tieCandidates.length > 1) {
-                tieBreaker = 'leftmost (first in array order)';
-              }
-            }
-          }
-        }
-        
-        targetingDecisions.push({
-          casterId: action.casterId,
-          skillId: action.skillId,
-          targetingMode: skill.targeting as any,
-          candidates: candidateIds,
-          filtersApplied,
-          finalTargets: action.targets,
-          tieBreaker,
-        });
-      }
-    }
-    
-    // Resolve with substep tracking
-    const resolverResult = resolveActionsWithDebug(
+    // Resolve actions
+    const resolverResult = ActionResolver.resolveActions(
       sortedActions,
       workingPlayers,
       workingEnemies,
-      newTickNumber,
-      resolutionSubsteps
+      newTickNumber
     );
     
     workingPlayers = resolverResult.updatedPlayers;
@@ -827,440 +748,7 @@ function executeTickWithDebug(
     battleEnded: battleStatus !== 'ongoing',
     debugInfo: {
       ruleEvaluations,
-      targetingDecisions,
-      resolutionSubsteps,
     },
-  };
-}
-
-/**
- * Debug-instrumented action resolution
- * Captures substep details for damage calculation, healing, shields, health updates, status application, and cancellation
- */
-function resolveActionsWithDebug(
-  actions: Action[],
-  players: Character[],
-  enemies: Character[],
-  tickNumber: number,
-  resolutionSubsteps: ResolutionSubstep[]
-): { updatedPlayers: Character[]; updatedEnemies: Character[]; events: any[] } {
-  // Substep detail collectors
-  const damageCalcDetails: SubstepDetail[] = [];
-  const healingCalcDetails: SubstepDetail[] = [];
-  const shieldAbsorptionDetails: SubstepDetail[] = [];
-  const healthUpdateDetails: SubstepDetail[] = [];
-  const statusApplicationDetails: SubstepDetail[] = [];
-  const actionCancelDetails: SubstepDetail[] = [];
-  
-  // Create immutable copies
-  const workingPlayers = players.map(p => ({ 
-    ...p, 
-    statusEffects: [...p.statusEffects.map(s => ({ ...s }))]
-  }));
-  const workingEnemies = enemies.map(e => ({ 
-    ...e, 
-    statusEffects: [...e.statusEffects.map(s => ({ ...s }))]
-  }));
-  
-  const events: any[] = [];
-  const cancelledActions: Action[] = [];
-  
-  const findChar = (id: string): Character | undefined => {
-    return workingPlayers.find(c => c.id === id) || workingEnemies.find(c => c.id === id);
-  };
-  
-  interface DamageInstance {
-    action: Action;
-    targetId: string;
-    baseDamage: number;
-    finalDamage: number;
-  }
-  
-  const damageInstances: DamageInstance[] = [];
-  const healingMap = new Map<string, number>();
-  const statusesToApply: Array<{ targetId: string; status: any; actorId: string }> = [];
-  const cancellationTargets = new Set<string>();
-  
-  const initialHpMap = new Map<string, number>();
-  [...workingPlayers, ...workingEnemies].forEach(c => initialHpMap.set(c.id, c.currentHp));
-  
-  // SUBSTEP 1: Damage Calculation
-  for (const action of actions) {
-    const skill = SkillLibrary.getSkill(action.skillId);
-    const caster = findChar(action.casterId);
-    if (!caster) continue;
-    
-    const damageEffect = skill.effects.find(e => e.type === 'damage');
-    if (damageEffect && damageEffect.value !== undefined) {
-      const baseDamage = damageEffect.value;
-      const enragedStatus = caster.statusEffects.find(s => s.type === 'enraged');
-      const enragedBonus = enragedStatus?.value ?? 0;
-      
-      for (const targetId of action.targets) {
-        const target = findChar(targetId);
-        if (!target) continue;
-        
-        let damage = baseDamage + enragedBonus;
-        const isDefending = target.statusEffects.some(s => s.type === 'defending');
-        if (isDefending) {
-          damage = Math.floor(damage * 0.5);
-        }
-        
-        damageInstances.push({
-          action,
-          targetId,
-          baseDamage: damage,
-          finalDamage: damage,
-        });
-        
-        damageCalcDetails.push({
-          actorId: action.casterId,
-          targetId,
-          skillId: action.skillId,
-          value: damage,
-          description: `Calculated ${damage} damage to ${target.name}`,
-        });
-      }
-    }
-  }
-  
-  // SUBSTEP 2: Healing Calculation
-  for (const action of actions) {
-    const skill = SkillLibrary.getSkill(action.skillId);
-    
-    const healEffect = skill.effects.find(e => e.type === 'heal');
-    if (healEffect && healEffect.value !== undefined) {
-      for (const targetId of action.targets) {
-        const target = findChar(targetId);
-        if (!target) continue;
-        
-        if (target.currentHp === 0) continue;
-        
-        const currentHealing = healingMap.get(targetId) ?? 0;
-        healingMap.set(targetId, currentHealing + healEffect.value);
-        
-        healingCalcDetails.push({
-          actorId: action.casterId,
-          targetId,
-          skillId: action.skillId,
-          value: healEffect.value,
-          description: `Calculated ${healEffect.value} healing to ${target.name}`,
-        });
-      }
-    }
-    
-    const reviveEffect = skill.effects.find(e => e.type === 'revive');
-    if (reviveEffect && reviveEffect.value !== undefined) {
-      for (const targetId of action.targets) {
-        const target = findChar(targetId);
-        if (!target) continue;
-        
-        if (target.currentHp === 0) {
-          healingMap.set(targetId, reviveEffect.value);
-          
-          healingCalcDetails.push({
-            actorId: action.casterId,
-            targetId,
-            skillId: action.skillId,
-            value: reviveEffect.value,
-            description: `Calculated ${reviveEffect.value} revive healing to ${target.name}`,
-          });
-        } else {
-          events.push({
-            tick: tickNumber,
-            type: 'target-lost',
-            actorId: action.casterId,
-            targetId,
-            message: `Revive failed: ${target.name} is not knocked out`,
-          });
-        }
-      }
-    }
-  }
-  
-  // SUBSTEP 3: Shield Absorption
-  damageInstances.sort((a, b) => {
-    const charA = findChar(a.action.casterId);
-    const charB = findChar(b.action.casterId);
-    if (!charA || !charB) return 0;
-    
-    if (charA.isPlayer && !charB.isPlayer) return -1;
-    if (!charA.isPlayer && charB.isPlayer) return 1;
-    
-    return a.action.casterId.localeCompare(b.action.casterId);
-  });
-  
-  for (const instance of damageInstances) {
-    const target = findChar(instance.targetId);
-    if (!target) continue;
-    
-    const shieldStatus = target.statusEffects.find(s => s.type === 'shielded');
-    if (shieldStatus && shieldStatus.value !== undefined && shieldStatus.value > 0) {
-      const shieldValue = shieldStatus.value;
-      
-      if (shieldValue >= instance.finalDamage) {
-        shieldAbsorptionDetails.push({
-          actorId: instance.action.casterId,
-          targetId: instance.targetId,
-          skillId: instance.action.skillId,
-          value: instance.finalDamage,
-          description: `shield absorbed ${instance.finalDamage} damage for ${target.name}`,
-        });
-        
-        shieldStatus.value = shieldValue - instance.finalDamage;
-        instance.finalDamage = 0;
-      } else {
-        shieldAbsorptionDetails.push({
-          actorId: instance.action.casterId,
-          targetId: instance.targetId,
-          skillId: instance.action.skillId,
-          value: shieldValue,
-          description: `shield absorbed ${shieldValue} damage, ${instance.finalDamage - shieldValue} overflow to ${target.name}`,
-        });
-        
-        instance.finalDamage = instance.finalDamage - shieldValue;
-        shieldStatus.value = 0;
-      }
-    }
-  }
-  
-  // SUBSTEP 4: Health Updates
-  const damageMap = new Map<string, number>();
-  for (const instance of damageInstances) {
-    const current = damageMap.get(instance.targetId) ?? 0;
-    damageMap.set(instance.targetId, current + instance.finalDamage);
-  }
-  
-  for (const char of [...workingPlayers, ...workingEnemies]) {
-    const damage = damageMap.get(char.id) ?? 0;
-    const healing = healingMap.get(char.id) ?? 0;
-    
-    if (damage > 0 || healing > 0) {
-      const oldHp = char.currentHp;
-      let newHp = char.currentHp - damage + healing;
-      newHp = Math.min(newHp, char.maxHp);
-      newHp = Math.max(newHp, 0);
-      char.currentHp = newHp;
-      
-      healthUpdateDetails.push({
-        actorId: char.id,
-        targetId: char.id,
-        skillId: '', // Health update is a result, not from a specific skill
-        value: newHp - oldHp,
-        description: `${char.name} HP: ${oldHp} → ${newHp} (damage: ${damage}, healing: ${healing})`,
-      });
-    }
-  }
-  
-  // SUBSTEP 5: Status Application
-  for (const action of actions) {
-    const skill = SkillLibrary.getSkill(action.skillId);
-    
-    for (const effect of skill.effects) {
-      if (effect.type === 'status' && effect.statusType && effect.duration !== undefined) {
-        for (const targetId of action.targets) {
-          const target = findChar(targetId);
-          if (!target) continue;
-          
-          statusesToApply.push({
-            targetId,
-            status: {
-              type: effect.statusType,
-              duration: effect.duration,
-              value: effect.statusType === 'poisoned' ? 5 : undefined,
-            },
-            actorId: action.casterId,
-          });
-          
-          statusApplicationDetails.push({
-            actorId: action.casterId,
-            targetId,
-            skillId: action.skillId,
-            description: `Applied status ${effect.statusType} to ${target.name}`,
-          });
-        }
-      }
-      
-      if (effect.type === 'shield' && effect.value !== undefined) {
-        for (const targetId of action.targets) {
-          const target = findChar(targetId);
-          if (!target) continue;
-          
-          statusesToApply.push({
-            targetId,
-            status: {
-              type: 'shielded',
-              duration: 4,
-              value: effect.value,
-            },
-            actorId: action.casterId,
-          });
-          
-          statusApplicationDetails.push({
-            actorId: action.casterId,
-            targetId,
-            skillId: action.skillId,
-            value: effect.value,
-            description: `Applied shield (${effect.value}) to ${target.name}`,
-          });
-        }
-      }
-    }
-  }
-  
-  for (const { targetId, status } of statusesToApply) {
-    const char = findChar(targetId);
-    if (!char) continue;
-    
-    const updated = StatusEffectProcessor.applyStatus(char, status);
-    Object.assign(char, updated);
-  }
-  
-  // SUBSTEP 6: Action Cancellation
-  for (const action of actions) {
-    const skill = SkillLibrary.getSkill(action.skillId);
-    
-    const hasCancelEffect = skill.effects.some(e => e.type === 'cancel');
-    const hasStunEffect = skill.effects.some(e => e.type === 'status' && e.statusType === 'stunned');
-    
-    if (hasCancelEffect || hasStunEffect) {
-      for (const targetId of action.targets) {
-        cancellationTargets.add(targetId);
-      }
-    }
-  }
-  
-  for (const targetId of cancellationTargets) {
-    const char = findChar(targetId);
-    if (char?.currentAction) {
-      const cancelledAction = char.currentAction;
-      cancelledActions.push(cancelledAction);
-      char.currentAction = null;
-      
-      actionCancelDetails.push({
-        actorId: targetId,
-        targetId,
-        skillId: cancelledAction.skillId,
-        description: `cancelled action for ${char.name}`,
-      });
-    }
-  }
-  
-  // Generate Events
-  for (const action of actions) {
-    const skill = SkillLibrary.getSkill(action.skillId);
-    const caster = findChar(action.casterId);
-    
-    events.push({
-      tick: tickNumber,
-      type: 'action-resolved',
-      actorId: action.casterId,
-      skillName: skill.name,
-      message: `${caster?.name ?? action.casterId} used ${skill.name}`,
-    });
-    
-    for (const instance of damageInstances) {
-      if (instance.action === action) {
-        const target = findChar(instance.targetId);
-        events.push({
-          tick: tickNumber,
-          type: 'damage',
-          actorId: action.casterId,
-          targetId: instance.targetId,
-          value: instance.baseDamage,
-          message: `${target?.name ?? instance.targetId} takes ${instance.baseDamage} damage`,
-        });
-      }
-    }
-    
-    const healEffect = skill.effects.find(e => e.type === 'heal');
-    const reviveEffect = skill.effects.find(e => e.type === 'revive');
-    
-    if (healEffect && healEffect.value !== undefined) {
-      for (const targetId of action.targets) {
-        const target = findChar(targetId);
-        const healing = healEffect.value;
-        
-        events.push({
-          tick: tickNumber,
-          type: 'healing',
-          actorId: action.casterId,
-          targetId,
-          value: healing,
-          message: `${target?.name ?? targetId} healed for ${healing}`,
-        });
-      }
-    }
-    
-    if (reviveEffect && reviveEffect.value !== undefined) {
-      for (const targetId of action.targets) {
-        const target = findChar(targetId);
-        const healing = reviveEffect.value;
-        
-        events.push({
-          tick: tickNumber,
-          type: 'healing',
-          actorId: action.casterId,
-          targetId,
-          value: healing,
-          message: `${target?.name ?? targetId} revived for ${healing}`,
-        });
-      }
-    }
-  }
-  
-  for (const { targetId, status, actorId } of statusesToApply) {
-    const target = findChar(targetId);
-    events.push({
-      tick: tickNumber,
-      type: 'status-applied',
-      actorId,
-      targetId,
-      statusType: status.type,
-      message: `${status.type} applied to ${target?.name ?? targetId}`,
-    });
-  }
-  
-  for (const char of [...workingPlayers, ...workingEnemies]) {
-    const wasAlive = (initialHpMap.get(char.id) ?? 0) > 0;
-    const isKnockedOut = char.currentHp === 0;
-    
-    if (wasAlive && isKnockedOut) {
-      char.statusEffects = [];
-      
-      events.push({
-        tick: tickNumber,
-        type: 'knockout',
-        targetId: char.id,
-        message: `${char.name} was knocked out`,
-      });
-    }
-  }
-  
-  // Add substeps to debug info
-  if (damageCalcDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'damage-calc', details: damageCalcDetails });
-  }
-  if (healingCalcDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'healing-calc', details: healingCalcDetails });
-  }
-  if (shieldAbsorptionDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'shield-absorption', details: shieldAbsorptionDetails });
-  }
-  if (healthUpdateDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'health-update', details: healthUpdateDetails });
-  }
-  if (statusApplicationDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'status-application', details: statusApplicationDetails });
-  }
-  if (actionCancelDetails.length > 0) {
-    resolutionSubsteps.push({ substep: 'action-cancel', details: actionCancelDetails });
-  }
-  
-  return {
-    updatedPlayers: workingPlayers,
-    updatedEnemies: workingEnemies,
-    events,
   };
 }
 
