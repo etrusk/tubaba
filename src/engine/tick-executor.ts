@@ -123,6 +123,14 @@ function executeTick(
     return action;
   });
   
+  // Sync decremented ticksRemaining back to character.currentAction
+  for (const action of workingActionQueue) {
+    const character = [...workingPlayers, ...workingEnemies].find(c => c.id === action.casterId);
+    if (character && character.currentAction) {
+      character.currentAction.ticksRemaining = action.ticksRemaining;
+    }
+  }
+  
   // PHASE 3: Action Resolution
   // Resolve actions that were at 0 BEFORE decrement
   // (Actions that reach 0 during decrement will resolve next tick)
@@ -645,6 +653,14 @@ function executeTickWithDebug(
     }
     return action;
   });
+  
+  // Sync decremented ticksRemaining back to character.currentAction
+  for (const action of workingActionQueue) {
+    const character = [...workingPlayers, ...workingEnemies].find(c => c.id === action.casterId);
+    if (character && character.currentAction) {
+      character.currentAction.ticksRemaining = action.ticksRemaining;
+    }
+  }
   
   // PHASE 3: Action Resolution (with debug instrumentation)
   if (actionsToResolve.length > 0) {

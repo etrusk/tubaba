@@ -9,7 +9,7 @@ exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for b
     <span class="hp-text">85/100</span>
   </div>
   <div class="status-effects"></div>
-  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">2</span></div>
+  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">Executing</span></div>
 </div></div>
   <div class="enemies"><div class="character-card enemy" data-character-id="enemy-1">
   <div class="character-name"><span style="color: #9c27b0; font-weight: bold;">Goblin</span></div>
@@ -18,7 +18,7 @@ exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for b
     <span class="hp-text">20/50</span>
   </div>
   <div class="status-effects"><span class="status poisoned" data-duration="3">Poisoned (3)</span></div>
-  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">2</span></div>
+  <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">Executing</span></div>
 </div></div>
   <div class="event-log">
   <div class="event damage" data-tick="5">
