@@ -21,13 +21,12 @@ export function renderDebugInspector(debugInfo: DebugInfo): string {
   }
 
   const rulesSection = renderRuleEvaluations(debugInfo.ruleEvaluations);
-  const targetingSection = renderTargetingDecisions(debugInfo.targetingDecisions, characterNameMap);
-  const substepsSection = renderResolutionSubsteps(debugInfo.resolutionSubsteps, characterNameMap);
+  // Removed: Targeting Decisions and Resolution Substeps sections
+  // const targetingSection = renderTargetingDecisions(debugInfo.targetingDecisions, characterNameMap);
+  // const substepsSection = renderResolutionSubsteps(debugInfo.resolutionSubsteps, characterNameMap);
 
   return `<div class="debug-inspector">
   ${rulesSection}
-  ${targetingSection}
-  ${substepsSection}
 </div>`;
 }
 
