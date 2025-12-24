@@ -21,6 +21,17 @@ import _TargetFilter from '../targeting/target-filter.js';
 import { SkillLibrary } from './skill-library.js';
 
 /**
+ * Helper function to compare two arrays for equality
+ */
+function arraysEqual<T>(a: T[], b: T[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
  * TickExecutor - Orchestrates the 5-phase tick cycle
  *
  * Phase 1: Rule Evaluation (idle units check rules and queue actions)
@@ -67,14 +78,13 @@ function executeTick(
   };
   
   for (const character of allCharacters) {
-    // Check if character is idle (can evaluate rules)
+    // Check if character can evaluate rules (not knocked out, not stunned)
     const isKnockedOut = character.currentHp <= 0;
     const isStunned = character.statusEffects.some(s => s.type === 'stunned' && s.duration > 0);
-    const hasPendingAction = character.currentAction !== null;
     
-    const isIdle = !isKnockedOut && !isStunned && !hasPendingAction;
+    const canEvaluate = !isKnockedOut && !isStunned;
     
-    if (!isIdle) {
+    if (!canEvaluate) {
       continue;
     }
     
@@ -98,17 +108,38 @@ function executeTick(
       const skill = selection.skill;
       const targetIds = selection.targets.map(t => t.id);
       
-      // Create action and set on character
-      const action: Action = {
+      // Create candidate action
+      const candidateAction: Action = {
         casterId: character.id,
         skillId: skill.id,
         targets: targetIds,
         ticksRemaining: skill.baseDuration,
       };
       
-      character.currentAction = action;
-      workingActionQueue.push(action);
+      // Check if this is the same action as current
+      const currentAction = character.currentAction;
+      const isSameAction = currentAction !== null &&
+        candidateAction.skillId === currentAction.skillId &&
+        arraysEqual(candidateAction.targets, currentAction.targets);
+      
+      if (isSameAction) {
+        // Same action - keep current action untouched (preserve ticksRemaining)
+        // Do nothing
+      } else if (currentAction !== null) {
+        // Different action - replace current action
+        // Remove old action from queue
+        workingActionQueue = workingActionQueue.filter(a => a.casterId !== character.id);
+        
+        // Set new action
+        character.currentAction = candidateAction;
+        workingActionQueue.push(candidateAction);
+      } else {
+        // No current action - queue the new action
+        character.currentAction = candidateAction;
+        workingActionQueue.push(candidateAction);
+      }
     }
+    // If selection is null and character has current action, keep it (don't cancel)
   }
   
   // PHASE 2: Action Progress
@@ -302,14 +333,13 @@ function executeTickWithDebug(
   };
   
   for (const character of allCharacters) {
-    // Check if character is idle (can evaluate rules)
+    // Check if character can evaluate rules (not knocked out, not stunned)
     const isKnockedOut = character.currentHp <= 0;
     const isStunned = character.statusEffects.some(s => s.type === 'stunned' && s.duration > 0);
-    const hasPendingAction = character.currentAction !== null;
     
-    const isIdle = !isKnockedOut && !isStunned && !hasPendingAction;
+    const canEvaluate = !isKnockedOut && !isStunned;
     
-    if (!isIdle) {
+    if (!canEvaluate) {
       // Still capture evaluation entry for stunned characters with empty rules
       if (isStunned) {
         ruleEvaluations.push({
@@ -624,20 +654,52 @@ function executeTickWithDebug(
           tieBreaker: undefined,
         });
         
-        evaluation.selectedRule = `rule-${ruleIndex}`;
-        evaluation.selectedSkill = skillId;
-        evaluation.selectedTargets = finalTargetIds;
-        
-        // Actually queue the action (not just capture debug info)
-        const action: Action = {
+        // Create candidate action
+        const candidateAction: Action = {
           casterId: character.id,
           skillId: skillId,
           targets: finalTargetIds,
           ticksRemaining: skill.baseDuration,
         };
         
-        character.currentAction = action;
-        workingActionQueue.push(action);
+        // Check if this is the same action as current
+        const currentAction = character.currentAction;
+        const isSameAction = currentAction !== null &&
+          candidateAction.skillId === currentAction.skillId &&
+          arraysEqual(candidateAction.targets, currentAction.targets);
+        
+        // Update the last rule check with appropriate reason
+        const lastRuleCheck = evaluation.rulesChecked[evaluation.rulesChecked.length - 1];
+        if (lastRuleCheck) {
+          if (isSameAction) {
+            lastRuleCheck.reason = 'All conditions met (kept current action)';
+          } else if (currentAction !== null) {
+            lastRuleCheck.reason = 'All conditions met (switched from previous action)';
+          } else {
+            lastRuleCheck.reason = 'All conditions met';
+          }
+        }
+        
+        evaluation.selectedRule = `rule-${ruleIndex}`;
+        evaluation.selectedSkill = skillId;
+        evaluation.selectedTargets = finalTargetIds;
+        
+        if (isSameAction) {
+          // Same action - keep current action untouched (preserve ticksRemaining)
+          // Do nothing
+        } else if (currentAction !== null) {
+          // Different action - replace current action
+          // Remove old action from queue
+          workingActionQueue = workingActionQueue.filter(a => a.casterId !== character.id);
+          
+          // Set new action
+          character.currentAction = candidateAction;
+          workingActionQueue.push(candidateAction);
+        } else {
+          // No current action - queue the new action
+          character.currentAction = candidateAction;
+          workingActionQueue.push(candidateAction);
+        }
       }
     }
     

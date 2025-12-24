@@ -4,6 +4,30 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-24 Per-Tick Rule Re-evaluation (Spike Accepted)
+
+**Status:** Accepted
+
+**Context:** Previously, characters with a pending action (`currentAction !== null`) were skipped during rule evaluation phase. This caused "No rule evaluations this tick" messages and prevented characters from changing intent when conditions changed mid-cast.
+
+**Decision:** Characters now re-evaluate their instruction sets EVERY tick (unless knocked out or stunned). If a different action is selected, the current action is replaced. If the same action would be selected, the current action is preserved (maintaining countdown progress).
+
+**Key Changes:**
+1. Removed `hasPendingAction` from idle check in [`tick-executor.ts`](../src/engine/tick-executor.ts)
+2. Added `arraysEqual()` helper for target comparison
+3. "Same action" detection: `skillId === currentAction.skillId && arraysEqual(targets, currentAction.targets)`
+4. If selection returns null, keep current action (don't cancel queued action)
+
+**Consequences:**
+- Rule Evaluations debug panel now shows evaluations for all active characters every tick
+- Characters can respond dynamically to changing conditions mid-cast
+- Action countdown progress is preserved when conditions don't change
+- Debug info shows "kept current action" or "switched from previous action"
+
+**Branch:** `spike/per-tick-reevaluation` (to be merged)
+
+---
+
 ## 2025-12-24 Skill Labels Under Characters (Spike Accepted)
 
 **Status:** Accepted

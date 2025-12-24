@@ -70,6 +70,14 @@ npm run lint         # Check linting
 npm run typecheck    # TypeScript check
 ```
 
+## Development URLs
+
+| URL | Purpose |
+|-----|---------|
+| `http://localhost:3000/battle-viewer` | Browser testing for battle visualization UI |
+
+**Note:** The dev server must be running (`npm run dev`) before accessing these URLs.
+
 ## Current Focus
 [What the team is actively working on - update regularly]
 
