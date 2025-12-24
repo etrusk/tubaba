@@ -567,6 +567,94 @@
     .substep.status-application { background: rgba(156, 39, 176, 0.2); }
     .substep.action-cancel { background: rgba(255, 87, 34, 0.2); }
 
+    /* Decision Flow Styles */
+    .rule-step {
+      border-left: 3px solid #666;
+      padding: 8px 12px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    .rule-step.selected {
+      border-left-color: #4ade80;
+      background: rgba(74, 222, 128, 0.1);
+    }
+
+    .rule-step.skipped {
+      border-left-color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+    }
+
+    .rule-step.failed {
+      border-left-color: #888;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .step-number {
+      color: #888;
+      font-weight: bold;
+      min-width: 20px;
+    }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .status-badge.selected {
+      background: #4ade80;
+      color: #000;
+    }
+
+    .status-badge.skipped {
+      background: #fbbf24;
+      color: #000;
+    }
+
+    .status-badge.failed {
+      background: #666;
+      color: #fff;
+    }
+
+    .step-details {
+      font-size: 0.9rem;
+      color: #ccc;
+      margin-top: 4px;
+      margin-left: 28px;
+    }
+
+    .not-reached-section {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .not-reached-section summary {
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .not-reached-rule {
+      padding: 2px 0 2px 20px;
+    }
+
+    .final-action {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: rgba(59, 130, 246, 0.2);
+      border-left: 3px solid #3b82f6;
+      border-radius: 4px;
+    }
+
     /* Event Log */
     .event-log {
       background: rgba(0, 0, 0, 0.3);
@@ -879,13 +967,10 @@
         </div>
       </div>
       
-      <!-- Middle column: Action Forecast -->
+      <!-- Middle column: Rule Evaluations -->
       <div class="battle-column-middle">
-        <!-- Action Forecast Panel (fills entire column) -->
-        <div class="panel forecast-panel">
-          <h2>🔮 Action Forecast</h2>
-          <div id="forecast-container"></div>
-        </div>
+        <!-- Rule Evaluations Panel (Debug Inspector) -->
+        <div id="rule-evaluations-container"></div>
       </div>
       
       <!-- Right column: Rule Evaluations (Debug Inspector) OR Instructions Builder -->
@@ -925,7 +1010,7 @@
     // Get DOM elements
     const battleArenaContainer = document.getElementById('battle-arena-container');
     const rightColumnContainer = document.getElementById('right-column-container');
-    const forecastContainer = document.getElementById('forecast-container');
+    const ruleEvaluationsContainer = document.getElementById('rule-evaluations-container');
     const eventLogContainer = document.getElementById('event-log-container');
     const tickDisplay = document.getElementById('tick-display');
     const battleStatus = document.getElementById('battle-status');
@@ -996,6 +1081,19 @@
     let battleController = new BattleController(sampleEncounter);
     let lastDebugInfo = null;
 
+    // Refresh debug info with current instructions (for when instructions change)
+    function refreshDebugInfo() {
+      const state = battleController.getCurrentState();
+      const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
+      lastDebugInfo = tickResult.debugInfo;
+    }
+
+    // Helper to refresh debug info AND render (call when instructions change)
+    function refreshDebugInfoAndRender() {
+      refreshDebugInfo();
+      renderBattle();
+    }
+
     // Render functions
     function renderBattle() {
       const state = battleController.getCurrentState();
@@ -1017,7 +1115,14 @@
         }
       }
       
-      // Render right column: Instructions Builder (if character selected) OR Debug Inspector
+      // Render middle column: Rule Evaluations (Debug Inspector)
+      if (lastDebugInfo) {
+        ruleEvaluationsContainer.innerHTML = renderDebugInspector(lastDebugInfo);
+      } else {
+        ruleEvaluationsContainer.innerHTML = '';
+      }
+      
+      // Render right column: Instructions Builder (if character selected)
       if (selectedCharacterId) {
         // Render instructions in right column
         const selectedCharacter = battleController.getSelectedCharacter();
@@ -1035,12 +1140,7 @@
           </div>
         `;
       } else {
-        // Render debug info if available, clear if not
-        if (lastDebugInfo) {
-          rightColumnContainer.innerHTML = renderDebugInspector(lastDebugInfo);
-        } else {
-          rightColumnContainer.innerHTML = '';
-        }
+        rightColumnContainer.innerHTML = '';
       }
       
       // Render tick display
@@ -1052,9 +1152,6 @@
       
       // Render event log with combat state for character name colorization
       eventLogContainer.innerHTML = renderEventLog(state.eventLog, state);
-      
-      // Render forecast (already obtained above for visualization)
-      forecastContainer.innerHTML = renderActionForecast(forecast);
       
       // Update button states
       updateButtonStates();
@@ -1103,12 +1200,12 @@
       switch (action) {
         case 'set-human':
           battleController.updateControlMode(characterId, 'human');
-          renderBattle();
+          refreshDebugInfoAndRender();
           break;
           
         case 'set-ai':
           battleController.updateControlMode(characterId, 'ai');
-          renderBattle();
+          refreshDebugInfoAndRender();
           break;
           
         case 'move-up': {
@@ -1118,7 +1215,7 @@
             const currentIndex = instructions.skillInstructions.findIndex(si => si.skillId === skillId);
             if (currentIndex > 0) {
               battleController.updateSkillPriority(characterId, skillId, currentIndex - 1);
-              renderBattle();
+              refreshDebugInfoAndRender();
             }
           }
           break;
@@ -1131,7 +1228,7 @@
             const currentIndex = instructions.skillInstructions.findIndex(si => si.skillId === skillId);
             if (currentIndex < instructions.skillInstructions.length - 1) {
               battleController.updateSkillPriority(characterId, skillId, currentIndex + 1);
-              renderBattle();
+              refreshDebugInfoAndRender();
             }
           }
           break;
@@ -1141,7 +1238,7 @@
           const skillId = target.dataset.skillId;
           if (skillId) {
             battleController.toggleSkillEnabled(characterId, skillId);
-            renderBattle();
+            refreshDebugInfoAndRender();
           }
           break;
         }
@@ -1155,7 +1252,7 @@
               value: 50
             };
             battleController.addCondition(characterId, skillId, condition);
-            renderBattle();
+            refreshDebugInfoAndRender();
           }
           break;
         }
@@ -1165,14 +1262,14 @@
           const conditionIndex = parseInt(target.dataset.conditionIndex, 10);
           if (skillId && !isNaN(conditionIndex)) {
             battleController.removeCondition(characterId, skillId, conditionIndex);
-            renderBattle();
+            refreshDebugInfoAndRender();
           }
           break;
         }
           
         case 'apply':
           battleController.applyInstructions();
-          renderBattle();
+          refreshDebugInfoAndRender();
           break;
           
         case 'cancel':
@@ -1208,7 +1305,7 @@
         if (characterId && skillId) {
           const value = target.value || undefined;
           battleController.updateTargetingOverride(characterId, skillId, value);
-          renderBattle();
+          refreshDebugInfoAndRender();
         }
       }
     });
@@ -1218,7 +1315,7 @@
       // Execute tick with debug to get debug info
       const state = battleController.getCurrentState();
       if (state.battleStatus === 'ongoing') {
-        const tickResult = TickExecutor.executeTickWithDebug(state);
+        const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
         lastDebugInfo = tickResult.debugInfo;
         
         // Update controller's state manually
@@ -1237,9 +1334,17 @@
 
     resetBtn.addEventListener('click', () => {
       battleController.reset();
-      lastDebugInfo = null;
+      // Get debug info for step 0 after reset
+      const state = battleController.getCurrentState();
+      const tickResult = TickExecutor.executeTickWithDebug(state, battleController.getInstructionsState().instructions);
+      lastDebugInfo = tickResult.debugInfo;
       renderBattle();
     });
+
+    // Get debug info for initial step 0
+    const initialState = battleController.getCurrentState();
+    const initialTickResult = TickExecutor.executeTickWithDebug(initialState, battleController.getInstructionsState().instructions);
+    lastDebugInfo = initialTickResult.debugInfo;
 
     // Initial render
     renderBattle();

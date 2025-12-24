@@ -358,6 +358,20 @@ function executeTickWithDebug(
       // Evaluate each rule
       let foundMatch = false;
       for (const { ruleIndex, rule, skill, skillId } of ruleSkillPairs) {
+        // If already found match, mark remaining as not-reached
+        if (foundMatch) {
+          evaluation.rulesChecked.push({
+            ruleIndex,
+            skillId,
+            skillName: skill.name,
+            priority: rule.priority,
+            conditions: [],
+            status: 'not-reached',
+            reason: 'Higher priority action already selected',
+          });
+          continue;
+        }
+        
         const conditionResults: ConditionCheckResult[] = [];
         let allConditionsMet = true;
         
@@ -381,7 +395,7 @@ function executeTickWithDebug(
           } else if (condition.type === 'enemy-has-status') {
             expected = `enemy has ${condition.statusType}`;
             const enemies = character.isPlayer ? currentState.enemies : currentState.players;
-            const hasStatus = enemies.some(e => 
+            const hasStatus = enemies.some(e =>
               e.currentHp > 0 && e.statusEffects.some(s => s.type === condition.statusType && s.duration > 0)
             );
             actual = hasStatus ? 'yes' : 'no';
@@ -392,7 +406,7 @@ function executeTickWithDebug(
           } else if (condition.type === 'ally-has-status') {
             expected = `ally has ${condition.statusType}`;
             const allies = character.isPlayer ? currentState.players : currentState.enemies;
-            const hasStatus = allies.some(a => 
+            const hasStatus = allies.some(a =>
               a.id !== character.id && a.currentHp > 0 && a.statusEffects.some(s => s.type === condition.statusType && s.duration > 0)
             );
             actual = hasStatus ? 'yes' : 'no';
@@ -410,118 +424,178 @@ function executeTickWithDebug(
           }
         }
         
-        // Build reason string
-        let reason = '';
-        if (allConditionsMet) {
-          reason = 'all conditions met';
-        } else {
+        // If conditions failed
+        if (!allConditionsMet) {
           const failedConditions = conditionResults.filter(c => !c.passed);
-          reason = `condition failed: ${failedConditions.map(c => c.type).join(', ')}`;
+          evaluation.rulesChecked.push({
+            ruleIndex,
+            skillId,
+            skillName: skill.name,
+            priority: rule.priority,
+            conditions: conditionResults,
+            status: 'failed',
+            reason: `Condition failed: ${failedConditions.map(c => c.type).join(', ')}`,
+          });
+          continue;
         }
+        
+        // Conditions passed - try to select targets
+        const targetingMode = rule.targetingOverride ?? skill.targeting;
+        
+        // Get initial candidates
+        const candidates = character.isPlayer
+          ? selectTargets(targetingMode, character, currentState.players, currentState.enemies)
+          : selectTargets(targetingMode, character, currentState.enemies, currentState.players);
+        
+        // Apply filters and track them
+        const filtersApplied: TargetFilterResult[] = [];
+        
+        // Dead exclusion filter
+        const aliveCandidates = candidates.filter(c => c.currentHp > 0);
+        const deadRemoved = candidates.filter(c => c.currentHp <= 0).map(c => c.id);
+        if (deadRemoved.length > 0) {
+          filtersApplied.push({
+            filterType: 'dead-exclusion',
+            removed: deadRemoved,
+          });
+        }
+        
+        // Taunt filter (only for enemy attackers targeting players)
+        let finalTargets = aliveCandidates;
+        if (!character.isPlayer) {
+          const allPlayers = currentState.players;
+          const taunter = allPlayers.find(p =>
+            p.currentHp > 0 && p.statusEffects.some(s => s.type === 'taunting' && s.duration > 0)
+          );
+          if (taunter) {
+            const nonTaunters = aliveCandidates.filter(c => c.id !== taunter.id).map(c => c.id);
+            if (nonTaunters.length > 0) {
+              filtersApplied.push({
+                filterType: 'taunt',
+                removed: nonTaunters,
+              });
+            }
+            finalTargets = [taunter];
+          }
+        }
+        
+        // Self-exclusion filter (for ally targeting)
+        if (targetingMode === 'ally-lowest-hp' || targetingMode === 'all-allies') {
+          const selfRemoved = finalTargets.find(t => t.id === character.id);
+          if (selfRemoved) {
+            filtersApplied.push({
+              filterType: 'self-exclusion',
+              removed: [character.id],
+            });
+            finalTargets = finalTargets.filter(t => t.id !== character.id);
+          }
+        }
+        
+        // Build candidate list for debug
+        const candidateList = candidates.map(c => `${c.name} (${c.currentHp}/${c.maxHp})`);
+        
+        // No valid targets - skipped
+        if (finalTargets.length === 0) {
+          evaluation.rulesChecked.push({
+            ruleIndex,
+            skillId,
+            skillName: skill.name,
+            priority: rule.priority,
+            conditions: conditionResults,
+            status: 'skipped',
+            reason: candidates.length === 0
+              ? 'No valid targets available'
+              : `All ${candidates.length} candidates filtered out`,
+            candidatesConsidered: candidateList.length > 0 ? candidateList : undefined,
+          });
+          continue;
+        }
+        
+        // Valid targets - SELECTED
+        foundMatch = true;
+        const chosen = finalTargets[0];
+        
+        // Build target choice reasoning inline
+        let targetReason: string;
+        if (targetingMode === 'self') {
+          targetReason = 'self';
+        } else if (targetingMode === 'all-enemies') {
+          targetReason = `All ${finalTargets.length} enemies`;
+        } else if (targetingMode === 'all-allies') {
+          targetReason = `All ${finalTargets.length} allies`;
+        } else if (chosen) {
+          // Single target modes (chosen is guaranteed to exist here)
+          if (targetingMode === 'ally-dead') {
+            targetReason = `${chosen.name} - dead ally`;
+          } else {
+            targetReason = `${chosen.name}`;
+            if (targetingMode === 'single-enemy-lowest-hp') {
+              targetReason += ` - lowest HP (${chosen.currentHp}/${chosen.maxHp})`;
+              // Check for tie-breaker
+              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
+              if (tieCandidates.length > 1) {
+                targetReason += ` (${tieCandidates.length} tied, chose first)`;
+              }
+            } else if (targetingMode === 'single-enemy-highest-hp') {
+              targetReason += ` - highest HP (${chosen.currentHp}/${chosen.maxHp})`;
+              // Check for tie-breaker
+              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
+              if (tieCandidates.length > 1) {
+                targetReason += ` (${tieCandidates.length} tied, chose first)`;
+              }
+            } else if (targetingMode === 'ally-lowest-hp') {
+              targetReason += ` - ally lowest HP (${chosen.currentHp}/${chosen.maxHp})`;
+              // Check for tie-breaker
+              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
+              if (tieCandidates.length > 1) {
+                targetReason += ` (${tieCandidates.length} tied, chose first)`;
+              }
+            }
+          }
+        } else {
+          // Fallback if chosen is undefined (shouldn't happen)
+          targetReason = 'Unknown target';
+        }
+        
+        const finalTargetIds = finalTargets.map(t => t.id);
         
         evaluation.rulesChecked.push({
           ruleIndex,
+          skillId,
+          skillName: skill.name,
           priority: rule.priority,
           conditions: conditionResults,
-          matched: allConditionsMet && !foundMatch,
-          reason,
+          status: 'selected',
+          reason: 'All conditions met',
+          candidatesConsidered: candidateList,
+          targetChosen: targetReason,
         });
         
-        // If this rule matches and we haven't found a match yet, select it
-        if (allConditionsMet && !foundMatch) {
-          foundMatch = true;
-          
-          // Select targets
-          const targetingMode = rule.targetingOverride ?? skill.targeting;
-          
-          // Get initial candidates
-          const candidates = character.isPlayer
-            ? selectTargets(targetingMode, character, currentState.players, currentState.enemies)
-            : selectTargets(targetingMode, character, currentState.enemies, currentState.players);
-          
-          // Apply filters and track them
-          const filtersApplied: TargetFilterResult[] = [];
-          const candidateIds = candidates.map(c => c.id);
-          
-          // Dead exclusion filter
-          const aliveCandidates = candidates.filter(c => c.currentHp > 0);
-          const deadRemoved = candidates.filter(c => c.currentHp <= 0).map(c => c.id);
-          if (deadRemoved.length > 0) {
-            filtersApplied.push({
-              filterType: 'dead-exclusion',
-              removed: deadRemoved,
-            });
-          }
-          
-          // Taunt filter (only for enemy attackers targeting players)
-          let finalTargets = aliveCandidates;
-          if (!character.isPlayer) {
-            const allPlayers = currentState.players;
-            const taunter = allPlayers.find(p => 
-              p.currentHp > 0 && p.statusEffects.some(s => s.type === 'taunting' && s.duration > 0)
-            );
-            if (taunter) {
-              const nonTaunters = aliveCandidates.filter(c => c.id !== taunter.id).map(c => c.id);
-              if (nonTaunters.length > 0) {
-                filtersApplied.push({
-                  filterType: 'taunt',
-                  removed: nonTaunters,
-                });
-              }
-              finalTargets = [taunter];
-            }
-          }
-          
-          // Self-exclusion filter (for ally targeting)
-          if (targetingMode === 'ally-lowest-hp' || targetingMode === 'all-allies') {
-            const selfRemoved = finalTargets.find(t => t.id === character.id);
-            if (selfRemoved) {
-              filtersApplied.push({
-                filterType: 'self-exclusion',
-                removed: [character.id],
-              });
-              finalTargets = finalTargets.filter(t => t.id !== character.id);
-            }
-          }
-          
-          const finalTargetIds = finalTargets.map(t => t.id);
-          
-          // Check for tie-breaker situation
-          let tieBreaker: string | undefined = undefined;
-          if (targetingMode === 'single-enemy-lowest-hp' || targetingMode === 'ally-lowest-hp') {
-            const lowestHp = finalTargets.length > 0 ? finalTargets[0]?.currentHp : 0;
-            const tieCandidates = aliveCandidates.filter(c => c.currentHp === lowestHp);
-            if (tieCandidates.length > 1) {
-              tieBreaker = 'leftmost (first in array order)';
-            }
-          }
-          
-          // Record targeting decision
-          targetingDecisions.push({
-            casterId: character.id,
-            skillId: skillId,
-            targetingMode: targetingMode as any,
-            candidates: candidateIds,
-            filtersApplied,
-            finalTargets: finalTargetIds,
-            tieBreaker,
-          });
-          
-          evaluation.selectedRule = `rule-${ruleIndex}`;
-          evaluation.selectedSkill = skillId;
-          evaluation.selectedTargets = finalTargetIds;
-          
-          // Actually queue the action (not just capture debug info)
-          const action: Action = {
-            casterId: character.id,
-            skillId: skillId,
-            targets: finalTargetIds,
-            ticksRemaining: skill.baseDuration,
-          };
-          
-          character.currentAction = action;
-          workingActionQueue.push(action);
-        }
+        // Record targeting decision
+        targetingDecisions.push({
+          casterId: character.id,
+          skillId: skillId,
+          targetingMode: targetingMode as any,
+          candidates: candidates.map(c => c.id),
+          filtersApplied,
+          finalTargets: finalTargetIds,
+          tieBreaker: undefined,
+        });
+        
+        evaluation.selectedRule = `rule-${ruleIndex}`;
+        evaluation.selectedSkill = skillId;
+        evaluation.selectedTargets = finalTargetIds;
+        
+        // Actually queue the action (not just capture debug info)
+        const action: Action = {
+          casterId: character.id,
+          skillId: skillId,
+          targets: finalTargetIds,
+          ticksRemaining: skill.baseDuration,
+        };
+        
+        character.currentAction = action;
+        workingActionQueue.push(action);
       }
     }
     

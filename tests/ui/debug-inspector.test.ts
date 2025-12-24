@@ -38,10 +38,12 @@ function createRuleCheckResult(
   ruleIndex: number,
   priority: number,
   conditions: ConditionCheckResult[],
-  matched: boolean,
-  reason: string
+  status: 'selected' | 'skipped' | 'not-reached' | 'failed',
+  reason: string,
+  skillId: string = 'strike',
+  skillName: string = 'Strike'
 ): RuleCheckResult {
-  return { ruleIndex, priority, conditions, matched, reason };
+  return { ruleIndex, priority, conditions, status, reason, skillId, skillName };
 }
 
 function createRuleEvaluation(
@@ -118,8 +120,8 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
   it('should show all rules checked with ✓ (matched) or ✗ (failed) indicators', () => {
     const condition1 = createConditionCheckResult('hp-below', '50%', '30%', true);
     const condition2 = createConditionCheckResult('ally-count', '>2', '3', true);
-    const matchedRule = createRuleCheckResult(0, 100, [condition1, condition2], true, 'All conditions met');
-    const failedRule = createRuleCheckResult(1, 50, [condition1], false, 'HP not low enough');
+    const matchedRule = createRuleCheckResult(0, 100, [condition1, condition2], 'selected', 'All conditions met', 'heal', 'Heal');
+    const failedRule = createRuleCheckResult(1, 50, [condition1], 'failed', 'HP not low enough', 'strike', 'Strike');
     
     const evaluation = createRuleEvaluation(
       'enemy-1',
@@ -140,8 +142,8 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
   });
 
   it('should highlight matched rule distinctly from failed rules', () => {
-    const matchedRule = createRuleCheckResult(0, 100, [], true, 'Matched');
-    const failedRule = createRuleCheckResult(1, 50, [], false, 'Failed');
+    const matchedRule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
+    const failedRule = createRuleCheckResult(1, 50, [], 'failed', 'Failed', 'heal', 'Heal');
     
     const evaluation = createRuleEvaluation(
       'enemy-1',
@@ -160,7 +162,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
   });
 
   it('should show selected skill and targets for matched rule', () => {
-    const matchedRule = createRuleCheckResult(0, 100, [], true, 'Matched');
+    const matchedRule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'fireball', 'Fireball');
     const evaluation = createRuleEvaluation(
       'enemy-1',
       'Dark Mage',
@@ -179,8 +181,8 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
   });
 
   it('should show "No action (waiting)" when no rules matched', () => {
-    const failedRule1 = createRuleCheckResult(0, 100, [], false, 'HP too high');
-    const failedRule2 = createRuleCheckResult(1, 50, [], false, 'No allies nearby');
+    const failedRule1 = createRuleCheckResult(0, 100, [], 'failed', 'HP too high', 'heal', 'Heal');
+    const failedRule2 = createRuleCheckResult(1, 50, [], 'failed', 'No allies nearby', 'strike', 'Strike');
     
     const evaluation = createRuleEvaluation(
       'enemy-1',
@@ -199,7 +201,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
 
   it('should show condition details (expected vs actual)', () => {
     const condition = createConditionCheckResult('hp-below', '50%', '75%', false);
-    const rule = createRuleCheckResult(0, 100, [condition], false, 'HP not low enough');
+    const rule = createRuleCheckResult(0, 100, [condition], 'failed', 'HP not low enough', 'heal', 'Heal');
     
     const evaluation = createRuleEvaluation('enemy-1', 'Troll', [rule], null, null, []);
     const debugInfo = createDebugInfo([evaluation], [], []);
@@ -212,10 +214,10 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
 
 
   it('should handle multiple character evaluations', () => {
-    const rule1 = createRuleCheckResult(0, 100, [], true, 'Matched');
+    const rule1 = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
     const evaluation1 = createRuleEvaluation('enemy-1', 'Goblin', [rule1], 'rule-0', 'strike', ['player-1']);
     
-    const rule2 = createRuleCheckResult(0, 100, [], false, 'Failed');
+    const rule2 = createRuleCheckResult(0, 100, [], 'failed', 'Failed', 'heal', 'Heal');
     const evaluation2 = createRuleEvaluation('enemy-2', 'Orc', [rule2], null, null, []);
     
     const debugInfo = createDebugInfo([evaluation1, evaluation2], [], []);
@@ -228,7 +230,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
   });
 
   it('should display character name in rule evaluation section', () => {
-    const rule = createRuleCheckResult(0, 100, [], true, 'Matched');
+    const rule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'flame-breath', 'Flame Breath');
     const evaluation = createRuleEvaluation(
       'enemy-1',
       'Ancient Dragon',
@@ -519,7 +521,7 @@ describe('DebugInspector - AC53: Substep Display', () => {
 
 describe('DebugInspector - General Rendering', () => {
   it('should render complete debug panel with all sections', () => {
-    const rule = createRuleCheckResult(0, 100, [], true, 'Matched');
+    const rule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
     const evaluation = createRuleEvaluation('enemy-1', 'Goblin', [rule], 'rule-0', 'strike', ['player-1']);
     
     const decision = createTargetingDecision(
@@ -560,7 +562,7 @@ describe('DebugInspector - General Rendering', () => {
   });
 
   it('should have distinct sections for rules, targeting, and substeps', () => {
-    const rule = createRuleCheckResult(0, 100, [], true, 'Matched');
+    const rule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
     const evaluation = createRuleEvaluation('enemy-1', 'Goblin', [rule], 'rule-0', 'strike', ['player-1']);
     
     const decision = createTargetingDecision(

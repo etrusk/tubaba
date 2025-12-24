@@ -50,13 +50,25 @@ export interface RuleEvaluation {
   selectedTargets: string[];
 }
 
+/** Rule evaluation status - distinguishes why a rule was/wasn't selected */
+export type RuleEvaluationStatus =
+  | 'selected'      // Conditions passed, targets found, action queued
+  | 'skipped'       // Conditions passed but no valid targets
+  | 'not-reached'   // Never evaluated (higher priority action selected)
+  | 'failed';       // Conditions did not pass
+
 /** Individual rule check result */
 export interface RuleCheckResult {
   ruleIndex: number;
+  skillId: string;              // Which skill this rule belongs to
+  skillName: string;            // Human-readable skill name
   priority: number;
   conditions: ConditionCheckResult[];
-  matched: boolean;
-  reason: string;
+  status: RuleEvaluationStatus; // Replaces boolean 'matched' field
+  reason: string;               // Now includes skip/target reasoning
+  // Optional: only populated when targets were evaluated
+  candidatesConsidered?: string[]; // e.g., ["Goblin (30/50)", "Orc (45/50)"]
+  targetChosen?: string;        // e.g., "Goblin - lowest HP"
 }
 
 /** Condition evaluation result */

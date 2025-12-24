@@ -56,44 +56,91 @@ function renderRuleEvaluations(evaluations: RuleEvaluation[]): string {
  * Renders a single character's rule evaluation
  */
 function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
-  const rules = evaluation.rulesChecked
-    .map((rule, index) => renderRuleCheck(rule, evaluation.selectedSkill, index))
-    .join('\n      ');
-
-  const selectedAction = evaluation.selectedSkill
-    ? `<div class="selected-action">✓ Selected Action: <strong>${evaluation.selectedSkill}</strong> targeting ${evaluation.selectedTargets.join(', ')}</div>`
-    : '<div class="selected-action">⏸ No action selected (waiting for conditions to be met)</div>';
-
-  return `<div class="character-eval" data-character-id="${evaluation.characterId}">
-      <h4>${formatCharacterName(evaluation.characterName, evaluation.characterId)}</h4>
-      ${rules}
-      ${selectedAction}
+  const rules = evaluation.rulesChecked;
+  let rulesHtml = '';
+  let stepNumber = 1;
+  
+  // Render rules that were evaluated (not 'not-reached')
+  for (const rule of rules) {
+    if (rule.status === 'not-reached') continue;
+    
+    const statusBadge = rule.status === 'selected' ? '✓ SELECTED'
+                      : rule.status === 'skipped' ? 'SKIPPED'
+                      : '✗ FAILED';
+    const cssClass = rule.status;
+    
+    // Build condition details if present
+    const conditionDetails = rule.conditions.length > 0
+      ? `<div class="conditions">Conditions: ${rule.conditions
+          .map(renderCondition)
+          .join(' AND ')}</div>`
+      : '';
+    
+    rulesHtml += `<div class="rule-step ${cssClass}">
+      <div class="step-header">
+        <span class="step-number">${stepNumber}.</span>
+        <strong>${rule.skillName}</strong> (Priority ${rule.priority})
+        <span class="status-badge ${cssClass}">${statusBadge}</span>
+      </div>
+      <div class="step-details">
+        ${rule.reason}
+        ${rule.candidatesConsidered ? `<br>Candidates: ${rule.candidatesConsidered.join(', ')}` : ''}
+        ${rule.targetChosen ? `<br>→ Target: <strong>${rule.targetChosen}</strong>` : ''}
+      </div>
+      ${conditionDetails}
     </div>`;
+    
+    stepNumber++;
+  }
+  
+  // Collapsible not-reached section
+  const notReached = rules.filter(r => r.status === 'not-reached');
+  if (notReached.length > 0) {
+    rulesHtml += `<details class="not-reached-section">
+      <summary>${notReached.length} lower-priority rule(s) not evaluated</summary>
+      ${notReached.map(r => `<div class="not-reached-rule">${r.skillName} (Priority ${r.priority})</div>`).join('')}
+    </details>`;
+  }
+  
+  // Final action line
+  const finalAction = evaluation.selectedSkill
+    ? `<div class="final-action">→ <strong>Action:</strong> ${evaluation.selectedSkill} targeting ${evaluation.selectedTargets.join(', ')}</div>`
+    : '<div class="final-action">→ <strong>No action</strong> (waiting for conditions to be met)</div>';
+  
+  return `<div class="character-eval" data-character-id="${evaluation.characterId}">
+    <h4>${formatCharacterName(evaluation.characterName, evaluation.characterId)}</h4>
+    ${rulesHtml}
+    ${finalAction}
+  </div>`;
 }
 
 /**
  * Renders a single rule check result
  */
-function renderRuleCheck(rule: RuleCheckResult, selectedSkill: string | null, ruleIndex: number): string {
-  const icon = rule.matched ? '✓' : '✗';
-  const cssClass = rule.matched ? 'matched' : 'failed';
+function renderRuleCheck(rule: RuleCheckResult): string {
+  // Use the new status field instead of matched
+  const icon = rule.status === 'selected' ? '✓' : '✗';
+  const cssClass = rule.status === 'selected' ? 'matched' :
+                   rule.status === 'skipped' ? 'skipped' :
+                   rule.status === 'not-reached' ? 'not-reached' :
+                   'failed';
   
-  // Use the selected skill as the skill name if this rule matched
-  // Otherwise, use a generic label
-  const skillName = selectedSkill || `Skill-${ruleIndex}`;
+  // Use the skillName field from the rule (now always populated)
+  const skillName = rule.skillName;
   
   let statusText = '';
-  if (rule.matched) {
-    statusText = ' - <strong>Matched:</strong> All conditions met';
-  } else {
-    // Provide detailed failure reason
-    const failedConditions = rule.conditions.filter(c => !c.passed);
-    if (failedConditions.length > 0) {
-      const reasons = failedConditions.map(c => `${c.type} (expected ${c.expected}, actual ${c.actual})`).join(', ');
-      statusText = ` - <strong>Failed:</strong> ${reasons}`;
-    } else {
-      statusText = ` - <strong>Failed:</strong> ${rule.reason || 'Conditions not met'}`;
+  if (rule.status === 'selected') {
+    statusText = ' - <strong>Selected:</strong> ' + rule.reason;
+    if (rule.targetChosen) {
+      statusText += ` → Target: ${rule.targetChosen}`;
     }
+  } else if (rule.status === 'skipped') {
+    statusText = ` - <strong>Skipped:</strong> ${rule.reason}`;
+  } else if (rule.status === 'not-reached') {
+    statusText = ` - <strong>Not Reached:</strong> ${rule.reason}`;
+  } else {
+    // Failed status
+    statusText = ` - <strong>Failed:</strong> ${rule.reason}`;
   }
 
   const conditionDetails = rule.conditions.length > 0

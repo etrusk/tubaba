@@ -217,9 +217,9 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
     expect(playerEval?.selectedSkill).toBe('strike');
     expect(playerEval?.selectedTargets).toContain('enemy-1');
     
-    // Rule should be marked as matched
-    const matchedRule = playerEval?.rulesChecked.find(r => r.matched);
-    expect(matchedRule).toBeDefined();
+    // Rule should be marked as selected
+    const selectedRule = playerEval?.rulesChecked.find(r => r.status === 'selected');
+    expect(selectedRule).toBeDefined();
   });
 
   it('should show no rules checked for stunned character', () => {
@@ -265,9 +265,9 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
     expect(playerEval).toBeDefined();
     
     const ruleCheck = playerEval?.rulesChecked[0];
-    expect(ruleCheck?.matched).toBe(false);
+    expect(ruleCheck?.status).toBe('failed');
     expect(ruleCheck?.reason).toBeDefined();
-    expect(ruleCheck?.reason).toContain('condition'); // Should explain why it didn't match
+    expect(ruleCheck?.reason.toLowerCase()).toContain('condition'); // Should explain why it didn't match
   });
 
   it('should capture multiple rule evaluations for multiple idle characters', () => {
