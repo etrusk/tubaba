@@ -13,8 +13,8 @@ import { SkillLibrary } from '../../src/engine/skill-library.js';
  * Tests the skill inventory system prototype:
  * - Distributing skills from pool to characters
  * - Unequipping skills back to pool
- * - 4-skill cap enforcement
- * - All skills can be unequipped (no innate skill protection)
+ * - 4-skill cap enforcement (excluding innate skills: strike and defend)
+ * - Innate skills (strike and defend) cannot be unequipped
  */
 
 // Test helper: Create character with skills
@@ -88,17 +88,19 @@ describe('SkillLoadoutManager - distributeSkill()', () => {
     }).toThrow('Character player-99 not found in party');
   });
 
-  it('should throw if character already has 4 skills', () => {
+  it('should throw if character already has 4 non-innate skills', () => {
     const character = createTestCharacter('player-1', 'Warrior', [
-      'strike',
+      'strike',      // innate
+      'defend',      // innate
       'heavy-strike',
       'bash',
-      'defend',
+      'fireball',
+      'heal',
     ]);
-    const runState = createTestRunState([character], ['fireball']);
+    const runState = createTestRunState([character], ['shield']);
 
     expect(() => {
-      distributeSkill(runState, 'fireball', 'player-1');
+      distributeSkill(runState, 'shield', 'player-1');
     }).toThrow('Character player-1 already has 4 skills');
   });
 
@@ -143,17 +145,26 @@ describe('SkillLoadoutManager - unequipSkill()', () => {
     expect(updatedCharacter.skills.map(s => s.id)).toEqual(['strike']);
   });
 
-  it('should allow unequipping ANY skill (no innate protection)', () => {
-    const character = createTestCharacter('player-1', 'Warrior', ['strike', 'heavy-strike']);
+  it('should prevent unequipping innate skills (strike and defend)', () => {
+    const character = createTestCharacter('player-1', 'Warrior', ['strike', 'defend', 'heavy-strike']);
     const runState = createTestRunState([character], []);
 
-    // Can now unequip first skill (was previously "innate")
-    const updated = unequipSkill(runState, 'strike', 'player-1');
+    // Cannot unequip strike (innate)
+    expect(() => {
+      unequipSkill(runState, 'strike', 'player-1');
+    }).toThrow('strike is an innate skill and cannot be unequipped');
     
-    expect(updated.skillPool).toContain('strike');
+    // Cannot unequip defend (innate)
+    expect(() => {
+      unequipSkill(runState, 'defend', 'player-1');
+    }).toThrow('defend is an innate skill and cannot be unequipped');
+    
+    // Can unequip non-innate skills
+    const updated = unequipSkill(runState, 'heavy-strike', 'player-1');
+    expect(updated.skillPool).toContain('heavy-strike');
     const updatedCharacter = updated.playerParty[0]!;
-    expect(updatedCharacter.skills.length).toBe(1);
-    expect(updatedCharacter.skills.map(s => s.id)).toEqual(['heavy-strike']);
+    expect(updatedCharacter.skills.length).toBe(2);
+    expect(updatedCharacter.skills.map(s => s.id)).toEqual(['strike', 'defend']);
   });
 
   it('should throw if character does not have the skill', () => {
@@ -166,67 +177,77 @@ describe('SkillLoadoutManager - unequipSkill()', () => {
   });
 
   it('should throw if character not found', () => {
-    const character = createTestCharacter('player-1', 'Warrior', ['strike']);
+    const character = createTestCharacter('player-1', 'Warrior', ['strike', 'heavy-strike']);
     const runState = createTestRunState([character], []);
 
     expect(() => {
-      unequipSkill(runState, 'strike', 'player-99');
+      unequipSkill(runState, 'heavy-strike', 'player-99');
     }).toThrow('Character player-99 not found in party');
   });
 
-  it('should allow unequipping all skills from a character', () => {
+  it('should allow unequipping all non-innate skills from a character', () => {
     const character = createTestCharacter('player-1', 'Warrior', [
-      'strike',
+      'strike',      // innate - cannot unequip
+      'defend',      // innate - cannot unequip
       'heavy-strike',
       'bash',
     ]);
     const runState = createTestRunState([character], []);
 
-    // Unequip all three skills
+    // Unequip non-innate skills
     let updated = unequipSkill(runState, 'heavy-strike', 'player-1');
     expect(updated.skillPool).toContain('heavy-strike');
     
     updated = unequipSkill(updated, 'bash', 'player-1');
     expect(updated.skillPool).toContain('bash');
     
-    updated = unequipSkill(updated, 'strike', 'player-1');
-    expect(updated.skillPool).toContain('strike');
-    
-    // Character has no skills
+    // Character still has innate skills
     const updatedCharacter = updated.playerParty[0]!;
-    expect(updatedCharacter.skills.length).toBe(0);
+    expect(updatedCharacter.skills.length).toBe(2);
+    expect(updatedCharacter.skills.map(s => s.id)).toEqual(['strike', 'defend']);
   });
 });
 
 describe('SkillLoadoutManager - canReceiveSkill()', () => {
-  it('should return true if character has less than 4 skills', () => {
-    const character = createTestCharacter('player-1', 'Warrior', ['strike']);
+  it('should return true if character has less than 4 non-innate skills', () => {
+    const character = createTestCharacter('player-1', 'Warrior', [
+      'strike',      // innate - doesn't count
+      'defend',      // innate - doesn't count
+      'heavy-strike',
+    ]);
     
     expect(canReceiveSkill(character)).toBe(true);
   });
 
-  it('should return false if character has 4 skills', () => {
+  it('should return false if character has 4 non-innate skills', () => {
     const character = createTestCharacter('player-1', 'Warrior', [
-      'strike',
+      'strike',      // innate - doesn't count
+      'defend',      // innate - doesn't count
       'heavy-strike',
       'bash',
-      'defend',
+      'fireball',
+      'heal',
     ]);
     
     expect(canReceiveSkill(character)).toBe(false);
   });
 
-  it('should return true if character has 0 skills', () => {
-    const character = createTestCharacter('player-1', 'Warrior', []);
+  it('should return true if character has 0 non-innate skills', () => {
+    const character = createTestCharacter('player-1', 'Warrior', [
+      'strike',      // innate only
+      'defend',      // innate only
+    ]);
     
     expect(canReceiveSkill(character)).toBe(true);
   });
 
-  it('should return true if character has 3 skills', () => {
+  it('should return true if character has 3 non-innate skills', () => {
     const character = createTestCharacter('player-1', 'Warrior', [
-      'strike',
+      'strike',      // innate - doesn't count
+      'defend',      // innate - doesn't count
       'heavy-strike',
       'bash',
+      'fireball',
     ]);
     
     expect(canReceiveSkill(character)).toBe(true);

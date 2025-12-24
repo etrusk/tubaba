@@ -12,11 +12,16 @@ import { SkillLibrary } from '../engine/skill-library.js';
 const MAX_SKILLS_PER_CHARACTER = 4;
 
 /**
+ * Innate skills that all characters have and cannot be unequipped
+ */
+const INNATE_SKILLS = ['strike', 'defend'];
+
+/**
  * Check if a character can receive more skills
- * (4 skill cap per character, excluding innate Strike)
+ * (4 skill cap per character, excluding innate skills: strike and defend)
  */
 export function canReceiveSkill(character: Character): boolean {
-  const nonInnateSkills = character.skills.filter(s => s.id !== 'strike');
+  const nonInnateSkills = character.skills.filter(s => !INNATE_SKILLS.includes(s.id));
   return nonInnateSkills.length < MAX_SKILLS_PER_CHARACTER;
 }
 
@@ -77,7 +82,7 @@ export function distributeSkill(
 
 /**
  * Unequip a skill from character back to pool
- * Strike cannot be unequipped (it's innate)
+ * Innate skills (strike, defend) cannot be unequipped
  * @returns Updated RunState or throws if invalid
  */
 export function unequipSkill(
@@ -85,9 +90,9 @@ export function unequipSkill(
   skillId: string,
   characterId: string
 ): RunState {
-  // Strike is innate and cannot be unequipped
-  if (skillId === 'strike') {
-    throw new Error('Strike is an innate skill and cannot be unequipped');
+  // Innate skills cannot be unequipped
+  if (INNATE_SKILLS.includes(skillId)) {
+    throw new Error(`${skillId} is an innate skill and cannot be unequipped`);
   }
 
   // Find character

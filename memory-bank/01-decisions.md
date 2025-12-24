@@ -4,31 +4,83 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
-## 2025-12-24 Debug System Simplification - Remove Targeting Decisions and Resolution Substeps
+## 2025-12-24 Per-Tick Rule Re-evaluation (Spike Accepted)
 
 **Status:** Accepted
 
-**Context:** The debug system had three sections:
-1. Rule Evaluations - Shows which rules were checked and why actions were selected
-2. Targeting Decisions - Showed targeting candidate filtering details
-3. Resolution Substeps - Showed damage-calc, healing-calc, shield-absorption, health-update, status-application, action-cancel steps
+**Context:** Previously, characters with a pending action (`currentAction !== null`) were skipped during rule evaluation phase. This caused "No rule evaluations this tick" messages and prevented characters from changing intent when conditions changed mid-cast.
 
-The Targeting Decisions and Resolution Substeps sections duplicated information already present in Rule Evaluations (which now shows candidates and target selection) and the event log (which shows resolution outcomes).
+**Decision:** Characters now re-evaluate their instruction sets EVERY tick (unless knocked out or stunned). If a different action is selected, the current action is replaced. If the same action would be selected, the current action is preserved (maintaining countdown progress).
 
-**Decision:** Remove Targeting Decisions and Resolution Substeps from the debug system, keeping only Rule Evaluations.
-
-**Changes Made:**
-- Removed types: `TargetingDecision`, `TargetFilterResult`, `ResolutionSubstep`, `SubstepDetail`
-- Updated `DebugInfo` interface to only contain `ruleEvaluations`
-- Removed capture logic from `tick-executor.ts`
-- Removed render functions from `debug-inspector.ts`
-- Removed related tests (AC46, AC47)
+**Key Changes:**
+1. Removed `hasPendingAction` from idle check in [`tick-executor.ts`](../src/engine/tick-executor.ts)
+2. Added `arraysEqual()` helper for target comparison
+3. "Same action" detection: `skillId === currentAction.skillId && arraysEqual(targets, currentAction.targets)`
+4. If selection returns null, keep current action (don't cancel queued action)
 
 **Consequences:**
-- Simplified debug output - one focused section instead of three
-- Reduced code complexity (~300 lines removed)
-- Rule Evaluations section already shows targeting info via `candidatesConsidered` and `targetChosen`
-- Event log already shows resolution outcomes
+- Rule Evaluations debug panel now shows evaluations for all active characters every tick
+- Characters can respond dynamically to changing conditions mid-cast
+- Action countdown progress is preserved when conditions don't change
+- Debug info shows "kept current action" or "switched from previous action"
+
+**Branch:** `spike/per-tick-reevaluation` (to be merged)
+
+---
+
+## 2025-12-24 Skill Labels Under Characters (Spike Accepted)
+
+**Status:** Accepted
+
+**Context:** Explored two approaches for displaying action labels in the battle arena:
+1. Labels on intent lines (spike/intent-line-labels) - DECLINED
+2. Labels under character circles (spike/skill-labels-under-character) - ACCEPTED
+
+**Decisions:**
+
+### 1. Action Labels Placement
+**Decision:** Display skill action labels under character circles, not on intent lines.
+
+**Rationale:** Under-character labels are cleaner and don't clutter the arena. Intent line labels created visual noise and competed with the intent lines themselves for attention.
+
+**Alternative Rejected:** `spike/intent-line-labels` placed labels along or near intent lines, which:
+- Cluttered the visual space between characters
+- Made overlapping lines harder to distinguish
+- Required complex positioning logic to avoid label collisions
+
+### 2. Consistent Skill Colors
+**Decision:** Action labels use `SKILL_COLORS` map matching intent line colors.
+
+| Skill Type | Color |
+|------------|-------|
+| Strike | Red |
+| Heal | Green |
+| Shield | Blue |
+
+**Rationale:** Visual consistency across the battle UI - the label color matches the intent line color, reinforcing the connection between character and their action.
+
+### 3. Debug Panel Simplification
+**Decision:** Removed "Targeting Decisions" and "Resolution Substeps" from debug panel.
+
+**What remains:** Rule Evaluations section only.
+
+**Rationale:** Reduced noise, focused on essential debug info. The removed sections duplicated information available elsewhere or were rarely useful during debugging.
+
+### 4. Tick Countdown Sync Fix
+**Decision:** Fixed `ticksRemaining` synchronization to `character.currentAction`.
+
+**Before (bug):** Countdown display was stale, didn't update between ticks.
+
+**After (fix):** Properly shows countdown progression:
+- "Strike (2)" → "Strike (1)" → "Strike - Executing!"
+
+**Root cause:** `ticksRemaining` wasn't being synced from the engine state to the character's `currentAction` object during tick processing.
+
+**Consequences:**
+- Cleaner battle arena visualization
+- Consistent color language for skills throughout UI
+- Leaner debug panel with higher signal-to-noise ratio
+- Accurate countdown display for pending actions
 
 ---
 

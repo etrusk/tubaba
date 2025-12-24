@@ -41,6 +41,10 @@ export type {
   RuleEvaluation,
   RuleCheckResult,
   ConditionCheckResult,
+  TargetingDecision,
+  TargetFilterResult,
+  ResolutionSubstep,
+  SubstepDetail,
 } from './debug.js';
 
 // Instructions types

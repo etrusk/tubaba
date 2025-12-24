@@ -4,19 +4,10 @@ import type { Character } from '../types/character.js';
 import { colorizeCharacterNamesInText } from './character-name-formatter.js';
 
 /**
- * Represents a grouped action with its results
- */
-interface EventGroup {
-  tick: number;
-  parentEvent: CombatEvent; // The action-resolved event
-  resultEvents: CombatEvent[]; // damage, healing, status-applied, knockout
-}
-
-/**
  * Renders combat events as HTML
  *
  * Displays events in descending tick order (newest at top).
- * Consolidates action-resolved events with their consequence events.
+ * Groups all events for a tick onto a single line with compact narrative format.
  * Character names in messages are color-coded with unique colors per character.
  *
  * @param events - Array of combat events to display
@@ -32,205 +23,152 @@ export function renderEventLog(events: CombatEvent[], combatState?: CombatState)
   // Build character array if combat state provided
   const characters = combatState ? buildCharacterArray(combatState) : [];
 
-  // Sort by tick descending (newest first), maintaining original order for same tick
-  // Use stable sort by adding index to ensure stability
-  const sortedEvents = events
-    .map((event, index) => ({ event, index }))
-    .sort((a, b) => {
-      if (a.event.tick !== b.event.tick) {
-        return b.event.tick - a.event.tick; // Descending tick order
-      }
-      return a.index - b.index; // Maintain original order for same tick
-    })
-    .map(({ event }) => event);
+  // Group events by tick
+  const eventsByTick = groupEventsByTick(events);
 
-  // Group events: consolidate action-resolved with their results
-  const grouped = groupEvents(sortedEvents);
-
-  // Build HTML for each event or group
-  const eventHtml = grouped.map(item => {
-    if ('parentEvent' in item) {
-      return renderEventGroup(item, characters);
-    } else {
-      return renderSingleEvent(item, characters);
-    }
+  // Build HTML for each tick (newest first)
+  const tickNumbers = Array.from(eventsByTick.keys()).sort((a, b) => b - a);
+  
+  const tickHtml = tickNumbers.map(tickNumber => {
+    const tickEvents = eventsByTick.get(tickNumber)!;
+    const summary = summarizeTick(tickEvents, characters, combatState);
+    
+    return `  <div class="event tick-summary" data-tick="${tickNumber}">
+    <span class="tick">T${tickNumber}:</span>
+    <span class="message">${summary}</span>
+  </div>`;
   }).join('\n');
 
-  return `<div class="event-log">\n${eventHtml}\n</div>`;
+  return `<div class="event-log">\n${tickHtml}\n</div>`;
 }
 
 /**
- * Groups action-resolved events with their consequence events
+ * Groups events by tick number
  */
-function groupEvents(sortedEvents: CombatEvent[]): (CombatEvent | EventGroup)[] {
-  const groups: (CombatEvent | EventGroup)[] = [];
-  const resultEventTypes = new Set(['damage', 'healing', 'status-applied', 'knockout']);
+function groupEventsByTick(events: CombatEvent[]): Map<number, CombatEvent[]> {
+  const grouped = new Map<number, CombatEvent[]>();
   
-  let i = 0;
-  while (i < sortedEvents.length) {
-    const event = sortedEvents[i];
-    if (!event) {
-      i++;
+  for (const event of events) {
+    if (!grouped.has(event.tick)) {
+      grouped.set(event.tick, []);
+    }
+    grouped.get(event.tick)!.push(event);
+  }
+  
+  return grouped;
+}
+
+/**
+ * Summarizes all events for a tick into a compact narrative
+ */
+function summarizeTick(events: CombatEvent[], characters: Character[], combatState?: CombatState): string {
+  // Filter out meta events we don't want to show in summary
+  const actionEvents = events.filter(e => 
+    e.type === 'action-resolved' || 
+    e.type === 'damage' || 
+    e.type === 'healing' ||
+    e.type === 'status-applied' ||
+    e.type === 'knockout' ||
+    e.type === 'victory' ||
+    e.type === 'defeat'
+  );
+
+  if (actionEvents.length === 0) {
+    // Fallback to showing first message if no action events
+    const message = events[0]?.message || 'No activity';
+    return colorizeCharacterNamesInText(message, characters);
+  }
+
+  // Group by player vs enemy actions
+  const playerActions: string[] = [];
+  const enemyActions: string[] = [];
+
+  // Track actions and their consequences
+  const processedIndices = new Set<number>();
+
+  for (let i = 0; i < actionEvents.length; i++) {
+    if (processedIndices.has(i)) continue;
+    
+    const event = actionEvents[i];
+    if (!event) continue;
+    
+    // Handle special events
+    if (event.type === 'victory' || event.type === 'defeat' || event.type === 'knockout') {
+      const message = colorizeCharacterNamesInText(event.message, characters);
+      playerActions.push(`⚔️ ${message}`);
+      processedIndices.add(i);
       continue;
     }
-    
-    // Check if this is an action-resolved event
-    if (event.type === 'action-resolved' && event.actorId !== undefined) {
-      // Look ahead for result events with same tick and actorId
-      const resultEvents: CombatEvent[] = [];
-      let j = i + 1;
+
+    // Handle action-resolved events
+    if (event.type === 'action-resolved' && event.actorId && event.skillName) {
+      const actor = getCharacterName(event.actorId, combatState);
+      const skill = event.skillName;
       
-      while (j < sortedEvents.length) {
-        const nextEvent = sortedEvents[j];
-        if (!nextEvent) {
-          j++;
-          continue;
-        }
+      // Look for consequence (damage/healing) in next events
+      let consequence = '';
+      for (let j = i + 1; j < actionEvents.length; j++) {
+        const nextEvent = actionEvents[j];
+        if (!nextEvent) continue;
         
-        // Stop if different tick
-        if (nextEvent.tick !== event.tick) break;
-        
-        // Check if this is a result event from the same actor
-        if (
-          resultEventTypes.has(nextEvent.type) &&
-          nextEvent.actorId === event.actorId
-        ) {
-          resultEvents.push(nextEvent);
-          j++;
-        } else {
-          // Different actor or non-result event, stop grouping
+        if ((nextEvent.type === 'damage' || nextEvent.type === 'healing') &&
+            nextEvent.actorId === event.actorId) {
+          const target = getCharacterName(nextEvent.targetId || '', combatState);
+          const value = nextEvent.value || 0;
+          const arrow = nextEvent.type === 'damage' ? '→' : '♥';
+          consequence = `${arrow}${target}(${value})`;
+          processedIndices.add(j);
           break;
         }
       }
       
-      // Create group if we have results, otherwise standalone event
-      if (resultEvents.length > 0) {
-        groups.push({
-          tick: event.tick,
-          parentEvent: event,
-          resultEvents,
-        });
-        i = j; // Skip past all grouped events
+      const actionText = consequence
+        ? `${colorizeCharacterNamesInText(actor, characters)}→${skill}${consequence}`
+        : `${colorizeCharacterNamesInText(actor, characters)}→${skill}`;
+      
+      const isPlayerAction = combatState?.players.some(p => p.id === event.actorId);
+      if (isPlayerAction) {
+        playerActions.push(actionText);
       } else {
-        groups.push(event);
-        i++;
+        enemyActions.push(actionText);
       }
-    } else {
-      // Not an action-resolved event, add as standalone
-      groups.push(event);
-      i++;
+      processedIndices.add(i);
+      continue;
+    }
+
+    // Handle standalone damage/healing/status events
+    if (event.type === 'damage' || event.type === 'healing' || event.type === 'status-applied') {
+      const message = colorizeCharacterNamesInText(event.message, characters);
+      const isPlayerEvent = combatState?.players.some(p => p.id === event.targetId || p.id === event.actorId);
+      if (isPlayerEvent) {
+        playerActions.push(message);
+      } else {
+        enemyActions.push(message);
+      }
+      processedIndices.add(i);
     }
   }
-  
-  return groups;
+
+  // Combine player and enemy actions
+  const parts: string[] = [];
+  if (playerActions.length > 0) {
+    parts.push(playerActions.join('. '));
+  }
+  if (enemyActions.length > 0) {
+    parts.push(enemyActions.join('. '));
+  }
+
+  return parts.join(' <span class="separator">|</span> ');
 }
 
 /**
- * Renders a grouped action-resolved event with its results
+ * Gets character name from ID
  */
-function renderEventGroup(group: EventGroup, characters: Character[]): string {
-  // Combine messages: "Hero used Strike → Goblin takes 15 damage"
-  const parentMsg = characters.length > 0
-    ? colorizeCharacterNamesInText(group.parentEvent.message, characters)
-    : group.parentEvent.message;
+function getCharacterName(id: string, combatState?: CombatState): string {
+  if (!combatState) return id;
   
-  const resultMsgs = group.resultEvents.map(e => {
-    const msg = characters.length > 0
-      ? colorizeCharacterNamesInText(e.message, characters)
-      : e.message;
-    return msg;
-  }).join(', ');
-  
-  const combinedMessage = `${parentMsg} → ${resultMsgs}`;
-  
-  // Combine metadata from all events
-  const metaParts: string[] = [];
-  
-  // Add actor from parent
-  if (group.parentEvent.actorId !== undefined) {
-    metaParts.push(`Actor: ${group.parentEvent.actorId}`);
-  }
-  if (group.parentEvent.skillName !== undefined) {
-    metaParts.push(`Skill: ${group.parentEvent.skillName}`);
-  }
-  
-  // Add targets and values from results
-  const targets = new Set<string>();
-  const values: number[] = [];
-  const statuses: string[] = [];
-  
-  for (const result of group.resultEvents) {
-    if (result.targetId !== undefined) {
-      targets.add(result.targetId);
-    }
-    if (result.value !== undefined) {
-      values.push(result.value);
-    }
-    if (result.statusType !== undefined) {
-      statuses.push(result.statusType);
-    }
-  }
-  
-  if (targets.size > 0) {
-    metaParts.push(`Target: ${Array.from(targets).join(', ')}`);
-  }
-  if (values.length > 0) {
-    metaParts.push(`Value: ${values.join(', ')}`);
-  }
-  if (statuses.length > 0) {
-    metaParts.push(`Status: ${statuses.join(', ')}`);
-  }
-  
-  const metaHtml = metaParts.length > 0
-    ? `\n    <span class="meta">${metaParts.join(' | ')}</span>`
-    : '';
-  
-  // Build combined type string for CSS classes
-  const types = [group.parentEvent.type, ...group.resultEvents.map(e => e.type)].join(' ');
-  
-  return `  <div class="event ${types}" data-tick="${group.tick}">
-    <span class="tick">Tick ${group.tick}</span>
-    <span class="type">${group.parentEvent.type}</span>
-    <span class="message">${combinedMessage}</span>${metaHtml}
-  </div>`;
-}
-
-/**
- * Renders a single standalone event
- */
-function renderSingleEvent(event: CombatEvent, characters: Character[]): string {
-  const metaParts: string[] = [];
-  
-  if (event.actorId !== undefined) {
-    metaParts.push(`Actor: ${event.actorId}`);
-  }
-  if (event.targetId !== undefined) {
-    metaParts.push(`Target: ${event.targetId}`);
-  }
-  if (event.value !== undefined) {
-    metaParts.push(`Value: ${event.value}`);
-  }
-  if (event.skillName !== undefined) {
-    metaParts.push(`Skill: ${event.skillName}`);
-  }
-  if (event.statusType !== undefined) {
-    metaParts.push(`Status: ${event.statusType}`);
-  }
-
-  const metaHtml = metaParts.length > 0
-    ? `\n    <span class="meta">${metaParts.join(' | ')}</span>`
-    : '';
-
-  // Colorize character names in message with unique colors
-  const colorizedMessage = characters.length > 0
-    ? colorizeCharacterNamesInText(event.message, characters)
-    : event.message;
-
-  return `  <div class="event ${event.type}" data-tick="${event.tick}">
-    <span class="tick">Tick ${event.tick}</span>
-    <span class="type">${event.type}</span>
-    <span class="message">${colorizedMessage}</span>${metaHtml}
-  </div>`;
+  const character = [...combatState.players, ...combatState.enemies].find(c => c.id === id);
+  return character?.name || id;
 }
 
 /**

@@ -143,7 +143,10 @@ describe('RunStateManager - AC35: Run Initialization', () => {
     expect(runState.runId).toBe('run-001');
     expect(runState.currentEncounterIndex).toBe(0);
     expect(runState.encounters).toEqual(encounters);
-    expect(runState.playerParty).toEqual(playerParty);
+    // Characters now have innate skills (strike, defend) added during initialization
+    expect(runState.playerParty).toHaveLength(playerParty.length);
+    expect(runState.playerParty[0]!.id).toBe('player-1');
+    expect(runState.playerParty[0]!.skills.map(s => s.id)).toEqual(['strike', 'defend']);
     expect(runState.runStatus).toBe('in-progress');
     expect(runState.encountersCleared).toBe(0);
     expect(runState.skillsUnlockedThisRun).toEqual([]);

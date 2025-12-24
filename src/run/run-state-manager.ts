@@ -19,7 +19,7 @@ import { SkillLibrary } from '../engine/skill-library.js';
 export const RunStateManager = {
   /**
    * Initialize a new run with player party and encounters
-   * Strike is innate (all characters start with it)
+   * Strike and Defend are innate (all characters start with them)
    * Other starting skills are moved to skillPool
    */
   initializeRun(
@@ -34,30 +34,33 @@ export const RunStateManager = {
       throw new Error('Encounter list cannot be empty');
     }
 
-    // Collect non-Strike starting skills into the pool
+    // Innate skills that all characters start with
+    const INNATE_SKILL_IDS = ['strike', 'defend'];
+
+    // Collect non-innate starting skills into the pool
     const startingSkillIds: string[] = [];
     for (const character of playerParty) {
       for (const skill of character.skills) {
-        if (skill.id !== 'strike') {
+        if (!INNATE_SKILL_IDS.includes(skill.id)) {
           startingSkillIds.push(skill.id);
         }
       }
     }
 
-    // Get Strike skill from library
-    const strikeSkill = SkillLibrary.getSkill('strike');
+    // Get innate skills from library
+    const innateSkills = INNATE_SKILL_IDS.map(id => SkillLibrary.getSkill(id));
 
-    // Create party with Strike as innate skill
-    const partyWithInnateStrike = playerParty.map(character => ({
+    // Create party with innate skills
+    const partyWithInnateSkills = playerParty.map(character => ({
       ...character,
-      skills: [strikeSkill],
+      skills: innateSkills,
     }));
 
     return {
       runId,
       currentEncounterIndex: 0,
       encounters,
-      playerParty: partyWithInnateStrike,
+      playerParty: partyWithInnateSkills,
       runStatus: 'in-progress',
       encountersCleared: 0,
       skillsUnlockedThisRun: [],

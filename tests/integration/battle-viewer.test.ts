@@ -166,7 +166,7 @@ describe('BattleViewer Integration', () => {
       const tickResult = TickExecutor.executeTickWithDebug(state);
       const html = renderBattleViewer(tickResult.updatedState, tickResult.debugInfo);
       
-      // Verify debug inspector is present
+      // Verify debug inspector is present with rule evaluations
       expect(html).toContain('debug-inspector');
       expect(html).toContain('Rule Evaluations');
     });

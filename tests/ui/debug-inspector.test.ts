@@ -4,6 +4,10 @@ import type {
   RuleEvaluation,
   RuleCheckResult,
   ConditionCheckResult,
+  TargetingDecision,
+  TargetFilterResult,
+  ResolutionSubstep,
+  SubstepDetail,
 } from '../../src/types/debug.js';
 import { renderDebugInspector } from '../../src/ui/debug-inspector.js';
 
@@ -14,6 +18,8 @@ import { renderDebugInspector } from '../../src/ui/debug-inspector.js';
  *
  * Tests the debug panel rendering that shows WHY each action was chosen:
  * - AC51: Rule evaluation display (shows all rules checked, matched rule, conditions)
+ * - AC52: Targeting decision display (shows candidates, filters, final targets, tie-breakers)
+ * - AC53: Resolution substep display (shows numbered substeps with details)
  *
  * Implementation: src/ui/debug-inspector.ts
  */
@@ -58,10 +64,56 @@ function createRuleEvaluation(
   };
 }
 
+function createTargetFilterResult(
+  filterType: 'taunt' | 'dead-exclusion' | 'self-exclusion',
+  removed: string[]
+): TargetFilterResult {
+  return { filterType, removed };
+}
+
+function createTargetingDecision(
+  casterId: string,
+  skillId: string,
+  targetingMode: 'self' | 'single-enemy-lowest-hp' | 'single-enemy-highest-hp' | 'all-enemies' | 'ally-lowest-hp' | 'ally-dead' | 'all-allies',
+  candidates: string[],
+  filtersApplied: TargetFilterResult[],
+  finalTargets: string[],
+  tieBreaker?: string
+): TargetingDecision {
+  return {
+    casterId,
+    skillId,
+    targetingMode,
+    candidates,
+    filtersApplied,
+    finalTargets,
+    tieBreaker,
+  };
+}
+
+function createSubstepDetail(
+  actorId: string,
+  targetId: string,
+  skillId: string,
+  value: number | undefined,
+  description: string
+): SubstepDetail {
+  return { actorId, targetId, skillId, value, description };
+}
+
+function createResolutionSubstep(
+  substep: 'damage-calc' | 'healing-calc' | 'shield-absorption' | 'health-update' | 'status-application' | 'action-cancel',
+  details: SubstepDetail[]
+): ResolutionSubstep {
+  return { substep, details };
+}
+
 function createDebugInfo(
-  ruleEvaluations: RuleEvaluation[]
+  ruleEvaluations: RuleEvaluation[],
+  targetingDecisions: TargetingDecision[],
+  resolutionSubsteps: ResolutionSubstep[]
 ): DebugInfo {
-  return { ruleEvaluations };
+  return { ruleEvaluations, targetingDecisions, resolutionSubsteps };
 }
 
 describe('DebugInspector - AC51: Rule Evaluation Display', () => {
@@ -80,7 +132,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
       ['enemy-2']
     );
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('✓');
@@ -102,7 +154,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
       ['player-1']
     );
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('✓');
@@ -120,7 +172,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
       ['player-1', 'player-2']
     );
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('fireball');
@@ -141,7 +193,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
       []
     );
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toMatch(/no action|waiting/i);
@@ -152,7 +204,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
     const rule = createRuleCheckResult(0, 100, [condition], 'failed', 'HP not low enough', 'heal', 'Heal');
     
     const evaluation = createRuleEvaluation('enemy-1', 'Troll', [rule], null, null, []);
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('hp-below');
@@ -168,7 +220,7 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
     const rule2 = createRuleCheckResult(0, 100, [], 'failed', 'Failed', 'heal', 'Heal');
     const evaluation2 = createRuleEvaluation('enemy-2', 'Orc', [rule2], null, null, []);
     
-    const debugInfo = createDebugInfo([evaluation1, evaluation2]);
+    const debugInfo = createDebugInfo([evaluation1, evaluation2], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('Goblin');
@@ -188,19 +240,20 @@ describe('DebugInspector - AC51: Rule Evaluation Display', () => {
       ['player-1']
     );
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('Ancient Dragon');
   });
 });
 
+
 describe('DebugInspector - General Rendering', () => {
-  it('should render complete debug panel', () => {
+  it('should render debug panel with rule evaluations', () => {
     const rule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
     const evaluation = createRuleEvaluation('enemy-1', 'Goblin', [rule], 'rule-0', 'strike', ['player-1']);
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toContain('Goblin');
@@ -208,7 +261,7 @@ describe('DebugInspector - General Rendering', () => {
   });
 
   it('should return valid HTML string', () => {
-    const debugInfo = createDebugInfo([]);
+    const debugInfo = createDebugInfo([], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(typeof html).toBe('string');
@@ -217,18 +270,18 @@ describe('DebugInspector - General Rendering', () => {
   });
 
   it('should handle empty debug info gracefully', () => {
-    const debugInfo = createDebugInfo([]);
+    const debugInfo = createDebugInfo([], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toBeTruthy();
     expect(typeof html).toBe('string');
   });
 
-  it('should have section for rule evaluations', () => {
+  it('should have rule evaluation section', () => {
     const rule = createRuleCheckResult(0, 100, [], 'selected', 'Matched', 'strike', 'Strike');
     const evaluation = createRuleEvaluation('enemy-1', 'Goblin', [rule], 'rule-0', 'strike', ['player-1']);
     
-    const debugInfo = createDebugInfo([evaluation]);
+    const debugInfo = createDebugInfo([evaluation], [], []);
     const html = renderDebugInspector(debugInfo);
     
     expect(html).toMatch(/rule|evaluation/i);

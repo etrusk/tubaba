@@ -1,5 +1,6 @@
 import type { CircleCharacterData } from '../types/visualization.js';
 import { getCharacterColor } from './character-name-formatter.js';
+import { SKILL_COLORS } from './intent-line.js';
 
 /**
  * Renders a character circle as SVG string
@@ -72,8 +73,10 @@ export function renderCharacterCircle(data: CircleCharacterData): string {
 
   // Build action display text
   let actionText = '';
+  let actionColor = SKILL_COLORS['default'];
   if (currentAction !== null) {
     const skillName = currentAction.skillId.charAt(0).toUpperCase() + currentAction.skillId.slice(1);
+    actionColor = SKILL_COLORS[currentAction.skillId] ?? SKILL_COLORS['default'];
     if (currentAction.ticksRemaining === 0) {
       actionText = `${skillName} - Executing!`;
     } else {
@@ -154,12 +157,12 @@ export function renderCharacterCircle(data: CircleCharacterData): string {
       ? `
   
   <!-- Current action -->
-  <text 
-    x="${x}" 
-    y="${actionY}" 
+  <text
+    x="${x}"
+    y="${actionY}"
     class="action-display"
     text-anchor="middle"
-    fill="#ffd700"
+    fill="${actionColor}"
     font-size="11">${actionText}</text>`
       : ''
   }
