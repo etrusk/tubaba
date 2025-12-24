@@ -326,6 +326,9 @@ function executeTickWithDebug(
       selectedTargets: [],
     };
     
+    // Get character instructions if available
+    const characterInstructions = instructions?.get(character.id);
+    
     // Evaluate all rules for this character
     if (character.skills && character.skills.length > 0) {
       // Collect all rule-skill pairs
@@ -339,15 +342,46 @@ function executeTickWithDebug(
       const ruleSkillPairs: RuleSkillPair[] = [];
       let globalRuleIndex = 0;
       
-      for (const skill of character.skills) {
-        if (skill.rules && skill.rules.length > 0) {
-          for (const rule of skill.rules) {
-            ruleSkillPairs.push({
-              ruleIndex: globalRuleIndex++,
-              rule,
-              skill,
-              skillId: skill.id,
-            });
+      // If instructions provided, use them instead of skill.rules
+      if (characterInstructions && characterInstructions.controlMode === 'ai') {
+        for (const skillInstruction of characterInstructions.skillInstructions) {
+          // Skip disabled instructions
+          if (!skillInstruction.enabled) {
+            continue;
+          }
+          
+          // Find the matching skill
+          const skill = character.skills.find(s => s.id === skillInstruction.skillId);
+          if (!skill) {
+            continue;
+          }
+          
+          // Create rule from instruction
+          const rule: any = {
+            priority: skillInstruction.priority,
+            conditions: skillInstruction.conditions,
+            targetingOverride: skillInstruction.targetingOverride
+          };
+          
+          ruleSkillPairs.push({
+            ruleIndex: globalRuleIndex++,
+            rule,
+            skill,
+            skillId: skill.id,
+          });
+        }
+      } else {
+        // Fall back to skill.rules (legacy behavior)
+        for (const skill of character.skills) {
+          if (skill.rules && skill.rules.length > 0) {
+            for (const rule of skill.rules) {
+              ruleSkillPairs.push({
+                ruleIndex: globalRuleIndex++,
+                rule,
+                skill,
+                skillId: skill.id,
+              });
+            }
           }
         }
       }

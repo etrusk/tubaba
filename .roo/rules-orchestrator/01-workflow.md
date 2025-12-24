@@ -182,7 +182,7 @@ Delegate to 🔍 Reviewer:
 | Prototype code | 💻 Code | Goal, acceptance, shortcuts OK |
 | Production code | 💻 Code | plan.md reference, test scenarios, no shortcuts |
 | Validate work | 🔍 Reviewer | Files, spec reference, drift check |
-| Bug fix | 🪲 Debug | Error, repro, suspected cause |
+| Bug fix | 💻 Code | Error, repro, suspected cause |
 | Questions | ❓ Ask | Question + context |
 
 ---

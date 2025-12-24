@@ -851,4 +851,175 @@ describe('VisualizationAnalyzer', () => {
       expect(result.intentLines[0].color).toBe('#4caf50');
     });
   });
+
+  describe('Curved Lines for Overlapping Paths', () => {
+    it('should add control points to bidirectional lines (A→B and B→A)', () => {
+      const player: Character = {
+        id: 'p1',
+        name: 'Hero',
+        maxHp: 100,
+        currentHp: 100,
+        skills: [],
+        statusEffects: [],
+        currentAction: {
+          skillId: 'strike',
+          casterId: 'p1',
+          targets: ['e1'],
+          ticksRemaining: 1,
+        },
+        isPlayer: true,
+      };
+
+      const enemy: Character = {
+        id: 'e1',
+        name: 'Goblin',
+        maxHp: 50,
+        currentHp: 50,
+        skills: [],
+        statusEffects: [],
+        currentAction: {
+          skillId: 'bash',
+          casterId: 'e1',
+          targets: ['p1'],
+          ticksRemaining: 1,
+        },
+        isPlayer: false,
+      };
+
+      const state: CombatState = {
+        players: [player],
+        enemies: [enemy],
+        tickNumber: 0,
+        actionQueue: [player.currentAction!, enemy.currentAction!],
+        eventLog: [],
+        battleStatus: 'ongoing',
+      };
+
+      const result = analyzeVisualization(state);
+
+      expect(result.intentLines).toHaveLength(2);
+      
+      // Both lines should have control points for curves
+      const line1 = result.intentLines.find((line: IntentLine) => line.casterId === 'p1');
+      const line2 = result.intentLines.find((line: IntentLine) => line.casterId === 'e1');
+
+      expect(line1?.controlPoint).toBeDefined();
+      expect(line2?.controlPoint).toBeDefined();
+      
+      // Control points should be in opposite directions
+      expect(line1?.controlPoint?.x).toBeDefined();
+      expect(line1?.controlPoint?.y).toBeDefined();
+      expect(line2?.controlPoint?.x).toBeDefined();
+      expect(line2?.controlPoint?.y).toBeDefined();
+    });
+
+    it('should not add control points to single lines (no overlap)', () => {
+      const player: Character = {
+        id: 'p1',
+        name: 'Hero',
+        maxHp: 100,
+        currentHp: 100,
+        skills: [],
+        statusEffects: [],
+        currentAction: {
+          skillId: 'strike',
+          casterId: 'p1',
+          targets: ['e1'],
+          ticksRemaining: 1,
+        },
+        isPlayer: true,
+      };
+
+      const enemy: Character = {
+        id: 'e1',
+        name: 'Goblin',
+        maxHp: 50,
+        currentHp: 50,
+        skills: [],
+        statusEffects: [],
+        currentAction: null,
+        isPlayer: false,
+      };
+
+      const state: CombatState = {
+        players: [player],
+        enemies: [enemy],
+        tickNumber: 0,
+        actionQueue: [player.currentAction!],
+        eventLog: [],
+        battleStatus: 'ongoing',
+      };
+
+      const result = analyzeVisualization(state);
+
+      expect(result.intentLines).toHaveLength(1);
+      
+      // Single line should not have control point (stays straight)
+      expect(result.intentLines[0].controlPoint).toBeUndefined();
+    });
+
+    it('should add control points to multiple lines targeting same character', () => {
+      const player1: Character = {
+        id: 'p1',
+        name: 'Hero',
+        maxHp: 100,
+        currentHp: 100,
+        skills: [],
+        statusEffects: [],
+        currentAction: {
+          skillId: 'strike',
+          casterId: 'p1',
+          targets: ['e1'],
+          ticksRemaining: 1,
+        },
+        isPlayer: true,
+      };
+
+      const player2: Character = {
+        id: 'p2',
+        name: 'Mage',
+        maxHp: 80,
+        currentHp: 80,
+        skills: [],
+        statusEffects: [],
+        currentAction: {
+          skillId: 'fireball',
+          casterId: 'p2',
+          targets: ['e1'],
+          ticksRemaining: 1,
+        },
+        isPlayer: true,
+      };
+
+      const enemy: Character = {
+        id: 'e1',
+        name: 'Goblin',
+        maxHp: 50,
+        currentHp: 50,
+        skills: [],
+        statusEffects: [],
+        currentAction: null,
+        isPlayer: false,
+      };
+
+      const state: CombatState = {
+        players: [player1, player2],
+        enemies: [enemy],
+        tickNumber: 0,
+        actionQueue: [player1.currentAction!, player2.currentAction!],
+        eventLog: [],
+        battleStatus: 'ongoing',
+      };
+
+      const result = analyzeVisualization(state);
+
+      expect(result.intentLines).toHaveLength(2);
+      
+      // Lines from different sources to same target don't get control points
+      // (they're from different angles so don't overlap)
+      // Only lines sharing BOTH endpoints get curved
+      expect(result.intentLines[0].controlPoint).toBeUndefined();
+      expect(result.intentLines[1].controlPoint).toBeUndefined();
+    });
+  });
 });

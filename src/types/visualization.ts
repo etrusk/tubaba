@@ -59,6 +59,8 @@ export interface IntentLine {
   startPos: { x: number; y: number };
   /** End position (target circle edge) */
   endPos: { x: number; y: number };
+  /** Control point for curved line (optional - straight if undefined) */
+  controlPoint?: { x: number; y: number };
 }
 
 /**

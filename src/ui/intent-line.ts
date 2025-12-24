@@ -35,12 +35,12 @@ export const SKILL_COLORS: SkillColorMap = {
 /**
  * Render an intent line connecting caster to target
  * Based on spec lines 243-265
- * 
+ *
  * @param line - Intent line data with positions and styling
- * @returns SVG string containing marker definition and line element
+ * @returns SVG string containing marker definition and path element
  */
 export function renderIntentLine(line: IntentLine): string {
-  const { casterId, targetId, skillId, ticksRemaining, lineStyle, color, startPos, endPos } = line;
+  const { casterId, targetId, skillId, ticksRemaining, lineStyle, color, startPos, endPos, controlPoint } = line;
   
   // Generate unique marker ID for this line
   const markerId = `arrowhead-${casterId}-${targetId}-${skillId}`;
@@ -51,6 +51,16 @@ export function renderIntentLine(line: IntentLine): string {
   // Determine stroke dash pattern
   const strokeDashArray = lineStyle === 'solid' ? '' : ' stroke-dasharray="8,4"';
   
+  // Build path data: curved if controlPoint exists, straight otherwise
+  let pathData: string;
+  if (controlPoint) {
+    // Quadratic Bezier curve: M start Q control end
+    pathData = `M ${startPos.x} ${startPos.y} Q ${controlPoint.x} ${controlPoint.y} ${endPos.x} ${endPos.y}`;
+  } else {
+    // Straight line: M start L end
+    pathData = `M ${startPos.x} ${startPos.y} L ${endPos.x} ${endPos.y}`;
+  }
+  
   // Build SVG string
   const marker = `<defs>
   <marker id="${markerId}" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -58,7 +68,7 @@ export function renderIntentLine(line: IntentLine): string {
   </marker>
 </defs>`;
   
-  const lineElement = `<line x1="${startPos.x}" y1="${startPos.y}" x2="${endPos.x}" y2="${endPos.y}" stroke="${color}" stroke-width="${strokeWidth}"${strokeDashArray} marker-end="url(#${markerId})" class="intent-line ${lineStyle}" data-caster-id="${casterId}" data-target-id="${targetId}" data-skill-id="${skillId}" />`;
+  const pathElement = `<path d="${pathData}" stroke="${color}" stroke-width="${strokeWidth}"${strokeDashArray} fill="none" marker-end="url(#${markerId})" class="intent-line ${lineStyle}" data-caster-id="${casterId}" data-target-id="${targetId}" data-skill-id="${skillId}" />`;
   
-  return marker + '\n' + lineElement;
+  return marker + '\n' + pathElement;
 }

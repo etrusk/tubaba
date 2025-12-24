@@ -104,13 +104,6 @@ When escalating, provide:
 **Blocked until:** [What decision is needed to proceed]
 ```
 
-### Escalate to Debug Mode
-
-Use `switch_mode` to Debug when:
-- Test failures you can't diagnose
-- Runtime errors with unclear cause
-- Performance issues requiring investigation
-
 ### Escalate to Orchestrator
 
 Use `switch_mode` to Orchestrator when:

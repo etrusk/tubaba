@@ -706,4 +706,51 @@ describe('TickExecutor Debug Enhancement - Integration', () => {
     // Plus debug info
     expect(result.debugInfo).toBeDefined();
   });
+
+  it('should respect targetingOverride from CharacterInstructions', () => {
+    const strikeSkill: Skill = {
+      id: 'strike',
+      name: 'Strike',
+      baseDuration: 3,
+      targeting: 'single-enemy-lowest-hp', // Default targeting
+      effects: [{ type: 'damage', value: 30 }],
+      rules: [], // No rules - instructions will provide them
+    };
+    
+    const player = createTestCharacter('player-1', 100, 100, [], true, null, [strikeSkill]);
+    const enemy1 = createTestCharacter('enemy-1', 50, 100, [], false);
+    const enemy2 = createTestCharacter('enemy-2', 100, 100, [], false); // Highest HP
+    
+    const state = createCombatState([player], [enemy1, enemy2], 1);
+
+    // Create instructions with targetingOverride to highest HP
+    const instructions = new Map();
+    instructions.set('player-1', {
+      characterId: 'player-1',
+      controlMode: 'ai' as const,
+      skillInstructions: [{
+        skillId: 'strike',
+        priority: 10,
+        conditions: [],
+        targetingOverride: 'single-enemy-highest-hp', // Override to highest HP
+        enabled: true,
+      }],
+    });
+
+    const result = TickExecutorDebug.executeTickWithDebug(state, instructions);
+
+    // Verify targeting decision shows the override was used
+    const playerDecision = result.debugInfo.targetingDecisions.find(d => d.casterId === 'player-1');
+    expect(playerDecision).toBeDefined();
+    expect(playerDecision?.targetingMode).toBe('single-enemy-highest-hp');
+    
+    // Verify the correct target was selected (enemy2 with 100 HP, not enemy1 with 50 HP)
+    expect(playerDecision?.finalTargets).toContain('enemy-2');
+    expect(playerDecision?.finalTargets).not.toContain('enemy-1');
+
+    // Verify rule evaluation shows the override
+    const playerEval = result.debugInfo.ruleEvaluations.find(e => e.characterId === 'player-1');
+    expect(playerEval).toBeDefined();
+    expect(playerEval?.selectedTargets).toContain('enemy-2');
+  });
 });

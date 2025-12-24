@@ -199,9 +199,23 @@ export function analyzeVisualization(
     }
   }
   
+  // Step 5: Calculate curve control points to prevent overlapping lines
+  const controlPoints = calculateCurveControlPoints(intentLines, positionMap);
+  
+  // Apply control points to intent lines
+  const curvedLines = intentLines.map((line, index) => {
+    const controlPoint = controlPoints.get(index);
+    if (!controlPoint) return line;
+    
+    return {
+      ...line,
+      controlPoint,
+    };
+  });
+  
   return {
     characters,
-    intentLines,
+    intentLines: curvedLines,
     arenaDimensions,
   };
 }
@@ -217,9 +231,92 @@ function clampHpPercent(hpPercent: number): number {
 }
 
 /**
+ * Calculate curve control points to prevent overlapping lines.
+ * Lines sharing the same endpoints get curved in opposite directions.
+ *
+ * @param lines - Intent lines to process
+ * @param positionMap - Character positions for midpoint/perpendicular calculations
+ * @returns Map of line index to control point { x, y }
+ */
+function calculateCurveControlPoints(
+  lines: IntentLine[],
+  positionMap: Map<string, CharacterPosition>
+): Map<number, { x: number; y: number }> {
+  const CURVE_OFFSET = 30; // Perpendicular offset distance in pixels
+  const controlPoints = new Map<number, { x: number; y: number }>();
+  
+  // Group lines by endpoint pair (A-B, regardless of direction)
+  const linesByEndpoints = new Map<string, number[]>();
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    
+    // Skip self-targeting lines (would need loop arc, different logic)
+    if (line.casterId === line.targetId) continue;
+    
+    // Create sorted pair key so A→B and B→A group together
+    const pairKey = [line.casterId, line.targetId].sort().join('-');
+    
+    if (!linesByEndpoints.has(pairKey)) {
+      linesByEndpoints.set(pairKey, []);
+    }
+    linesByEndpoints.get(pairKey)!.push(i);
+  }
+  
+  // Calculate control points for overlapping line groups
+  for (const [pairKey, lineIndices] of linesByEndpoints) {
+    // Single line: no curve needed (stays straight)
+    if (lineIndices.length < 2) continue;
+    
+    // Get the two endpoints (characters)
+    const firstLine = lines[lineIndices[0]!];
+    if (!firstLine) continue;
+    
+    const pos1 = positionMap.get(firstLine.casterId);
+    const pos2 = positionMap.get(firstLine.targetId);
+    if (!pos1 || !pos2) continue;
+    
+    // Calculate midpoint between the two characters
+    const midX = (pos1.x + pos2.x) / 2;
+    const midY = (pos1.y + pos2.y) / 2;
+    
+    // Calculate perpendicular direction
+    const dx = pos2.x - pos1.x;
+    const dy = pos2.y - pos1.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    if (length === 0) continue; // Characters at same position
+    
+    // Perpendicular vector (rotate 90 degrees)
+    const perpX = -dy / length;
+    const perpY = dx / length;
+    
+    // Assign alternating offsets: +offset, -offset, +2*offset, -2*offset, ...
+    for (let i = 0; i < lineIndices.length; i++) {
+      const lineIndex = lineIndices[i];
+      if (lineIndex === undefined) continue;
+      
+      // Alternate between positive and negative offsets
+      const offsetMultiplier = Math.floor((i + 1) / 2) * (i % 2 === 0 ? 1 : -1);
+      const offset = CURVE_OFFSET * offsetMultiplier;
+      
+      const controlPoint = {
+        x: midX + perpX * offset,
+        y: midY + perpY * offset,
+      };
+      
+      controlPoints.set(lineIndex, controlPoint);
+    }
+  }
+  
+  return controlPoints;
+}
+
+/**
  * Calculate line start/end positions at circle edges
  * Based on spec lines 275-284 (trigonometry)
- * 
+ *
  * @param casterPos - Caster circle position
  * @param targetPos - Target circle position
  * @returns Start and end positions at circle edges
@@ -245,9 +342,9 @@ function calculateEdgePositions(
   const startX = casterX + casterRadius * Math.cos(angle);
   const startY = casterY + casterRadius * Math.sin(angle);
   
-  // End point: target circle edge (from caster)
-  const endX = targetX - targetRadius * Math.cos(angle);
-  const endY = targetY - targetRadius * Math.sin(angle);
+  // End point: target circle edge (opposite direction)
+  const endX = targetX + targetRadius * Math.cos(angle + Math.PI);
+  const endY = targetY + targetRadius * Math.sin(angle + Math.PI);
   
   return {
     start: { x: startX, y: startY },

@@ -12,7 +12,7 @@ For technical questions:
 
 If the user clearly wants to take action:
 - "How do I implement X?" → "I can explain, or would you like me to switch to 💻 Code mode to implement it?"
-- "What's wrong with this code?" → "I can analyze it. Want me to switch to 🪲 Debug mode to investigate and fix?"
+- "What's wrong with this code?" → "I can analyze it. Want me to switch to 💻 Code mode to investigate and fix?"
 
 ## Anti-Sycophancy in Practice
 

@@ -176,7 +176,7 @@ describe('IntentLine Renderer', () => {
       expect(svg).toContain('points="0 0, 10 3, 0 6"');
     });
 
-    it('should include line element with correct coordinates', () => {
+    it('should include path element with correct coordinates', () => {
       const line: IntentLine = {
         casterId: 'player1',
         targetId: 'enemy1',
@@ -190,10 +190,9 @@ describe('IntentLine Renderer', () => {
 
       const svg = renderIntentLine(line);
 
-      expect(svg).toContain('x1="100"');
-      expect(svg).toContain('y1="400"');
-      expect(svg).toContain('x2="200"');
-      expect(svg).toContain('y2="150"');
+      expect(svg).toContain('<path');
+      expect(svg).toContain('d="M 100 400 L 200 150"');
+      expect(svg).toContain('fill="none"');
     });
 
     it('should include data attributes for caster, target, and skill', () => {
@@ -249,8 +248,7 @@ describe('IntentLine Renderer', () => {
 
       const svg = renderIntentLine(line);
 
-      expect(svg).toContain('y1="360"');
-      expect(svg).toContain('y2="140"');
+      expect(svg).toContain('d="M 100 360 L 100 140"');
     });
 
     it('should connect at circle edges for horizontal line', () => {
@@ -267,10 +265,7 @@ describe('IntentLine Renderer', () => {
 
       const svg = renderIntentLine(line);
 
-      expect(svg).toContain('x1="140"');
-      expect(svg).toContain('x2="260"');
-      expect(svg).toContain('y1="400"');
-      expect(svg).toContain('y2="400"');
+      expect(svg).toContain('d="M 140 400 L 260 400"');
     });
 
     it('should connect at circle edges for diagonal line', () => {
@@ -287,10 +282,7 @@ describe('IntentLine Renderer', () => {
 
       const svg = renderIntentLine(line);
 
-      expect(svg).toContain('x1="128"');
-      expect(svg).toContain('y1="372"');
-      expect(svg).toContain('x2="272"');
-      expect(svg).toContain('y2="128"');
+      expect(svg).toContain('d="M 128 372 L 272 128"');
     });
   });
 
@@ -356,10 +348,7 @@ describe('IntentLine Renderer', () => {
 
       const svg = renderIntentLine(line);
 
-      expect(svg).toContain('x1="100.5"');
-      expect(svg).toContain('y1="400.75"');
-      expect(svg).toContain('x2="200.25"');
-      expect(svg).toContain('y2="150.33"');
+      expect(svg).toContain('d="M 100.5 400.75 L 200.25 150.33"');
     });
 
     it('should create unique marker IDs for different lines', () => {
@@ -395,6 +384,48 @@ describe('IntentLine Renderer', () => {
       expect(markerId1Match).not.toBeNull();
       expect(markerId2Match).not.toBeNull();
       expect(markerId1Match![1]).not.toBe(markerId2Match![1]);
+    });
+
+    it('should render curved line when control point is provided', () => {
+      const line: IntentLine = {
+        casterId: 'player1',
+        targetId: 'enemy1',
+        skillId: 'strike',
+        ticksRemaining: 0,
+        lineStyle: 'solid',
+        color: '#f44336',
+        startPos: { x: 100, y: 400 },
+        endPos: { x: 200, y: 100 },
+        controlPoint: { x: 180, y: 250 }, // Curved path
+      };
+
+      const svg = renderIntentLine(line);
+
+      // Should use quadratic Bezier curve
+      expect(svg).toContain('<path');
+      expect(svg).toContain('d="M 100 400 Q 180 250 200 100"');
+      expect(svg).toContain('fill="none"');
+    });
+
+    it('should render straight line when no control point is provided', () => {
+      const line: IntentLine = {
+        casterId: 'player1',
+        targetId: 'enemy1',
+        skillId: 'strike',
+        ticksRemaining: 0,
+        lineStyle: 'solid',
+        color: '#f44336',
+        startPos: { x: 100, y: 400 },
+        endPos: { x: 200, y: 100 },
+        // No controlPoint
+      };
+
+      const svg = renderIntentLine(line);
+
+      // Should use straight line path
+      expect(svg).toContain('<path');
+      expect(svg).toContain('d="M 100 400 L 200 100"');
+      expect(svg).toContain('fill="none"');
     });
   });
 });
