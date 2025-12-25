@@ -265,7 +265,7 @@ function calculateCurveControlPoints(
   }
   
   // Calculate control points for overlapping line groups
-  for (const [pairKey, lineIndices] of linesByEndpoints) {
+  for (const [_pairKey, lineIndices] of linesByEndpoints) {
     // Single line: no curve needed (stays straight)
     if (lineIndices.length < 2) continue;
     

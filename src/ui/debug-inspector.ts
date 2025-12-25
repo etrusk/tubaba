@@ -104,7 +104,9 @@ function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
   // Final action line
   const finalAction = evaluation.selectedSkill
     ? `<div class="final-action">→ <strong>Action:</strong> ${evaluation.selectedSkill} targeting ${evaluation.selectedTargets.join(', ')}</div>`
-    : '<div class="final-action">→ <strong>No action</strong> (waiting for conditions to be met)</div>';
+    : evaluation.rulesChecked.length === 0
+      ? '<div class="final-action">→ <strong>No action</strong> (no skills configured)</div>'
+      : '<div class="final-action">→ <strong>No action</strong> (waiting for conditions to be met)</div>';
   
   return `<div class="character-eval" data-character-id="${evaluation.characterId}">
     <h4>${formatCharacterName(evaluation.characterName, evaluation.characterId)}</h4>

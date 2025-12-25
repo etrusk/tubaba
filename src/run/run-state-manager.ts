@@ -5,6 +5,7 @@ import type {
   Encounter,
   SkillUnlockChoice,
 } from '../types/index.js';
+import { SkillLibrary } from '../engine/skill-library.js';
 
 /**
  * RunStateManager - Manages run state machine and encounter progression
@@ -18,6 +19,8 @@ import type {
 export const RunStateManager = {
   /**
    * Initialize a new run with player party and encounters
+   * Strike and Defend are innate (all characters start with them)
+   * Other starting skills are moved to skillPool
    */
   initializeRun(
     runId: string,
@@ -31,14 +34,37 @@ export const RunStateManager = {
       throw new Error('Encounter list cannot be empty');
     }
 
+    // Innate skills that all characters start with
+    const INNATE_SKILL_IDS = ['strike', 'defend'];
+
+    // Collect non-innate starting skills into the pool
+    const startingSkillIds: string[] = [];
+    for (const character of playerParty) {
+      for (const skill of character.skills) {
+        if (!INNATE_SKILL_IDS.includes(skill.id)) {
+          startingSkillIds.push(skill.id);
+        }
+      }
+    }
+
+    // Get innate skills from library
+    const innateSkills = INNATE_SKILL_IDS.map(id => SkillLibrary.getSkill(id));
+
+    // Create party with innate skills
+    const partyWithInnateSkills = playerParty.map(character => ({
+      ...character,
+      skills: innateSkills,
+    }));
+
     return {
       runId,
       currentEncounterIndex: 0,
       encounters,
-      playerParty,
+      playerParty: partyWithInnateSkills,
       runStatus: 'in-progress',
       encountersCleared: 0,
       skillsUnlockedThisRun: [],
+      skillPool: startingSkillIds,
     };
   },
 
@@ -98,12 +124,13 @@ export const RunStateManager = {
 
   /**
    * Apply skill unlock choice and update run state
+   * Now adds skills to skillPool instead of directly to character
    */
   applySkillUnlock(
     runState: RunState,
     choice: SkillUnlockChoice
   ): RunState {
-    // Validate character exists
+    // Validate character exists (for backward compatibility)
     const character = runState.playerParty.find(c => c.id === choice.characterId);
     if (!character) {
       throw new Error(`Character ${choice.characterId} not found in party`);
@@ -120,6 +147,7 @@ export const RunStateManager = {
     return {
       ...runState,
       skillsUnlockedThisRun: [...runState.skillsUnlockedThisRun, choice.skillId],
+      skillPool: [...runState.skillPool, choice.skillId],
       runStatus: isLastEncounter ? 'victory' : runState.runStatus,
     };
   },

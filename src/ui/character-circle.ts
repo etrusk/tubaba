@@ -80,14 +80,15 @@ export function renderCharacterCircle(data: CircleCharacterData): string {
     if (currentAction.ticksRemaining === 0) {
       actionText = `${skillName} - Executing!`;
     } else {
-      actionText = `${skillName} (${currentAction.ticksRemaining})`;
+      actionText = `${skillName} - ${currentAction.ticksRemaining} ticks`;
     }
   }
 
   // Calculate text positions
   const nameY = y - radius - 10;
-  const statusY = y + radius + 20;
-  const actionY = y + radius + 40;
+  const statusX = x + radius + 15;  // Right of circle
+  const statusY = y;                 // Vertically centered with circle
+  const actionY = y + radius + 20;
 
   // Build SVG
   return `<g class="character-circle" data-character-id="${id}">
@@ -143,11 +144,11 @@ export function renderCharacterCircle(data: CircleCharacterData): string {
     statusText
       ? `
   <!-- Status effects -->
-  <text 
-    x="${x}" 
-    y="${statusY}" 
+  <text
+    x="${statusX}"
+    y="${statusY}"
     class="status-effects"
-    text-anchor="middle"
+    text-anchor="start"
     fill="#ffeb3b"
     font-size="10">${statusText}</text>`
       : ''

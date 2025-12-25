@@ -178,7 +178,7 @@ describe('CharacterCircle - Border Colors', () => {
 });
 
 describe('CharacterCircle - Status Effects Display', () => {
-  it('should display status effects below circle', () => {
+  it('should display status effects to the right of circle', () => {
     const statuses = [
       createStatusEffect('shielded', 3, 20),
       createStatusEffect('poisoned', 2, 5),
@@ -190,10 +190,15 @@ describe('CharacterCircle - Status Effects Display', () => {
     expect(svg).toMatch(/shielded/i);
     expect(svg).toMatch(/poisoned/i);
     
-    // Positioned below circle (y + radius + offset)
+    // Positioned to the right of circle (x + radius + offset)
     const position = data.position;
-    const expectedY = position.y + position.radius + 20;
+    const expectedX = position.x + position.radius + 15;
+    const expectedY = position.y;  // Vertically centered
+    expect(svg).toContain(`x="${expectedX}"`);
     expect(svg).toContain(`y="${expectedY}"`);
+    
+    // Should be left-aligned (start anchor)
+    expect(svg).toContain('text-anchor="start"');
   });
 
   it('should handle no status effects gracefully', () => {
@@ -206,13 +211,13 @@ describe('CharacterCircle - Status Effects Display', () => {
 });
 
 describe('CharacterCircle - Current Action Display', () => {
-  it('should show action as "SkillName (ticks)" when queued', () => {
+  it('should show action as "SkillName - X ticks" when queued', () => {
     const action = createAction('strike', 'player-1', ['enemy-1'], 3);
     const data = createCircleCharacterData('player-1', 'Hero', 100, 100, 100, true, [], action);
     const svg = renderCharacterCircle(data);
     
-    // Should show skill name and ticks
-    expect(svg).toMatch(/strike.*\(3\)/i);
+    // Should show skill name and ticks in "X ticks" format
+    expect(svg).toMatch(/strike.*3 ticks/i);
   });
 
   it('should show "Executing!" when ticksRemaining is 0', () => {

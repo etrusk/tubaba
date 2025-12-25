@@ -132,12 +132,28 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
             "name": "Strike",
             "targeting": "single-enemy-lowest-hp",
           },
+          {
+            "baseDuration": 1,
+            "effects": [
+              {
+                "duration": 3,
+                "statusType": "defending",
+                "type": "status",
+              },
+            ],
+            "id": "defend",
+            "name": "Defend",
+            "targeting": "self",
+          },
         ],
         "statusEffects": [],
       },
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
+    "skillPool": [
+      "heal",
+    ],
     "skillsUnlockedThisRun": [
       "heal",
     ],
@@ -273,12 +289,26 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
             "name": "Strike",
             "targeting": "single-enemy-lowest-hp",
           },
+          {
+            "baseDuration": 1,
+            "effects": [
+              {
+                "duration": 3,
+                "statusType": "defending",
+                "type": "status",
+              },
+            ],
+            "id": "defend",
+            "name": "Defend",
+            "targeting": "self",
+          },
         ],
         "statusEffects": [],
       },
     ],
     "runId": "run-1",
     "runStatus": "victory",
+    "skillPool": [],
     "skillsUnlockedThisRun": [],
   },
 }
@@ -405,12 +435,26 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
           "name": "Strike",
           "targeting": "single-enemy-lowest-hp",
         },
+        {
+          "baseDuration": 1,
+          "effects": [
+            {
+              "duration": 3,
+              "statusType": "defending",
+              "type": "status",
+            },
+          ],
+          "id": "defend",
+          "name": "Defend",
+          "targeting": "self",
+        },
       ],
       "statusEffects": [],
     },
   ],
   "runId": "run-1",
   "runStatus": "in-progress",
+  "skillPool": [],
   "skillsUnlockedThisRun": [],
 }
 `;
@@ -591,6 +635,7 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
     ],
     "runId": "run-1",
     "runStatus": "awaiting-skill-selection",
+    "skillPool": [],
     "skillsUnlockedThisRun": [
       "heal",
     ],
@@ -601,6 +646,21 @@ exports[`Run Management Integration > Scenario 1: Three Encounter Victory Run > 
 exports[`Run Management Integration > Scenario 2: Early Defeat Run > should handle defeat in encounter 0 and verify runStatus = defeat 1`] = `
 {
   "battleLog": [
+    {
+      "actorId": "player-1",
+      "message": "Hero used Strike",
+      "skillName": "Strike",
+      "tick": 3,
+      "type": "action-resolved",
+    },
+    {
+      "actorId": "player-1",
+      "message": "Strong Goblin takes 15 damage",
+      "targetId": "enemy-0-1",
+      "tick": 3,
+      "type": "damage",
+      "value": 15,
+    },
     {
       "actorId": "enemy-0-1",
       "message": "Strong Goblin used Strike",
@@ -700,12 +760,39 @@ exports[`Run Management Integration > Scenario 2: Early Defeat Run > should hand
         "isPlayer": true,
         "maxHp": 100,
         "name": "Hero",
-        "skills": [],
+        "skills": [
+          {
+            "baseDuration": 2,
+            "effects": [
+              {
+                "type": "damage",
+                "value": 15,
+              },
+            ],
+            "id": "strike",
+            "name": "Strike",
+            "targeting": "single-enemy-lowest-hp",
+          },
+          {
+            "baseDuration": 1,
+            "effects": [
+              {
+                "duration": 3,
+                "statusType": "defending",
+                "type": "status",
+              },
+            ],
+            "id": "defend",
+            "name": "Defend",
+            "targeting": "self",
+          },
+        ],
         "statusEffects": [],
       },
     ],
     "runId": "run-1",
     "runStatus": "defeat",
+    "skillPool": [],
     "skillsUnlockedThisRun": [],
   },
 }
@@ -730,8 +817,8 @@ exports[`Run Management Integration > Scenario 3: Skill Persistence Across Encou
 exports[`Run Management Integration > Scenario 3: Skill Persistence Across Encounters > should verify strike available in encounter 1 loadout and battle 1`] = `
 {
   "activeLoadout": [
-    "heal",
     "strike",
+    "defend",
   ],
   "battleLog": [
     {
@@ -799,27 +886,25 @@ exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles >
   "afterSwap": {
     "activeLoadout": [
       "strike",
-      "heal",
       "defend",
+      "heal",
     ],
     "unlockedSkills": [
       "strike",
-      "heal",
-      "shield",
       "defend",
+      "heal",
     ],
   },
   "beforeSwap": {
     "activeLoadout": [
       "strike",
+      "defend",
       "heal",
-      "shield",
     ],
     "unlockedSkills": [
       "strike",
-      "heal",
-      "shield",
       "defend",
+      "heal",
     ],
   },
 }
@@ -829,7 +914,6 @@ exports[`Run Management Integration > Scenario 4: Loadout Swap Between Battles >
 {
   "activeLoadout": [
     "strike",
-    "heal",
     "defend",
   ],
   "battleLog": [

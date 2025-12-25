@@ -669,7 +669,7 @@ describe('Run Management Integration', () => {
             isPlayer: false,
           }),
         ],
-        ['defend']
+        ['heal']
       );
 
       const encounter1 = createEncounter('enc-1', 'Encounter 1', [], []);
@@ -679,17 +679,18 @@ describe('Run Management Integration', () => {
         encounter1,
       ]);
 
-      // Capture initial loadout
+      // Capture initial loadout (now has innate skills: strike, defend)
       const initialLoadout = CharacterProgression.getActiveLoadout(
         runState.playerParty[0]!
       );
-      expect(initialLoadout).toHaveLength(3);
+      expect(initialLoadout).toHaveLength(2);
+      expect(initialLoadout.map(s => s.id)).toEqual(['strike', 'defend']);
 
       // Simulate battle victory
       const playerAction = createAction('strike', 'player-1', ['enemy-0-1'], 2);
       const battleResult = simulateBattleVictory(runState, [playerAction]);
 
-      // Handle victory and unlock defend
+      // Handle victory and unlock heal (3rd skill)
       runState = RunStateManager.handleBattleResult(
         runState,
         TickExecutor.executeTick(battleResult)
@@ -697,28 +698,28 @@ describe('Run Management Integration', () => {
 
       const skillChoice: SkillUnlockChoice = {
         characterId: 'player-1',
-        skillId: 'defend',
+        skillId: 'heal',
       };
 
       runState = RunStateManager.applySkillUnlock(runState, skillChoice);
 
-      // Apply defend unlock to character (now has 4 skills unlocked, 3 active)
-      let updatedPlayer = CharacterProgression.unlockSkill(player, 'defend', ['defend']);
+      // Apply heal unlock to character (now has strike, defend innate + heal unlocked)
+      let updatedPlayer = CharacterProgression.unlockSkill(runState.playerParty[0]!, 'heal', ['heal']);
       runState = {
         ...runState,
         playerParty: [updatedPlayer],
       };
 
-      // Verify 4 skills unlocked
+      // Verify 3 skills total (2 innate + 1 unlocked)
       const unlockedSkills = CharacterProgression.getUnlockedSkills(
         runState.playerParty[0]!
       );
-      expect(unlockedSkills).toHaveLength(4);
+      expect(unlockedSkills).toHaveLength(3);
       expect(unlockedSkills.map((s) => s.id)).toEqual(
-        expect.arrayContaining(['strike', 'heal', 'shield', 'defend'])
+        expect.arrayContaining(['strike', 'defend', 'heal'])
       );
 
-      // Active loadout should still be 3 skills (original 3, defend not auto-added)
+      // Active loadout should still be innate skills + heal
       const currentLoadout = CharacterProgression.getActiveLoadout(
         runState.playerParty[0]!
       );
@@ -730,20 +731,20 @@ describe('Run Management Integration', () => {
         activeLoadout: currentLoadout.map((s) => s.id),
       };
 
-      // Swap loadout: replace shield with defend
+      // Swap loadout: replace defend with heal (innate skills can't be removed)
       updatedPlayer = CharacterProgression.setActiveLoadout(runState.playerParty[0]!, [
         'strike',
-        'heal',
         'defend',
+        'heal',
       ]);
       runState = {
         ...runState,
         playerParty: [updatedPlayer],
       };
 
-      // Verify new loadout
+      // Verify new loadout (same as before since we're just reordering)
       const newLoadout = CharacterProgression.getActiveLoadout(runState.playerParty[0]!);
-      expect(newLoadout.map((s) => s.id)).toEqual(['strike', 'heal', 'defend']);
+      expect(newLoadout.map((s) => s.id)).toEqual(['strike', 'defend', 'heal']);
       expect(newLoadout).toHaveLength(3);
 
       // Snapshot after swap
