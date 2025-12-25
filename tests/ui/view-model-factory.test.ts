@@ -473,11 +473,6 @@ describe('ViewModelFactory', () => {
       expect(viewModel.effectsSummary).toContain('→ Reduces incoming damage by 50%');
     });
     
-    it.skip('should format enraged status with description', () => {
-      // Skipped: No skill currently applies enraged status
-      // When a skill is added with enraged status, this test should pass
-      // Expected format: "Applies Enraged for X ticks\n→ Doubles outgoing damage"
-    });
     
     it('should format revive effects', () => {
       // Given: Revive skill
@@ -592,11 +587,6 @@ describe('ViewModelFactory', () => {
       
       // Then: Targeting should be described
       expect(viewModel.targetingDescription).toBe('Targets dead ally');
-    });
-    
-    it.skip('should describe all-allies targeting', () => {
-      // Skipped: No skill currently uses all-allies targeting mode
-      // When a skill is added with all-allies, this test should pass
     });
   });
 
