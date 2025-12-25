@@ -4,6 +4,42 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-25 SkillDisplay Component with CSS Tooltips
+
+**Status:** Proposed
+
+**Context:** Skills are rendered inconsistently across 6+ UI locations:
+- Different capitalization logic (some `charAt(0).toUpperCase()`, some use `skill.name`)
+- Different color sources (`SKILL_COLORS` map vs `getSkillColor()`)
+- No tooltips anywhere - users can't discover what skills do
+- Duration formatting duplicated
+
+**Decision:** Create a unified `renderSkillDisplay()` component and extend `SkillViewModel` with tooltip content.
+
+**Key Components:**
+- Extended `SkillViewModel` with `effectsSummary` and `targetingDescription` fields
+- `renderSkillDisplay()` function in `src/ui/skill-display.ts`
+- CSS-only tooltip (`:hover` based, no JS event handlers)
+
+**Tooltip Approach:** CSS-only with `:hover` pseudo-class.
+
+**Rationale:**
+- Simpler than JS event handlers (no state, no listeners)
+- Works with current SSR-style string rendering pattern
+- Adequate for discovery tooltips (not interactive content)
+
+**Trade-off accepted:** Cannot reposition if tooltip goes off-screen. Acceptable for controlled game UI layout.
+
+**Consequences:**
+- All skill displays use consistent styling and colors
+- Users can hover to discover skill effects and targeting
+- Single formatting point for effects/targeting in `ViewModelFactory`
+- Incremental migration (existing components continue working)
+
+**Implementation:** See [`specs/plan.md`](../specs/plan.md) for full specification.
+
+---
+
 ## 2025-12-25 View Model Pattern for UI Consistency
 
 **Status:** Accepted

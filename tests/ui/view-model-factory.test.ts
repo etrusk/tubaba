@@ -331,6 +331,273 @@ describe('ViewModelFactory', () => {
       expect(strikeVM.color).not.toBe(healVM.color);
       expect(healVM.color).not.toBe(shieldVM.color);
     });
+    it('should populate effectsSummary with formatted effects', () => {
+      // Given: Skills with different effect types
+      const strike = SkillLibrary.getSkill('strike'); // damage
+      const heal = SkillLibrary.getSkill('heal'); // heal
+      const poison = SkillLibrary.getSkill('poison'); // status
+
+      // When: Create skill view models
+      const strikeVM = ViewModelFactory.createSkillViewModel(strike);
+      const healVM = ViewModelFactory.createSkillViewModel(heal);
+      const poisonVM = ViewModelFactory.createSkillViewModel(poison);
+
+      // Then: Effects should be formatted
+      expect(strikeVM.effectsSummary).toBe('Deals 15 damage');
+      expect(healVM.effectsSummary).toBe('Heals 30 HP');
+      expect(poisonVM.effectsSummary).toContain('Applies Poisoned for');
+    });
+    
+    it('should populate targetingDescription with human-readable text', () => {
+      // Given: Skills with different targeting modes
+      const strike = SkillLibrary.getSkill('strike'); // single-enemy-lowest-hp
+      const heal = SkillLibrary.getSkill('heal'); // ally-lowest-hp-damaged
+      const defend = SkillLibrary.getSkill('defend'); // self
+
+      // When: Create skill view models
+      const strikeVM = ViewModelFactory.createSkillViewModel(strike);
+      const healVM = ViewModelFactory.createSkillViewModel(heal);
+      const defendVM = ViewModelFactory.createSkillViewModel(defend);
+
+      // Then: Targeting should be described
+      expect(strikeVM.targetingDescription).toBe('Targets lowest HP enemy');
+      expect(healVM.targetingDescription).toBe('Targets lowest HP damaged ally');
+      expect(defendVM.targetingDescription).toBe('Targets self');
+    });
+  });
+  
+  describe('effect formatting', () => {
+    it('should format damage effects', () => {
+      // Given: Damage skill
+      const strike = SkillLibrary.getSkill('strike');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(strike);
+      
+      // Then: Effect should be formatted
+      expect(viewModel.effectsSummary).toBe('Deals 15 damage');
+    });
+    
+    it('should format heal effects', () => {
+      // Given: Heal skill
+      const heal = SkillLibrary.getSkill('heal');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(heal);
+      
+      // Then: Effect should be formatted
+      expect(viewModel.effectsSummary).toBe('Heals 30 HP');
+    });
+    
+    it('should format shield effects', () => {
+      // Given: Shield skill
+      const shield = SkillLibrary.getSkill('shield');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(shield);
+      
+      // Then: Effect should be formatted (shield grants 30)
+      expect(viewModel.effectsSummary).toBe('Grants 30 Shield');
+    });
+    
+    it('should format status effects with duration', () => {
+      // Given: Status effect skill
+      const poison = SkillLibrary.getSkill('poison');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(poison);
+      
+      // Then: Effect should include status type and duration
+      expect(viewModel.effectsSummary).toContain('Applies Poisoned for');
+      expect(viewModel.effectsSummary).toContain('ticks');
+    });
+    
+    it('should include status effect descriptions (Phase 2)', () => {
+      // Given: Taunting status skill
+      const taunt = SkillLibrary.getSkill('taunt');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(taunt);
+      
+      // Then: Effect should include description
+      expect(viewModel.effectsSummary).toContain('Applies Taunting for');
+      expect(viewModel.effectsSummary).toContain('ticks');
+      expect(viewModel.effectsSummary).toContain('→ Forces enemies to target this character');
+    });
+    
+    it('should format poisoned status with description', () => {
+      // Given: Poison skill
+      const poison = SkillLibrary.getSkill('poison');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(poison);
+      
+      // Then: Effect should include description
+      expect(viewModel.effectsSummary).toContain('Applies Poisoned for');
+      expect(viewModel.effectsSummary).toContain('→ Deals damage over time');
+    });
+    
+    it('should format stunned status with description', () => {
+      // Given: Bash skill (applies stunned status)
+      const bash = SkillLibrary.getSkill('bash');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(bash);
+      
+      // Then: Effect should include description
+      expect(viewModel.effectsSummary).toContain('Applies Stunned for');
+      expect(viewModel.effectsSummary).toContain('→ Prevents action queueing');
+    });
+    
+    it('should format shielded status with description', () => {
+      // Given: Shield skill (applies shielded status)
+      const shield = SkillLibrary.getSkill('shield');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(shield);
+      
+      // Then: Should contain shield grant (not status effect for this skill)
+      // Shield skill grants shield points, not shielded status
+      expect(viewModel.effectsSummary).toBe('Grants 30 Shield');
+    });
+    
+    it('should format defending status with description', () => {
+      // Given: Defend skill
+      const defend = SkillLibrary.getSkill('defend');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(defend);
+      
+      // Then: Effect should include description
+      expect(viewModel.effectsSummary).toContain('Applies Defending for');
+      expect(viewModel.effectsSummary).toContain('→ Reduces incoming damage by 50%');
+    });
+    
+    it.skip('should format enraged status with description', () => {
+      // Skipped: No skill currently applies enraged status
+      // When a skill is added with enraged status, this test should pass
+      // Expected format: "Applies Enraged for X ticks\n→ Doubles outgoing damage"
+    });
+    
+    it('should format revive effects', () => {
+      // Given: Revive skill
+      const revive = SkillLibrary.getSkill('revive');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(revive);
+      
+      // Then: Effect should be formatted (revive gives 40% HP)
+      expect(viewModel.effectsSummary).toBe('Revives with 40% HP');
+    });
+    
+    it('should format cancel effects', () => {
+      // Given: Cancel skill (interrupt has damage + cancel)
+      const interrupt = SkillLibrary.getSkill('interrupt');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(interrupt);
+      
+      // Then: Effect should be formatted (interrupt has both damage and cancel)
+      expect(viewModel.effectsSummary).toContain("Interrupts target's action");
+      expect(viewModel.effectsSummary).toContain('Deals');
+    });
+    
+    it('should format multi-effect skills with comma separation', () => {
+      // Given: Multi-effect skill (interrupt has damage + cancel)
+      const interrupt = SkillLibrary.getSkill('interrupt');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(interrupt);
+      
+      // Then: Effects should be comma-separated
+      expect(viewModel.effectsSummary).toContain(',');
+      expect(viewModel.effectsSummary).toContain('Deals');
+      expect(viewModel.effectsSummary).toContain('Interrupts');
+    });
+  });
+  
+  describe('targeting descriptions', () => {
+    it('should describe self targeting', () => {
+      // Given: Self-targeting skill
+      const defend = SkillLibrary.getSkill('defend');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(defend);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets self');
+    });
+    
+    it('should describe single-enemy-lowest-hp targeting', () => {
+      // Given: Single enemy lowest HP skill
+      const strike = SkillLibrary.getSkill('strike');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(strike);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets lowest HP enemy');
+    });
+    
+    it('should describe single-enemy-highest-hp targeting', () => {
+      // Given: Single enemy highest HP skill (interrupt uses this)
+      const interrupt = SkillLibrary.getSkill('interrupt');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(interrupt);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets highest HP enemy');
+    });
+    
+    it('should describe all-enemies targeting', () => {
+      // Given: AOE damage skill (fireball)
+      const fireball = SkillLibrary.getSkill('fireball');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(fireball);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets all enemies');
+    });
+    
+    it('should describe ally-lowest-hp targeting', () => {
+      // Given: Ally heal skill
+      const shield = SkillLibrary.getSkill('shield');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(shield);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets lowest HP ally (including self)');
+    });
+    
+    it('should describe ally-lowest-hp-damaged targeting', () => {
+      // Given: Damaged ally heal skill
+      const heal = SkillLibrary.getSkill('heal');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(heal);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets lowest HP damaged ally');
+    });
+    
+    it('should describe ally-dead targeting', () => {
+      // Given: Revive skill
+      const revive = SkillLibrary.getSkill('revive');
+      
+      // When: Create view model
+      const viewModel = ViewModelFactory.createSkillViewModel(revive);
+      
+      // Then: Targeting should be described
+      expect(viewModel.targetingDescription).toBe('Targets dead ally');
+    });
+    
+    it.skip('should describe all-allies targeting', () => {
+      // Skipped: No skill currently uses all-allies targeting mode
+      // When a skill is added with all-allies, this test should pass
+    });
   });
 
   describe('createStatusEffectViewModel', () => {

@@ -21,6 +21,10 @@ export interface SkillViewModel {
   formattedDuration: string;
   /** Skill-type color for UI theming */
   color: string;
+  /** Human-readable effect summary, e.g., "Deals 15 damage" */
+  effectsSummary: string;
+  /** Human-readable targeting description, e.g., "Targets lowest HP enemy" */
+  targetingDescription: string;
 }
 
 /**

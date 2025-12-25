@@ -7,8 +7,8 @@
 
 import type { Character } from '../types/character.js';
 import type { CombatState, Action } from '../types/combat.js';
-import type { Skill } from '../types/skill.js';
-import type { StatusEffect } from '../types/status.js';
+import type { Skill, SkillEffect, TargetingMode } from '../types/skill.js';
+import type { StatusEffect, StatusType } from '../types/status.js';
 import type {
   BattleViewModel,
   CharacterViewModel,
@@ -18,6 +18,18 @@ import type {
 } from '../types/view-models.js';
 import { formatCharacterName, getCharacterColor } from './character-name-formatter.js';
 import { SkillLibrary } from '../engine/skill-library.js';
+
+/**
+ * Status effect descriptions for tooltip enhancement
+ */
+const STATUS_DESCRIPTIONS: Record<StatusType, string> = {
+  'poisoned': 'Deals damage over time',
+  'stunned': 'Prevents action queueing',
+  'shielded': 'Absorbs damage before HP',
+  'taunting': 'Forces enemies to target this character',
+  'defending': 'Reduces incoming damage by 50%',
+  'enraged': 'Doubles outgoing damage',
+};
 
 /**
  * Factory for creating view models from domain objects
@@ -94,6 +106,8 @@ export class ViewModelFactory {
       baseDuration: skill.baseDuration,
       formattedDuration: this.formatDuration(skill.baseDuration),
       color: this.getSkillColor(skill),
+      effectsSummary: this.formatEffects(skill.effects),
+      targetingDescription: this.formatTargeting(skill.targeting),
     };
     
     return Object.freeze(viewModel) as SkillViewModel;
@@ -141,6 +155,58 @@ export class ViewModelFactory {
       return '1 tick';
     }
     return `${ticks} ticks`;
+  }
+  
+  /**
+   * Format skill effects as human-readable summary
+   */
+  private static formatEffects(effects: SkillEffect[]): string {
+    return effects.map(effect => {
+      switch (effect.type) {
+        case 'damage':
+          return `Deals ${effect.value} damage`;
+        case 'heal':
+          return `Heals ${effect.value} HP`;
+        case 'shield':
+          return `Grants ${effect.value} Shield`;
+        case 'status': {
+          const statusName = this.capitalize(effect.statusType!);
+          const tickText = effect.duration === 1 ? 'tick' : 'ticks';
+          const description = STATUS_DESCRIPTIONS[effect.statusType!];
+          return `Applies ${statusName} for ${effect.duration} ${tickText}\n→ ${description}`;
+        }
+        case 'revive':
+          return `Revives with ${effect.value}% HP`;
+        case 'cancel':
+          return `Interrupts target's action`;
+        default:
+          return '';
+      }
+    }).filter(Boolean).join(', ');
+  }
+  
+  /**
+   * Format targeting mode as human-readable description
+   */
+  private static formatTargeting(mode: TargetingMode): string {
+    const descriptions: Record<TargetingMode, string> = {
+      'self': 'Targets self',
+      'single-enemy-lowest-hp': 'Targets lowest HP enemy',
+      'single-enemy-highest-hp': 'Targets highest HP enemy',
+      'all-enemies': 'Targets all enemies',
+      'ally-lowest-hp': 'Targets lowest HP ally (including self)',
+      'ally-lowest-hp-damaged': 'Targets lowest HP damaged ally',
+      'ally-dead': 'Targets dead ally',
+      'all-allies': 'Targets all allies',
+    };
+    return descriptions[mode] ?? mode;
+  }
+  
+  /**
+   * Capitalize first letter of a string
+   */
+  private static capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
   
   /**

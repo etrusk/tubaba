@@ -981,25 +981,6 @@
       min-height: 40px;
     }
     
-    .pool-skill {
-      padding: 8px 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.3s ease;
-      border: 2px solid transparent;
-    }
-    
-    .pool-skill:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    }
-    
-    .pool-skill.selected {
-      border-color: #ffd700;
-      box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
-    }
     
     .character-loadouts {
       display: grid;
@@ -1033,24 +1014,91 @@
       min-height: 36px;
     }
     
-    .loadout-skill {
-      padding: 6px 12px;
-      background: rgba(76, 175, 80, 0.3);
-      border-radius: 4px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .loadout-skill:hover {
-      background: rgba(244, 67, 54, 0.5);
-      transform: scale(1.05);
-    }
     
     .empty-loadout {
       color: #888;
       font-style: italic;
       font-size: 0.85rem;
+    }
+    
+    /* Skill Display with Tooltip */
+    .skill-display {
+      position: relative;
+      cursor: help;
+      display: inline-block;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    
+    /* Selectable variant (for pool/loadout) */
+    .skill-display--selectable {
+      cursor: pointer;
+    }
+    
+    .skill-display--selectable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+    
+    /* Selected state */
+    .skill-display--selected {
+      border-color: #ffd700;
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+    }
+    
+    /* Disabled state (innate skills) */
+    .skill-display--disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    .skill-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      z-index: 10000;
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px 12px;
+      min-width: 180px;
+      max-width: 250px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #e0e0e0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      
+      /* Position below by default */
+      left: 50%;
+      top: 100%;
+      transform: translateX(-50%);
+      margin-top: 8px;
+      
+      transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+      pointer-events: none;
+    }
+    
+    .skill-display:hover .skill-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    .skill-tooltip strong {
+      color: inherit;
+    }
+    
+    .skill-tooltip em {
+      color: #888;
+    }
+    
+    .skill-duration {
+      color: #64b5f6;
+      font-size: 0.85em;
+      margin-left: 4px;
     }
   </style>
 </head>
@@ -1110,6 +1158,8 @@
     import { renderActionForecast } from './dist/ui/action-forecast.js';
     import { analyzeVisualization } from './dist/ui/visualization-analyzer.js';
     import { renderBattleVisualization } from './dist/ui/battle-visualization.js';
+    import { renderSkillDisplay } from './dist/ui/skill-display.js';
+    import { ViewModelFactory } from './dist/ui/view-model-factory.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
     import { RunStateManager } from './dist/run/run-state-manager.js';
@@ -1230,9 +1280,15 @@
     
     // Assign skill to character when clicking on inventory panel (handled in renderBattle right column)
     window.assignSkillToCharacter = function(characterId, skillId) {
+      // BUG FIX 2: Only allow skill assignment to players (enemies are not in runState.playerParty)
       const character = runState.playerParty.find(c => c.id === characterId);
       
-      if (character && canReceiveSkill(character) && skillId) {
+      if (!character) {
+        console.warn('Cannot assign skills to enemies - only player characters can equip skills');
+        return;
+      }
+      
+      if (canReceiveSkill(character) && skillId) {
         try {
           runState = distributeSkill(runState, skillId, characterId);
           selectedSkillId = null;
@@ -1339,14 +1395,15 @@
             <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
               ${runState.skillPool.length === 0
                 ? '<div class="empty-loadout">All skills assigned!</div>'
-                : runState.skillPool.map(skillId => `
-                    <div class="pool-skill ${selectedSkillId === skillId ? 'selected' : ''}"
-                         style="background: ${getSkillColor(skillId)};"
-                         data-skill-id="${skillId}"
-                         onclick="selectSkillFromPool('${skillId}')">
-                      ${SkillLibrary.getSkill(skillId).name}
-                    </div>
-                  `).join('')
+                : runState.skillPool.map(skillId => {
+                    const skill = SkillLibrary.getSkill(skillId);
+                    const skillVM = ViewModelFactory.createSkillViewModel(skill);
+                    return `<div onclick="selectSkillFromPool('${skillId}')">${renderSkillDisplay(skillVM, {
+                      showDuration: false,
+                      selectable: true,
+                      selected: selectedSkillId === skillId
+                    })}</div>`;
+                  }).join('')
               }
             </div>
           </div>
@@ -1356,33 +1413,28 @@
             <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 1rem;">
               🎒 ${selectedCharacter.name}'s Equipped Skills
               <span style="color: #b0bec5; font-size: 0.85rem;">(${runStateCharacter ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length : 0}/4)</span>
-              ${selectedSkillId ? ' (Click to assign)' : ''}
             </h3>
             <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);">
               <div style="font-size: 0.85rem; color: #888; margin-bottom: 4px;">Innate:</div>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                <div class="loadout-skill"
-                     style="background: ${getSkillColor('strike')}; opacity: 0.7; cursor: not-allowed; display: inline-block;"
-                     data-skill-id="strike">
-                  Strike
-                </div>
-                <div class="loadout-skill"
-                     style="background: ${getSkillColor('defend')}; opacity: 0.7; cursor: not-allowed; display: inline-block;"
-                     data-skill-id="defend">
-                  Defend
-                </div>
+                ${renderSkillDisplay(ViewModelFactory.createSkillViewModel(SkillLibrary.getSkill('strike')), {
+                  showDuration: false,
+                  disabled: true
+                })}
+                ${renderSkillDisplay(ViewModelFactory.createSkillViewModel(SkillLibrary.getSkill('defend')), {
+                  showDuration: false,
+                  disabled: true
+                })}
               </div>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
               ${runStateCharacter && runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length > 0
-                ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').map(skill => `
-                    <div class="loadout-skill"
-                         style="background: ${getSkillColor(skill.id)};"
-                         data-skill-id="${skill.id}"
-                         onclick="event.stopPropagation(); unequipSkillFromCharacter('${selectedCharacterId}', '${skill.id}')">
-                      ${skill.name}
-                    </div>
-                  `).join('')
+                ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').map(skill => {
+                    const skillVM = ViewModelFactory.createSkillViewModel(skill);
+                    return `<div onclick="event.stopPropagation(); unequipSkillFromCharacter('${selectedCharacterId}', '${skill.id}')">${renderSkillDisplay(skillVM, {
+                      showDuration: false
+                    })}</div>`;
+                  }).join('')
                 : `<div class="empty-loadout">${selectedSkillId ? 'Click here to assign selected skill' : 'Select a skill above to equip'}</div>`
               }
             </div>
@@ -1436,6 +1488,8 @@
           } else {
             battleController.selectCharacter(characterId);
           }
+          // BUG FIX 1: Clear skill selection when switching characters
+          selectedSkillId = null;
           renderBattle();
         }
       }

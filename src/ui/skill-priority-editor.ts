@@ -10,6 +10,8 @@
 
 import type { SkillInstruction } from '../types/instructions.js';
 import type { Skill } from '../types/skill.js';
+import { renderSkillDisplay } from './skill-display.js';
+import { ViewModelFactory } from './view-model-factory.js';
 
 /**
  * Calculate priority value based on position in ordered list
@@ -83,6 +85,7 @@ export function renderSkillPriorityEditor(
     .filter(instruction => skillMap.has(instruction.skillId))
     .map((instruction, index) => {
       const skill = skillMap.get(instruction.skillId)!;
+      const skillViewModel = ViewModelFactory.createSkillViewModel(skill);
       const isFirst = index === 0;
       const isLast = index === instructions.length - 1;
       const isSelected = instruction.skillId === selectedSkillId;
@@ -110,7 +113,7 @@ export function renderSkillPriorityEditor(
         <button class="move-btn" data-action="move-down"${downDisabled} title="Move down: This skill will be tried AFTER the skill below it">↓</button>
       </div>
       <input type="checkbox" class="skill-enable"${checked} data-action="toggle-skill" data-skill-id="${instruction.skillId}" title="Enable/Disable: When disabled, this skill will not be used by the AI" />
-      <span class="skill-name">${skill.name} <span style="color: #64b5f6; font-size: 0.85em;">(${skill.baseDuration} ticks)</span></span>
+      <span class="skill-name">${renderSkillDisplay(skillViewModel)}</span>
       <span class="skill-priority">${instruction.priority}</span>
     </li>`;
     })

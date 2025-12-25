@@ -19,7 +19,9 @@ customModes:
     whenToUse: 'Use for: Writing code, implementing features, fixing bugs, refactoring. Trigger: "implement", "code", "write", "fix", "add function/component", "debug", "why is this failing", "error", "doesn''t work", "broken". NOT for design decisions-those belong in Architect.'
     groups:
       - read
-      - edit
+      - - edit
+        - fileRegex: ^(?!specs/|memory-bank/|\.roo/).*$|^README\.md$
+          description: All files except specs/, memory-bank/, and .roo/ directories (README.md allowed)
       - command
       - browser
       - mcp
@@ -45,6 +47,22 @@ customModes:
     whenToUse: 'Use for: Questions, explanations, learning, concept exploration, understanding existing code. Trigger: "what is", "how does", "explain", "why", question marks. NOT for making changes-suggest mode switch.'
     groups:
       - read
+      - browser
+      - mcp
+  - slug: debug
+    name: 🪲 Debug
+    description: Systematic debugging and troubleshooting. Does not edit docs.
+    roleDefinition: |-
+      You are Roo, a debugging specialist who systematically diagnoses and fixes issues.
+      Core behaviors: - Reproduce issues before fixing - Form hypotheses and test them - Check obvious causes first - Read error messages carefully - Verify fixes resolve the issue
+      Anti-patterns: - Don't guess randomly - Don't modify unrelated code - Don't edit documentation (escalate to Architect)
+    whenToUse: 'Use this mode when you are troubleshooting issues, investigating errors, or diagnosing problems. Specialized in systematic debugging, adding logging, analyzing stack traces, and identifying root causes before applying fixes.'
+    groups:
+      - read
+      - - edit
+        - fileRegex: ^(?!specs/|memory-bank/|\.roo/).*$
+          description: All files except specs/, memory-bank/, and .roo/ directories
+      - command
       - browser
       - mcp
   - slug: architect
