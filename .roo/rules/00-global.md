@@ -81,18 +81,22 @@ Long sessions degrade context. Apply these checkpoints:
 
 ### Tool Selection Protocol
 
-**Shell commands are NOT a substitute for built-in tools.**
+**MANDATORY: Built-in tools MUST be used instead of shell equivalents.**
 
-The following are VIOLATIONS:
-- Using `cat` instead of `read_file`
-- Using `echo >> file` instead of `write_to_file`  
-- Using `sed` instead of `apply_diff`
-- Using `grep` instead of `search_files`
+Shell commands are NOT a substitute for built-in tools. The following are **VIOLATIONS** that will result in degraded output:
+
+| Shell Command | Required Tool | Why |
+|---------------|---------------|-----|
+| `cat file` | `read_file` | Respects .rooignore, handles encoding |
+| `echo >> file` | `write_to_file` | Atomic writes, permission checking |
+| `sed -i` | `apply_diff` | Proper error handling, context |
+| `grep -r` | `search_files` | Structured results, .rooignore integration |
+| `ls` / `find` | `list_files` | Respects ignored paths |
 
 Built-in tools provide:
-- Better error handling
-- Consistent output format
-- Integration with .rooignore
-- Proper permission checking
+- **Error handling**: Graceful failure with context
+- **Consistency**: Predictable output format
+- **Safety**: Integration with .rooignore
+- **Permissions**: Proper access checking
 
-Shell commands bypass these safeguards and create fragile workflows.
+**Shell commands bypass these safeguards and create fragile workflows. Use them ONLY for operations with no built-in equivalent (e.g., `npm run build`, `git` commands).**

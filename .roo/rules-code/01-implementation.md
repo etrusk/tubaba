@@ -129,3 +129,18 @@ Before marking task complete:
 4. [ ] No hardcoded secrets or credentials
 5. [ ] Follows existing project patterns
 6. [ ] Ready for review (no TODOs blocking functionality)
+
+## Post-Completion Protocol
+
+After marking task complete, execute these steps:
+
+### 1. Build Verification
+```bash
+npm run build
+```
+Ensure build succeeds before presenting completion to user.
+
+### 2. Commit Prompt
+Ask the user: "Should I commit and push these changes?"
+- Wait for explicit approval before any git operations
+- If approved, use conventional commit format
