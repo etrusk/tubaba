@@ -29,38 +29,6 @@ Drift prevention depends on which workflow is active:
 
 Before accepting ANY production task as complete, verify documentation sync.
 
-### Delegation to Reviewer MUST Include
-
-When delegating to 🔍 Reviewer for production work:
-
-```
-**Drift Check Required:**
-Run verification before approving:
-1. `git diff --name-only` — list changed files
-2. If src/ changed but specs/ didn't → FLAG: "DRIFT RISK: Code without spec"
-3. If new types/interfaces → verify specs/plan.md documents them
-4. If design decision made → verify memory-bank/01-decisions.md updated
-
-Report drift severity:
-- CRITICAL: Interface/type mismatch with spec
-- HIGH: New component not in plan.md
-- MEDIUM: Decision made but not logged
-- LOW: Minor implementation detail divergence
-```
-
-### Post-Review Gate
-
-If Reviewer reports drift:
-1. Do NOT mark task complete
-2. Delegate spec sync to 🏗️ Architect:
-   ```
-   **Task:** Sync documentation with implementation
-   **Drift detected:** [Reviewer's finding]
-   **Files to update:** [specific files]
-   **Acceptance:** specs/ matches src/ for changed components
-   ```
-3. Only after Architect confirms sync → mark original task complete
-
 ---
 
 ## Prototype Graduation Protocol
@@ -103,18 +71,6 @@ Then delegate to 💻 Code:
 - Proper error handling
 - Refactored from prototype if needed
 - No shortcuts or TODOs
-```
-
-### Step 3: Final Verification
-
-Finally delegate to 🔍 Reviewer:
-
-```
-**Task:** Verify production readiness
-**Drift Check:** ENABLED
-- Implementation matches specs/plan.md
-- GAME_SPEC.md reflects new capability
-- Tests cover critical scenarios
 ```
 
 ---

@@ -11,7 +11,7 @@ Does task contain uncertainty signals?
 ├─ YES → 🧪 Rapid Prototyping Workflow
 │         (try → decide → graduate to production if accepted)
 └─ NO  → 📋 Spec-First Workflow
-          (spec → implement → review → merge)
+          (spec → implement → merge)
 ```
 
 **Uncertainty signals:**
@@ -100,13 +100,6 @@ Now switch to **Spec-First Workflow**:
    - Refactor inline logic to maintainable code
    ```
 
-3. Delegate to 🔍 Reviewer:
-   ```
-   **Task:** Verify production readiness
-   - Matches specs/plan.md
-   - Test coverage adequate
-   - No drift from documented design
-   ```
 
 ---
 
@@ -149,17 +142,6 @@ Delegate to 💻 Code with full context:
 - [ ] If diverging from plan → stop and escalate
 ```
 
-### Phase 3: Review
-
-Delegate to 🔍 Reviewer:
-
-```
-**Task:** Validate implementation against spec
-**Changed Files:** [list]
-**Spec Reference:** specs/plan.md section [X]
-**Drift Check:** Verify code matches documented design
-```
-
 ---
 
 ## Task Breakdown Rules
@@ -181,7 +163,6 @@ Delegate to 🔍 Reviewer:
 | Production design | 🏗️ Architect | Requirements, GAME_SPEC.md, full detail |
 | Prototype code | 💻 Code | Goal, acceptance, shortcuts OK |
 | Production code | 💻 Code | plan.md reference, test scenarios, no shortcuts |
-| Validate work | 🔍 Reviewer | Files, spec reference, drift check |
 | Bug fix | 💻 Code | Error, repro, suspected cause |
 | Questions | ❓ Ask | Question + context |
 
@@ -197,7 +178,7 @@ git checkout -b spike/[feature-name]
 
 # Production work
 git checkout -b ai/[mode]/[task-name]
-# → Merge when tests pass and reviewer approves
+# → Merge when tests pass
 ```
 
 ---
@@ -221,5 +202,4 @@ Human: "Implement rule evaluation display per specs/rule-evaluation-display-rede
 → Route: Spec-First Workflow
 → Architect: Verify specs/plan.md exists (or create)
 → Code: Full implementation with comprehensive tests
-→ Reviewer: Validate against spec
 ```

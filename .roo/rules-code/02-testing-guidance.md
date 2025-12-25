@@ -13,7 +13,7 @@ For business logic, payments, auth, complex algorithms, and public APIs:
 3. For items marked **"standard coverage"**:
    - Implement first, then write tests
 4. For items marked **"skip testing"**:
-   - Implement without tests (Reviewer may flag if misjudged)
+   - Implement without tests
 
 ## AI-Assisted TDD Pattern
 
