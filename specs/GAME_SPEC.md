@@ -82,9 +82,9 @@
 - "Lowest HP" means absolute HP value (25/100 beats 40/50)
 - Important for focus-fire tactics
 
-**Self excluded from ally targeting when teammates alive:**
-- Prevents heal/shield self-loops
-- Self-targeting allowed when solo or via explicit "self" targeting mode
+**Self included in ally targeting:**
+- Characters may target themselves with ally-targeting skills (Heal, Shield)
+- Target selection follows normal HP-based priority (lowest HP wins)
 
 **Taunt only affects NEW target selections:**
 - Does not redirect already-locked targets

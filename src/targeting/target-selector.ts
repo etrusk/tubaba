@@ -50,7 +50,7 @@ export function selectTargets(
 
     case 'ally-lowest-hp': {
       const livingAllies = players.filter(
-        (p) => p.currentHp > 0 && p.id !== caster.id
+        (p) => p.currentHp > 0
       );
       if (livingAllies.length === 0) return [];
       
@@ -65,7 +65,7 @@ export function selectTargets(
 
     case 'ally-lowest-hp-damaged': {
       const damagedAllies = players.filter(
-        (p) => p.currentHp > 0 && p.id !== caster.id && p.currentHp < p.maxHp
+        (p) => p.currentHp > 0 && p.currentHp < p.maxHp
       );
       if (damagedAllies.length === 0) return [];
       

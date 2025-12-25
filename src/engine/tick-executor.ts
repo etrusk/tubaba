@@ -551,18 +551,6 @@ function executeTickWithDebug(
           }
         }
         
-        // Self-exclusion filter (for ally targeting)
-        if (targetingMode === 'ally-lowest-hp' || targetingMode === 'all-allies') {
-          const selfRemoved = finalTargets.find(t => t.id === character.id);
-          if (selfRemoved) {
-            filtersApplied.push({
-              filterType: 'self-exclusion',
-              removed: [character.id],
-            });
-            finalTargets = finalTargets.filter(t => t.id !== character.id);
-          }
-        }
-        
         // Build candidate list for debug
         const candidateList = candidates.map(c => `${c.name} (${c.currentHp}/${c.maxHp})`);
         

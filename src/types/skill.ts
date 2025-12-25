@@ -6,8 +6,8 @@ import type { StatusType } from './status.js';
  * - single-enemy-lowest-hp: Single enemy with lowest HP (tie-break: leftmost)
  * - single-enemy-highest-hp: Single enemy with highest HP
  * - all-enemies: All living enemies
- * - ally-lowest-hp: Ally with lowest HP (excluding caster)
- * - ally-lowest-hp-damaged: Ally with lowest HP who is damaged (currentHp < maxHp)
+ * - ally-lowest-hp: Ally or self with lowest HP
+ * - ally-lowest-hp-damaged: Ally or self with lowest HP who is damaged (currentHp < maxHp)
  * - ally-dead: Dead ally (for Revive)
  * - all-allies: All living allies
  */

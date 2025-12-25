@@ -348,7 +348,7 @@ describe('TargetSelector', () => {
       expect(targets[0]!.currentHp).toBe(30);
     });
 
-    it('should exclude the caster from selection', () => {
+    it('should include caster in selection pool', () => {
       const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP
       const players = [
         caster,
@@ -365,7 +365,7 @@ describe('TargetSelector', () => {
       );
 
       expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p2'); // Should NOT select caster despite lowest HP
+      expect(targets[0]!.id).toBe('p1'); // Should select caster when they have lowest HP
     });
 
     it('should break ties by selecting leftmost in array', () => {
@@ -408,7 +408,7 @@ describe('TargetSelector', () => {
       expect(targets[0]!.id).toBe('p3');
     });
 
-    it('should return empty array when no valid allies exist (only caster alive)', () => {
+    it('should return caster when only caster alive', () => {
       const caster = createTestCharacter('p1', 'Solo Caster', 100, 100, true);
       const players = [caster];
       const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
@@ -420,10 +420,11 @@ describe('TargetSelector', () => {
         enemies
       );
 
-      expect(targets).toHaveLength(0); // No allies other than caster
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p1'); // Caster can target self
     });
 
-    it('should return empty array when all other allies are dead', () => {
+    it('should return caster when all other allies are dead', () => {
       const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
       const players = [
         caster,
@@ -439,7 +440,8 @@ describe('TargetSelector', () => {
         enemies
       );
 
-      expect(targets).toHaveLength(0);
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p1'); // Caster can target self
     });
 
     it('should select ally with lowest HP even if at full HP', () => {
@@ -507,8 +509,8 @@ describe('TargetSelector', () => {
       expect(targets[0]!.currentHp).toBe(30);
     });
 
-    it('should exclude the caster from selection', () => {
-      const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP
+    it('should include caster in selection pool if damaged', () => {
+      const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP and damaged
       const players = [
         caster,
         createTestCharacter('p2', 'Player 2', 50, 100, true),
@@ -524,7 +526,7 @@ describe('TargetSelector', () => {
       );
 
       expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p2'); // Should NOT select caster despite lowest HP
+      expect(targets[0]!.id).toBe('p1'); // Should select caster when they have lowest HP and are damaged
     });
 
     it('should break ties by selecting leftmost in array', () => {
@@ -607,7 +609,7 @@ describe('TargetSelector', () => {
       expect(targets).toHaveLength(0); // No valid targets when all at full HP
     });
 
-    it('should return empty array when no valid allies exist (only caster alive)', () => {
+    it('should return empty array when only caster alive and at full HP', () => {
       const caster = createTestCharacter('p1', 'Solo Caster', 100, 100, true);
       const players = [caster];
       const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
@@ -619,7 +621,7 @@ describe('TargetSelector', () => {
         enemies
       );
 
-      expect(targets).toHaveLength(0); // No allies other than caster
+      expect(targets).toHaveLength(0); // No damaged allies (caster is at full HP)
     });
 
     it('should return empty array when all other allies are dead', () => {
@@ -641,7 +643,7 @@ describe('TargetSelector', () => {
       expect(targets).toHaveLength(0);
     });
 
-    it('should select damaged caster if caster is damaged (edge case)', () => {
+    it('should select damaged caster when other allies are at full HP', () => {
       const caster = createTestCharacter('p1', 'Damaged Caster', 50, 100, true);
       const players = [
         caster,
@@ -656,7 +658,8 @@ describe('TargetSelector', () => {
         enemies
       );
 
-      expect(targets).toHaveLength(0); // Caster excluded even when damaged, only ally at full HP
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('p1'); // Caster can be selected when damaged
     });
   });
 

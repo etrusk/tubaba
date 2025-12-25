@@ -80,8 +80,8 @@ describe('TargetingOverrideSelector - Dropdown Options (AC59)', () => {
     expect(html).toContain('>Single Enemy (Lowest HP)<');
     expect(html).toContain('>Single Enemy (Highest HP)<');
     expect(html).toContain('>All Enemies<');
-    expect(html).toContain('>Ally (Lowest HP)<');
-    expect(html).toContain('>Ally (Lowest HP - Damaged)<');
+    expect(html).toContain('>Ally/Self (Lowest HP)<');
+    expect(html).toContain('>Ally/Self (Lowest HP - Damaged)<');
     expect(html).toContain('>Ally (Dead - for Revive)<');
     expect(html).toContain('>All Allies<');
   });
@@ -254,8 +254,8 @@ describe('getTargetingModeLabel - Utility Function', () => {
     expect(getTargetingModeLabel('all-enemies')).toBe('All Enemies');
   });
 
-  it('should return "Ally (Lowest HP)" for ally-lowest-hp', () => {
-    expect(getTargetingModeLabel('ally-lowest-hp')).toBe('Ally (Lowest HP)');
+  it('should return "Ally/Self (Lowest HP)" for ally-lowest-hp', () => {
+    expect(getTargetingModeLabel('ally-lowest-hp')).toBe('Ally/Self (Lowest HP)');
   });
 
   it('should return "Ally (Dead - for Revive)" for ally-dead', () => {

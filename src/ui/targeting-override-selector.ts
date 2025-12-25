@@ -27,8 +27,8 @@ export function getTargetingModeLabel(mode: TargetingMode): string {
     'single-enemy-lowest-hp': 'Single Enemy (Lowest HP)',
     'single-enemy-highest-hp': 'Single Enemy (Highest HP)',
     'all-enemies': 'All Enemies',
-    'ally-lowest-hp': 'Ally (Lowest HP)',
-    'ally-lowest-hp-damaged': 'Ally (Lowest HP - Damaged)',
+    'ally-lowest-hp': 'Ally/Self (Lowest HP)',
+    'ally-lowest-hp-damaged': 'Ally/Self (Lowest HP - Damaged)',
     'ally-dead': 'Ally (Dead - for Revive)',
     'all-allies': 'All Allies',
   };
@@ -54,8 +54,8 @@ export function getTargetingModeHelp(mode: TargetingMode): string {
     'single-enemy-lowest-hp': 'Targets the enemy with the lowest current HP',
     'single-enemy-highest-hp': 'Targets the enemy with the highest current HP',
     'all-enemies': 'Targets all enemies in the battle',
-    'ally-lowest-hp': 'Targets the ally with the lowest current HP',
-    'ally-lowest-hp-damaged': 'Targets the ally with the lowest HP who is damaged (HP < max)',
+    'ally-lowest-hp': 'Targets the ally or self with the lowest current HP',
+    'ally-lowest-hp-damaged': 'Targets the damaged ally or self with the lowest HP',
     'ally-dead': 'Targets a dead ally (for revival skills)',
     'all-allies': 'Targets all allies in the battle',
   };
