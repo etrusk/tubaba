@@ -118,7 +118,7 @@ function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
 /**
  * Renders a single rule check result
  */
-function renderRuleCheck(rule: RuleCheckResult): string {
+function _renderRuleCheck(rule: RuleCheckResult): string {
   // Use the new status field instead of matched
   const icon = rule.status === 'selected' ? '✓' : '✗';
   const cssClass = rule.status === 'selected' ? 'matched' :
@@ -164,7 +164,7 @@ function renderCondition(condition: ConditionCheckResult): string {
 /**
  * Renders the targeting decisions section
  */
-function renderTargetingDecisions(decisions: TargetingDecision[], characterNameMap: Map<string, string>): string {
+function _renderTargetingDecisions(decisions: TargetingDecision[], characterNameMap: Map<string, string>): string {
   const content = decisions.length > 0
     ? decisions.map(d => renderTargetingDecision(d, characterNameMap)).join('\n    ')
     : '<div>No targeting decisions this tick</div>';
@@ -236,7 +236,7 @@ function renderTargetingDecision(decision: TargetingDecision, characterNameMap: 
 /**
  * Renders the resolution substeps section
  */
-function renderResolutionSubsteps(substeps: ResolutionSubstep[], characterNameMap: Map<string, string>): string {
+function _renderResolutionSubsteps(substeps: ResolutionSubstep[], characterNameMap: Map<string, string>): string {
   const content = substeps.length > 0
     ? `<ol>
       ${substeps.map((substep, index) => renderSubstep(substep, index + 1, characterNameMap)).join('\n      ')}

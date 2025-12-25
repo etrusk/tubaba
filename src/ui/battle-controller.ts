@@ -5,9 +5,11 @@ import type {
 } from '../types/instructions.js';
 import type { Condition, TargetingMode } from '../types/skill.js';
 import type { ActionForecast } from '../types/forecast.js';
+import type { BattleViewModel } from '../types/view-models.js';
 import { TickExecutor } from '../engine/tick-executor.js';
 import { applyInstructionsToCharacter, createDefaultInstructions } from './instructions-converter.js';
 import { forecastNextActions } from './action-forecast-analyzer.js';
+import { ViewModelFactory } from './view-model-factory.js';
 
 /**
  * Deep clone utility for state management
@@ -74,9 +76,12 @@ export class BattleController {
   
   // Forecast cache
   private forecastCache: ActionForecast | null;
+  
+  // View model cache
+  private viewModelCache: BattleViewModel | null;
 
   constructor(initialState: CombatState, timeProvider: TimeProvider = defaultTimeProvider) {
-    // Initialize instructions for all characters (players AND enemies) BEFORE freezing state
+    // Initialize instructions for all characters using their ACTUAL skills
     const instructions = new Map<string, CharacterInstructions>();
     for (const player of initialState.players) {
       instructions.set(player.id, createDefaultInstructions(player));
@@ -85,7 +90,7 @@ export class BattleController {
       instructions.set(enemy.id, createDefaultInstructions(enemy));
     }
     
-    // Apply default instructions to initial state
+    // Apply default instructions to state
     const stateWithInstructions = {
       ...initialState,
       players: initialState.players.map(player => {
@@ -108,6 +113,7 @@ export class BattleController {
     this.playing = false;
     this.timeProvider = timeProvider;
     this.forecastCache = null;
+    this.viewModelCache = null;
     
     this.instructionsState = {
       selectedCharacterId: null,
@@ -177,6 +183,9 @@ export class BattleController {
 
     // Invalidate forecast cache
     this.forecastCache = null;
+    
+    // Invalidate view model cache
+    this.viewModelCache = null;
 
     // Auto-stop playback if battle just ended
     if (this.currentState.battleStatus !== 'ongoing') {
@@ -197,6 +206,9 @@ export class BattleController {
     // Move back one in history (safe to assign directly - immutable via Immer)
     this.currentHistoryIndex--;
     this.currentState = this.history[this.currentHistoryIndex]!;
+    
+    // Invalidate view model cache
+    this.viewModelCache = null;
   }
 
   /**
@@ -300,6 +312,9 @@ export class BattleController {
     
     // Clear forecast cache
     this.forecastCache = null;
+    
+    // Clear view model cache
+    this.viewModelCache = null;
   }
 
   // ===== Instructions Management Methods =====
@@ -332,8 +347,11 @@ export class BattleController {
       return null;
     }
 
+    // Search players first, then enemies
     const character = this.currentState.players.find(
       p => p.id === this.instructionsState.selectedCharacterId
+    ) || this.currentState.enemies.find(
+      e => e.id === this.instructionsState.selectedCharacterId
     );
 
     return character || null;
@@ -519,6 +537,9 @@ export class BattleController {
     
     // Invalidate forecast cache since instructions changed
     this.forecastCache = null;
+    
+    // Invalidate view model cache since instructions changed
+    this.viewModelCache = null;
   }
 
   /**
@@ -563,5 +584,16 @@ export class BattleController {
       );
     }
     return this.forecastCache;
+  }
+
+  /**
+   * Get presentation-ready view model for current state
+   * Returns cached view model if state hasn't changed
+   */
+  getViewModel(): BattleViewModel {
+    if (this.viewModelCache === null) {
+      this.viewModelCache = ViewModelFactory.createBattleViewModel(this.currentState);
+    }
+    return this.viewModelCache;
   }
 }

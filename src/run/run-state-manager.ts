@@ -37,15 +37,10 @@ export const RunStateManager = {
     // Innate skills that all characters start with
     const INNATE_SKILL_IDS = ['strike', 'defend'];
 
-    // Collect non-innate starting skills into the pool
-    const startingSkillIds: string[] = [];
-    for (const character of playerParty) {
-      for (const skill of character.skills) {
-        if (!INNATE_SKILL_IDS.includes(skill.id)) {
-          startingSkillIds.push(skill.id);
-        }
-      }
-    }
+    // Get all skills from library, excluding innates
+    const allSkillIds = SkillLibrary.getAllSkills()
+      .map(skill => skill.id)
+      .filter(id => !INNATE_SKILL_IDS.includes(id));
 
     // Get innate skills from library
     const innateSkills = INNATE_SKILL_IDS.map(id => SkillLibrary.getSkill(id));
@@ -64,7 +59,7 @@ export const RunStateManager = {
       runStatus: 'in-progress',
       encountersCleared: 0,
       skillsUnlockedThisRun: [],
-      skillPool: startingSkillIds,
+      skillPool: allSkillIds,
     };
   },
 

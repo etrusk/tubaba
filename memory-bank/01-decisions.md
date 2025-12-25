@@ -4,6 +4,41 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-25 View Model Pattern for UI Consistency
+
+**Status:** Accepted
+
+**Context:** UI components display inconsistent data because each component:
+1. Receives raw domain objects and transforms them independently
+2. Uses different sources for the same data (e.g., `Character.skills` vs `SkillLibrary.getAllSkills()`)
+3. Must explicitly call formatting functions (e.g., `formatCharacterName()`)
+
+This caused bugs where skills appeared in one panel but not another, and character name colors were applied inconsistently.
+
+**Decision:** Introduce a **View Model layer** between domain objects and UI components.
+
+**Key Components:**
+- `CharacterViewModel` - Pre-formatted character with `formattedName`, `color`, full skill list
+- `SkillViewModel` - Presentation-ready skill with duration formatting, type color
+- `BattleViewModel` - Complete presentation state with all characters and lookups
+- `ViewModelFactory` - Single transformation point from `CombatState` → `BattleViewModel`
+
+**Data Flow:**
+```
+CombatState → ViewModelFactory → BattleViewModel → All UI Components
+```
+
+**Consequences:**
+- All UI components receive consistent, pre-formatted data
+- No direct calls to formatters or `SkillLibrary` in UI components
+- Single place to update when presentation requirements change
+- Slightly more memory usage (view model alongside domain model)
+- Adds one abstraction layer (justified by consistency benefit)
+
+**Implementation:** See [`specs/plan.md`](../specs/plan.md) for full specification.
+
+---
+
 ## 2025-12-24 Per-Tick Rule Re-evaluation (Spike Accepted)
 
 **Status:** Accepted

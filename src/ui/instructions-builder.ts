@@ -35,7 +35,7 @@ export function renderInstructionsBuilder(
   editingSkillId: string | null,
   isDirty: boolean
 ): string {
-  // Derive available skills from character
+  // Use character's equipped skills
   const availableSkills = selectedCharacter?.skills ?? [];
 
   // Render empty state if no character selected

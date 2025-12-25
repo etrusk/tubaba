@@ -769,8 +769,8 @@ describe('BattleController - Standard Coverage: State Access', () => {
 
 describe('BattleController - Windowed History (Phase 2b)', () => {
   it('should limit history to MAX_HISTORY entries (50)', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -787,8 +787,8 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
   });
 
   it('should prune oldest entries when exceeding MAX_HISTORY', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -807,8 +807,8 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
   });
 
   it('should stop stepBack() at oldest available history entry', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -831,8 +831,8 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
   });
 
   it('should not crash when stepping back to oldest available state', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -858,8 +858,8 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
   });
 
   it('should maintain correct history after pruning and stepping forward', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -915,8 +915,8 @@ describe('BattleController - Windowed History (Phase 2b)', () => {
   });
 
   it('should not prune history when below MAX_HISTORY limit', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 1000, 1000, [], false);
+    const player = createTestCharacter('player-1', 999999, 999999, [], true);
+    const enemy = createTestCharacter('enemy-1', 999999, 999999, [], false);
     const initialState = createCombatState([player], [enemy], 0);
     
     const controller = new BattleController(initialState);
@@ -1163,9 +1163,10 @@ describe('BattleController - Skill Instruction Updates', () => {
     
     const instructions = controller.getInstructionsState().instructions.get('player-1');
     const originalOrder = instructions?.skillInstructions.map(si => si.skillId);
+    // Characters now keep their original skills
     expect(originalOrder).toEqual(['strike', 'heal', 'shield']);
     
-    // Move 'heal' (index 1) to index 0
+    // Move 'heal' to index 0
     controller.updateSkillPriority('player-1', 'heal', 0);
     
     const updated = controller.getInstructionsState().instructions.get('player-1');
@@ -1720,8 +1721,12 @@ describe('BattleController - Action Forecast Extension', () => {
     
     // Should have at least one timeline entry for the queued action
     expect(forecast.timeline.length).toBeGreaterThan(0);
-    expect(forecast.timeline[0]?.isQueued).toBe(true);
-    expect(forecast.timeline[0]?.tickNumber).toBe(12); // Current tick 10 + 2 remaining
+    
+    // Find the queued action in the timeline (it might not be first due to sorting)
+    const queuedEntry = forecast.timeline.find(entry => entry.isQueued);
+    expect(queuedEntry).toBeDefined();
+    expect(queuedEntry?.tickNumber).toBe(12); // Current tick 10 + 2 remaining
+    expect(queuedEntry?.characterId).toBe('player-1');
   });
 
   it('should return empty forecast when no instructions configured', () => {

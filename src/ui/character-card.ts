@@ -3,7 +3,7 @@ import { formatCharacterName } from './character-name-formatter.js';
 
 /**
  * Renders a character card as HTML string
- * 
+ *
  * @param character - The character to render
  * @returns HTML string representing the character card
  */

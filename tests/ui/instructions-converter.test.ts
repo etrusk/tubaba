@@ -434,7 +434,7 @@ describe('instructions-converter', () => {
 
       expect(instructions.characterId).toBe(character.id);
       expect(instructions.controlMode).toBe('ai');
-      expect(instructions.skillInstructions).toHaveLength(3);
+      expect(instructions.skillInstructions).toHaveLength(3); // Character's equipped skills
     });
 
     it('creates instructions for each skill in character loadout', () => {
@@ -442,10 +442,12 @@ describe('instructions-converter', () => {
 
       const instructions = createDefaultInstructions(character);
 
+      // Should have skills from character's loadout
       const skillIds = instructions.skillInstructions.map((si: SkillInstruction) => si.skillId);
       expect(skillIds).toContain('skill1');
       expect(skillIds).toContain('skill2');
       expect(skillIds).toContain('skill3');
+      expect(skillIds).toHaveLength(3);
     });
 
     it('sets all skills to enabled by default', () => {
@@ -502,7 +504,8 @@ describe('instructions-converter', () => {
 
       const instructions = createDefaultInstructions(character);
 
-      expect(instructions.skillInstructions).toEqual([]);
+      // Characters with no skills get no instructions
+      expect(instructions.skillInstructions).toHaveLength(0);
     });
   });
 });

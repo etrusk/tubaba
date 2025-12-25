@@ -229,9 +229,15 @@ describe('Bug Fix: Instructions Priorities Used by Action Selection', () => {
 
     const controller = new BattleController(initialState);
 
-    // Disable Strike (highest priority skill)
+    // Disable Strike (highest priority skill) and all other skills except Shield
     const playerInstructions = controller.getInstructionsState().instructions.get('player-1');
     if (playerInstructions) {
+      // Disable all skills first
+      for (const instruction of playerInstructions.skillInstructions) {
+        instruction.enabled = false;
+      }
+      
+      // Then configure only the skills we're testing
       const strikeInstruction = playerInstructions.skillInstructions.find(si => si.skillId === 'strike');
       const shieldInstruction = playerInstructions.skillInstructions.find(si => si.skillId === 'shield');
       
@@ -239,7 +245,7 @@ describe('Bug Fix: Instructions Priorities Used by Action Selection', () => {
         strikeInstruction.priority = 20; // Highest priority
         strikeInstruction.enabled = false; // But disabled!
         shieldInstruction.priority = 10;
-        shieldInstruction.enabled = true;
+        shieldInstruction.enabled = true; // Only skill enabled
       }
     }
 

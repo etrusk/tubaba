@@ -11,7 +11,7 @@ export interface TargetFilter {
   applyFilters(
     targets: Character[],
     allPlayers: Character[],
-    allEnemies: Character[],
+    _allEnemies: Character[],
     casterIsEnemy: boolean
   ): Character[];
 }
@@ -20,7 +20,7 @@ const TargetFilter: TargetFilter = {
   applyFilters(
     targets: Character[],
     allPlayers: Character[],
-    allEnemies: Character[],
+    _allEnemies: Character[],
     casterIsEnemy: boolean
   ): Character[] {
     // 1. Filter out dead targets (HP <= 0)

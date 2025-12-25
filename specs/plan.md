@@ -1,188 +1,226 @@
-# Intent Line Overlap Fix - Curved Lines Implementation Plan
+# View Model Pattern for Consistent UI Presentation
 
 ## Overview
 
-Replace the fragile Angular Port Allocation algorithm with Quadratic Bezier curves. This eliminates mathematical fragility by ensuring overlapping lines take physically different paths.
+Introduce a View Model layer to transform domain objects into presentation-ready objects ONCE, ensuring all UI components display consistent data. This addresses the recurring issue where features (skill lists, name colors) are applied inconsistently across different UI panels.
 
-**Problem:** Straight lines between two points share the same geometric path. Offsetting endpoints is fragile (sign errors cause total overlap).
+## Problem Statement
 
-**Solution:** Curve overlapping lines in opposite directions so they never share the same path.
+Current architecture has **distributed presentation logic**:
+- [`character-card.ts`](../src/ui/character-card.ts) calls `formatCharacterName()` explicitly
+- [`skill-priority-editor.ts`](../src/ui/skill-priority-editor.ts) receives `availableSkills` as a separate parameter
+- [`instructions-converter.ts`](../src/ui/instructions-converter.ts) uses `SkillLibrary.getAllSkills()` directly
+- Each component does its own transformation, leading to inconsistencies when features are added
 
----
+**Result**: When we add "all skills for all characters", some components show 12 skills, others show 3.
 
 ## Components
 
-### 1. IntentLine Type Extension
+### 1. CharacterViewModel
+**Purpose**: Presentation-ready character data with all formatting pre-applied.
 
-**Purpose:** Add optional control point for Bezier curve rendering
+**Inputs**: `Character` (domain), character ID
+**Outputs**: `CharacterViewModel` with formatted name, colors, full skill list
 
-**File:** [`src/types/visualization.ts`](../src/types/visualization.ts:45)
-
-**Change:**
 ```typescript
-export interface IntentLine {
-  // ... existing fields ...
-  startPos: { x: number; y: number };
-  endPos: { x: number; y: number };
-  controlPoint?: { x: number; y: number };  // NEW
+// src/types/view-models.ts
+export interface CharacterViewModel {
+  // Identity
+  id: string;
+  name: string;                    // Raw name
+  formattedName: string;           // HTML with color styling
+  color: string;                   // Hex color for this character
+  
+  // State
+  currentHp: number;
+  maxHp: number;
+  hpPercent: number;               // Pre-calculated 0-100
+  isKO: boolean;
+  isPlayer: boolean;
+  
+  // Skills (always full library for all characters)
+  skills: SkillViewModel[];
+  
+  // Status
+  statusEffects: StatusEffectViewModel[];
+  
+  // Action
+  currentAction: ActionViewModel | null;
 }
 ```
 
-**Dependencies:** None
+### 2. SkillViewModel
+**Purpose**: Presentation-ready skill data.
 
----
-
-### 2. Curve Control Point Calculator
-
-**Purpose:** Replace `allocateAngularPorts()` with `calculateCurveControlPoints()`
-
-**File:** [`src/ui/visualization-analyzer.ts`](../src/ui/visualization-analyzer.ts:248)
-
-**Algorithm:**
-1. Group lines by endpoint pair (A-B, regardless of direction)
-2. For groups with 1 line: no control point (straight line)
-3. For groups with 2+ lines:
-   - Calculate midpoint between A and B
-   - Calculate perpendicular direction
-   - Assign alternating offsets: `+30px`, `-30px`, `+60px`, `-60px`...
-
-**Inputs:** `IntentLine[]`, `Map<string, CharacterPosition>`
-
-**Outputs:** `Map<number, { x: number; y: number }>` (line index → control point)
-
-**Dependencies:** None
-
----
-
-### 3. Intent Line Renderer Update
-
-**Purpose:** Render `<path>` with quadratic Bezier instead of `<line>`
-
-**File:** [`src/ui/intent-line.ts`](../src/ui/intent-line.ts:42)
-
-**Change:**
 ```typescript
-// BEFORE (straight line)
-<line x1="${startPos.x}" y1="${startPos.y}" x2="${endPos.x}" y2="${endPos.y}" ... />
-
-// AFTER (with optional curve)
-if (controlPoint) {
-  // Quadratic Bezier: M start Q control end
-  <path d="M ${startPos.x} ${startPos.y} Q ${controlPoint.x} ${controlPoint.y} ${endPos.x} ${endPos.y}" ... />
-} else {
-  // Straight line as path for consistency
-  <path d="M ${startPos.x} ${startPos.y} L ${endPos.x} ${endPos.y}" ... />
+export interface SkillViewModel {
+  id: string;
+  name: string;
+  baseDuration: number;
+  formattedDuration: string;      // "2 ticks"
+  color: string;                  // Skill-type color (strike=red, heal=green)
 }
 ```
 
-**Dependencies:** IntentLine type change (#1)
+### 3. ViewModelFactory
+**Purpose**: Single transformation point from domain → view models.
 
----
+**Location**: `src/ui/view-model-factory.ts`
+
+```typescript
+export class ViewModelFactory {
+  // Transform entire combat state to view models
+  static createBattleViewModel(state: CombatState): BattleViewModel;
+  
+  // Individual transformations (called by above)
+  static createCharacterViewModel(char: Character): CharacterViewModel;
+  static createSkillViewModel(skill: Skill): SkillViewModel;
+}
+```
+
+### 4. BattleViewModel
+**Purpose**: Complete presentation state for the entire battle UI.
+
+```typescript
+export interface BattleViewModel {
+  tick: number;
+  battleStatus: 'ongoing' | 'victory' | 'defeat';
+  
+  // All characters with consistent formatting
+  players: CharacterViewModel[];
+  enemies: CharacterViewModel[];
+  allCharacters: CharacterViewModel[];  // Combined for name lookups
+  
+  // Pre-built lookups for text colorization
+  characterColorMap: Map<string, string>;
+}
+```
 
 ## Data Flow
 
 ```
-CombatState
-    ↓
-analyzeVisualization()
-    ↓
-[Create IntentLine[] with startPos/endPos]
-    ↓
-calculateCurveControlPoints()  ← NEW (replaces allocateAngularPorts)
-    ↓
-[Assign controlPoint to overlapping lines]
-    ↓
-IntentLine[] (with optional controlPoint)
-    ↓
-renderIntentLine()  ← MODIFIED (renders <path> instead of <line>)
-    ↓
-SVG output
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  CombatState    │ ──► │ ViewModelFactory │ ──► │ BattleViewModel │
+│  (domain)       │     │                  │     │ (presentation)  │
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                                          │
+                                                          ▼
+                              ┌────────────────────────────────────────┐
+                              │            UI Components               │
+                              │  ┌──────────┐ ┌──────────┐ ┌────────┐ │
+                              │  │ CharCard │ │ SkillEd  │ │ Arena  │ │
+                              │  └──────────┘ └──────────┘ └────────┘ │
+                              └────────────────────────────────────────┘
 ```
-
----
 
 ## Implementation Sequence
 
-1. **Add `controlPoint` to IntentLine type** (5 min)
-   - No breaking changes (optional field)
-   
-2. **Implement `calculateCurveControlPoints()`** (30 min)
-   - Delete `allocateAngularPorts()` function (~215 lines)
-   - Write new function (~50 lines)
-   - Simple perpendicular offset math
-   
-3. **Update `renderIntentLine()`** (15 min)
-   - Check for `controlPoint`
-   - Render `<path>` with Q (quadratic Bezier) or L (line)
-   - Adjust arrowhead marker positioning for path end
+1. **Create view model types** (`src/types/view-models.ts`)
+   - Define all ViewModel interfaces
+   - No dependencies on existing code
 
-4. **Update tests** (30 min)
-   - Modify visualization-analyzer tests for new function
-   - Modify intent-line tests for path rendering
-   - Add test for bidirectional curve separation
+2. **Create ViewModelFactory** (`src/ui/view-model-factory.ts`)
+   - Import existing formatters (`character-name-formatter.ts`)
+   - Import `SkillLibrary` for full skill list
+   - Single factory with static methods
 
-5. **Visual verification** (10 min)
-   - Load battle-viewer.html
-   - Verify bidirectional lines (Mage↔Goblin) curve opposite directions
-   - Verify single lines remain straight
+3. **Add `getViewModel()` to BattleController**
+   - Cache view model, invalidate on state change
+   - Returns frozen `BattleViewModel`
 
----
+4. **Refactor UI components** (one at a time)
+   - `character-card.ts` - use `CharacterViewModel`
+   - `skill-priority-editor.ts` - use `SkillViewModel[]` from character
+   - `debug-inspector.ts` - use `characterColorMap` for text colorization
+   - `instructions-builder.ts` - use consistent skill list
+
+## Key Design Decisions
+
+### Skills: Always Full Library
+Every character gets access to ALL skills in the view model:
+```typescript
+// ViewModelFactory.createCharacterViewModel()
+const allSkills = SkillLibrary.getAllSkills();
+return {
+  ...character,
+  skills: allSkills.map(s => this.createSkillViewModel(s))
+};
+```
+
+**Rationale**: Simplifies skill management. Domain model can have subset, but presentation always shows full library.
+
+### Name Colors: Pre-computed
+```typescript
+const viewModel: CharacterViewModel = {
+  name: character.name,
+  formattedName: formatCharacterName(character.name, character.id),
+  color: getCharacterColor(character.id)
+};
+```
+
+**Rationale**: Components never call formatters directly. If they need the name, use `formattedName`. If they need the color, use `color`.
+
+### Immutable View Models
+View models are frozen on creation. Components cannot mutate them.
+
+```typescript
+return Object.freeze(viewModel);
+```
+
+**Rationale**: Matches existing pattern in `BattleController` using `deepFreeze()`.
+
+## Open Questions
+
+1. **Caching granularity**: Cache entire `BattleViewModel` or individual `CharacterViewModel`s?
+   - **Proposed default**: Cache entire view model, invalidate on any state change (simpler, current pattern)
+
+2. **Component migration order**: All at once or incremental?
+   - **Proposed default**: Incremental, starting with `character-card.ts` as reference implementation
+
+## Out of Scope
+
+- Reactive/observable patterns (overkill for current scale)
+- Component framework (staying vanilla JS)
+- State management library (BattleController is sufficient)
+- View model diffing/patching (full regeneration is fast enough)
 
 ## Test Scenarios
 
-### calculateCurveControlPoints()
+### ViewModelFactory
 
 **Critical path:**
 | Scenario | Input | Expected Output | Edge Case |
 |----------|-------|-----------------|-----------|
-| Bidirectional pair | Mage→Goblin, Goblin→Mage | Opposite control points | Same endpoints, opposite directions |
-| Single line | Hero→Goblin alone | No control point | Should remain straight |
-| 3 lines same target | Hero→Goblin, Mage→Goblin, Warrior→Goblin | Different control points | Multiple converging |
+| Character has subset of skills | Character with 3 skills | ViewModel with 12 skills (full library) | Empty skill array |
+| Name color consistency | Same character ID | Same color every call | Hash collision on different IDs |
+| HP percentage calculation | currentHp=25, maxHp=100 | hpPercent=25 | 0 HP, HP > maxHp |
 
 **Standard coverage:**
-- Self-targeting line: no curve (or loop arc?)
-- Control point distance scales with line length
+- Status effects have formatted duration text
+- Action has formatted countdown text
+- All characters (players + enemies) included in allCharacters
 
 **Skip testing:**
-- Exact pixel values (visual, not logic)
-- SVG path syntax (framework behavior)
+- `Object.freeze()` behavior (JS built-in)
+- Interface type compliance (TypeScript compile-time)
 
-### renderIntentLine()
+### Refactored Components
 
 **Critical path:**
 | Scenario | Input | Expected Output |
 |----------|-------|-----------------|
-| With controlPoint | `{..., controlPoint: {x: 100, y: 50}}` | `<path d="M...Q...">` |
-| Without controlPoint | `{..., controlPoint: undefined}` | `<path d="M...L...">` |
+| CharacterCard uses formattedName | CharacterViewModel | HTML contains colored name span |
+| SkillPriorityEditor shows all skills | CharacterViewModel.skills | 12 skill items rendered |
 
 **Skip testing:**
-- Marker/arrowhead rendering (existing behavior)
-
----
-
-## Open Questions
-
-1. **Curve intensity**: Should control point offset be fixed (30px) or proportional to line length?
-   - **Proposed default:** Fixed 30px, configurable via constant
-   
-2. **Self-targeting lines**: How to handle character targeting self?
-   - **Proposed default:** Small loop arc (separate concern, not in this plan)
-
----
-
-## Out of Scope
-
-- Self-targeting loop arcs (character buffs self)
-- Animated line drawing
-- Edge bundling for 5+ overlapping lines
-- Hover/selection highlighting changes
-
----
+- HTML structure (existing snapshot tests cover this)
+- CSS class application (visual, not logic)
 
 ## Acceptance Criteria
 
-1. ✅ Bidirectional lines (A→B and B→A) never overlap
-2. ✅ Single lines with no conflicts remain straight
-3. ✅ All existing tests pass (with updates for new API)
-4. ✅ No regression in visual appearance (colors, arrows, dash patterns)
-5. ✅ Battle viewer displays correctly with sample encounter
+1. ✅ All UI components receive data through `BattleViewModel`
+2. ✅ Character names are consistently colored across all panels
+3. ✅ Skill lists show full library for all characters in all panels
+4. ✅ No direct calls to `formatCharacterName()` or `SkillLibrary.getAllSkills()` in UI components
+5. ✅ Existing tests continue to pass
+6. ✅ New tests verify view model transformation logic

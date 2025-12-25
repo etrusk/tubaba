@@ -348,6 +348,7 @@ describe('InstructionsBuilder - General Rendering', () => {
 
     const html = renderInstructionsBuilder(character, instructions, null, false);
 
+    // Should show only character's equipped skills
     expect(html).toContain('Skill One');
     expect(html).toContain('Skill Two');
     expect(html).toContain('Skill Three');

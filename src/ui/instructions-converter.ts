@@ -62,6 +62,7 @@ export function skillInstructionToRule(
 export function createDefaultInstructions(
   character: Character
 ): CharacterInstructions {
+  // Use character's equipped skills, not full library
   return {
     characterId: character.id,
     controlMode: 'ai',

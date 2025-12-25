@@ -1353,7 +1353,11 @@
           
           <div class="panel" style="margin-bottom: 15px; padding: 15px; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
                ${selectedSkillId ? `onclick="assignSkillToCharacter('${selectedCharacterId}', '${selectedSkillId}')"` : ''}>
-            <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 1rem;">🎒 ${selectedCharacter.name}'s Equipped Skills ${selectedSkillId ? '(Click to assign)' : ''}</h3>
+            <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 1rem;">
+              🎒 ${selectedCharacter.name}'s Equipped Skills
+              <span style="color: #b0bec5; font-size: 0.85rem;">(${runStateCharacter ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length : 0}/4)</span>
+              ${selectedSkillId ? ' (Click to assign)' : ''}
+            </h3>
             <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);">
               <div style="font-size: 0.85rem; color: #888; margin-bottom: 4px;">Innate:</div>
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
@@ -1381,9 +1385,6 @@
                   `).join('')
                 : `<div class="empty-loadout">${selectedSkillId ? 'Click here to assign selected skill' : 'Select a skill above to equip'}</div>`
               }
-            </div>
-            <div style="margin-top: 8px; font-size: 0.85rem; color: #b0bec5;">
-              ${runStateCharacter ? `${runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length}/4 skills` : ''}
             </div>
           </div>
           
