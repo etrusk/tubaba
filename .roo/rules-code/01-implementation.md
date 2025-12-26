@@ -4,7 +4,7 @@
 
 Before writing any code:
 
-1. [ ] For production: Read specs/plan.md for this task
+1. [ ] For production: Read the delegation context and test requirements
 2. [ ] For prototypes: Understand goal and success criteria from handoff
 3. [ ] Understand existing patterns in the codebase
 4. [ ] Identify files that will be modified

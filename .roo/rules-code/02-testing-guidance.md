@@ -1,29 +1,18 @@
 # Testing Guidance
 
-## Test-First Protocol (Critical Code)
+## TDD Workflow
 
-For business logic, payments, auth, complex algorithms, and public APIs:
+Testing is now handled through dedicated TDD phase modes:
 
-1. Read test scenarios from `specs/plan.md` (defined by Architect)
-2. For items marked **"critical path"**:
-   - Write failing test BEFORE implementation
-   - Verify test fails for the right reason
-   - Implement minimal code to pass
-   - Refactor while green
-3. For items marked **"standard coverage"**:
-   - Implement first, then write tests
-4. For items marked **"skip testing"**:
-   - Implement without tests
+| Phase | Mode | Focus |
+|-------|------|-------|
+| 🔴 Red | tdd-red | Write failing tests first |
+| 🟢 Green | tdd-green | Minimal implementation to pass |
+| 🔧 Refactor | tdd-refactor | Improve code quality |
 
-## AI-Assisted TDD Pattern
+See Orchestrator (`01-workflow.md`) for TDD workflow coordination.
 
-When implementing from Architect's test scenarios:
-
-1. Read the scenario specification (inputs, expected outputs, edge cases)
-2. Generate test file with descriptive test names matching scenarios
-3. Run test—confirm it fails
-4. Implement code to pass
-5. If scenario seems wrong, STOP and ask—don't silently deviate
+---
 
 ## What to Test (Per Project Research)
 
@@ -45,6 +34,8 @@ When implementing from Architect's test scenarios:
 - Integration tests: 70% (highest confidence per test)
 - Unit tests: 20% (complex logic only)
 - E2E tests: 10% (2-3 critical user journeys max)
+
+---
 
 ## Quality Gates for AI-Generated Tests
 

@@ -6,12 +6,12 @@ Architect supports two planning modes:
 
 | Request Type | Output Format | Detail Level |
 |--------------|---------------|--------------|
-| 🧪 Prototype exploration | Inline response | ~3 paragraphs |
-| 📋 Production specification | specs/plan.md | Full structured spec |
+| 🧪 Exploration | Inline response | ~3 paragraphs |
+| 📋 Production | Inline + memory-bank decision log | Component boundaries + test scenarios |
 
 **Signal detection:**
-- "try", "explore", "prototype", "not sure" → Prototype planning
-- "implement", "build per spec", "production" → Full spec
+- "try", "explore", "prototype", "not sure" → Exploration planning
+- "implement", "build", "production", clear requirements → Production planning
 - If uncertain, ask: "Is this exploration or production work?"
 
 ---
@@ -25,7 +25,7 @@ Before proposing architecture, ask:
 
 ---
 
-## 🧪 Prototype Planning Output
+## 🧪 Exploration Planning Output
 
 For exploration/uncertain work, provide **inline response only** (~3 paragraphs):
 
@@ -45,48 +45,44 @@ For exploration/uncertain work, provide **inline response only** (~3 paragraphs)
 ```
 
 **Do NOT create:**
-- ❌ specs/plan.md
-- ❌ specs/requirements.md
 - ❌ Detailed component breakdowns
-- ❌ Test scenario tables
+- ❌ Comprehensive test scenario tables
+- ❌ Formal specifications
 
 ---
 
 ## 📋 Production Planning Output
 
-### For New Features (specs/plan.md)
+For production work, provide:
+
+### Component Design (inline response)
 
 ```markdown
-# [Feature Name] Implementation Plan
+## [Feature Name]
 
-## Overview
-One paragraph describing what we're building and why.
+### Component Boundaries
+- [Component 1]: Purpose, inputs, outputs
+- [Component 2]: Purpose, inputs, outputs
 
-## Components
-List each component with:
-- Purpose (one sentence)
-- Inputs/Outputs
-- Dependencies
+### Public Interfaces
+[Function signatures, types]
 
-## Data Flow
-How data moves through the system (use Mermaid if complex).
+### Test Scenarios
+**Happy path:** [scenarios]
+**Edge cases:** [scenarios]  
+**Error conditions:** [scenarios]
 
-## Implementation Sequence
-Ordered list of tasks with dependencies noted.
-
-## Open Questions
-Uncertainties that need resolution (with proposed defaults).
-
-## Out of Scope
-Explicitly state what this plan does NOT cover.
+### Implementation Sequence
+1. [First component]
+2. [Second component]
+...
 ```
 
-### For Decisions (memory-bank/01-decisions.md)
+### Decision Logging (memory-bank/01-decisions.md)
 
 **When making architectural decisions, update `memory-bank/01-decisions.md`:**
 - Add new decisions at the top using the template below
 - Keep decisions concise (1-2 sentences each)
-- Historical decisions go in the summary table
 
 ```markdown
 ## [Date] [Decision Title]
@@ -152,61 +148,31 @@ Use explicit uncertainty markers:
 - **Medium confidence:** "I recommend X, though Y is a reasonable alternative if [condition]"
 - **Low confidence:** "I'm uncertain between X and Y. Key question: [what would resolve this]"
 
-## Test Scenario Specification
+## Test Scenario Definition
 
-For each component in specs/plan.md, define test scenarios that Code mode will implement.
+For each component, define test scenarios that TDD Red phase will implement:
 
 ### Template
 
 ```markdown
-## Test Scenarios
+### [Component Name] Test Scenarios
 
-### [Component Name]
+**Happy path** (must have):
+| Scenario | Input | Expected Output |
+|----------|-------|-----------------|
+| [name] | [input] | [output] |
 
-**Critical path** (test-first required):
-| Scenario | Input | Expected Output | Edge Case |
-|----------|-------|-----------------|-----------|
-| [name] | [input] | [output] | [boundary] |
-
-**Standard coverage** (test alongside implementation):
+**Edge cases** (should have):
 - [Scenario]: [Expected behavior]
 
-**Skip testing** (justify):
-- [Item]: [Reason—e.g., trivial getter, framework behavior]
+**Error conditions** (must have):
+- [Scenario]: [Expected error/behavior]
 ```
 
 ### Guidelines
 
-1. **Critical path** = failure here breaks the product or loses money
-   - Auth, payments, core business logic, data integrity
-   
-2. **Standard coverage** = should work but failure is recoverable
-   - Secondary features, non-critical validations
-   
-3. **Skip testing** = testing cost exceeds value
-   - Getters/setters, config, UI styling, prototype code
+1. **Happy path** = core functionality that must work
+2. **Edge cases** = boundary conditions, empty inputs, limits
+3. **Error conditions** = invalid inputs, failure modes
 
-### Example
-
-```markdown
-## Test Scenarios
-
-### UserAuth Component
-
-**Critical path:**
-| Scenario | Input | Expected Output | Edge Case |
-|----------|-------|-----------------|-----------|
-| Valid login | correct email/password | JWT token, user object | case-insensitive email |
-| Invalid password | wrong password | 401 error, no token | after 5 fails, lockout |
-| Token refresh | valid refresh token | new access token | expired refresh → 401 |
-
-**Standard coverage:**
-- Logout: clears tokens from storage
-- Remember me: extends token expiry
-
-**Skip testing:**
-- Password field masking: browser/framework behavior
-- Email format hint: trivial UI
-```
-
-Human reviews these scenarios before Code begins implementation. If scenarios look wrong, push back before proceeding.
+Human reviews these scenarios before TDD Red begins.

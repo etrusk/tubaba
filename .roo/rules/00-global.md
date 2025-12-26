@@ -47,9 +47,9 @@ Never say "certainly" or "definitely" below 95% confidence.
 ## Project Structure Awareness
 
 ```
-specs/           → Requirements and plans (read before implementing)
 memory-bank/     → Project context and decisions (read at session start)
 .roo/rules-*/    → Mode-specific instructions (auto-loaded)
+tests/           → Tests are the spec (behavior documentation)
 ```
 
 ## When Uncertain
@@ -64,8 +64,8 @@ memory-bank/     → Project context and decisions (read at session start)
 Long sessions degrade context. Apply these checkpoints:
 
 **Every 5 substantive messages or 30 minutes:**
-- Re-read `specs/plan.md` if implementing production work
-- Verify current work aligns with requirements
+- Check if current work is drifting from tests/requirements
+- Verify TDD phase discipline is being followed
 - Check if decisions should be logged to `memory-bank/01-decisions.md`
 
 **Before starting new subtask:**
@@ -77,7 +77,7 @@ Long sessions degrade context. Apply these checkpoints:
 
 **Checkpoint triggers (log to memory-bank/):**
 - Architecture decision made → `01-decisions.md`
-- New requirement discovered → flag for human, update specs
+- New requirement discovered → flag for human
 
 ### Tool Selection Protocol
 
