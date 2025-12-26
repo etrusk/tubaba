@@ -1027,7 +1027,7 @@
       cursor: help;
       display: inline-block;
       padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(128, 128, 128, 0.3);
       border-radius: 6px;
       font-weight: bold;
       transition: all 0.3s ease;
@@ -1059,7 +1059,7 @@
     .skill-tooltip {
       visibility: hidden;
       opacity: 0;
-      position: absolute;
+      position: fixed;
       z-index: 10000;
       background: #1e1e1e;
       border: 1px solid #444;
@@ -1072,17 +1072,11 @@
       color: #e0e0e0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       
-      /* Position below by default */
-      left: 50%;
-      top: 100%;
-      transform: translateX(-50%);
-      margin-top: 8px;
-      
       transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
       pointer-events: none;
     }
     
-    .skill-display:hover .skill-tooltip {
+    .skill-tooltip.visible {
       visibility: visible;
       opacity: 1;
     }
@@ -1162,8 +1156,7 @@
     import { ViewModelFactory } from './dist/ui/view-model-factory.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
-    import { RunStateManager } from './dist/run/run-state-manager.js';
-    import { distributeSkill, unequipSkill, canReceiveSkill } from './dist/run/skill-loadout-manager.js';
+    import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter } from './dist/run/debug-character-manager.js';
 
     console.log('Imports loaded successfully');
 
@@ -1193,7 +1186,7 @@
           name: 'Alice',
           maxHp: 100,
           currentHp: 100,
-          skills: [strike, shield],
+          skills: [strike, defend],
           statusEffects: [],
           currentAction: null,
           isPlayer: true,
@@ -1203,7 +1196,7 @@
           name: 'Bob',
           maxHp: 100,
           currentHp: 100,
-          skills: [strike, heal, poison],
+          skills: [strike, defend],
           statusEffects: [],
           currentAction: null,
           isPlayer: true,
@@ -1215,7 +1208,7 @@
           name: 'Goblin',
           maxHp: 50,
           currentHp: 50,
-          skills: [strike],
+          skills: [strike, defend],
           statusEffects: [],
           currentAction: null,
           isPlayer: false,
@@ -1225,7 +1218,7 @@
           name: 'Orc',
           maxHp: 80,
           currentHp: 80,
-          skills: [strike, shield],
+          skills: [strike, defend],
           statusEffects: [],
           currentAction: null,
           isPlayer: false,
@@ -1237,20 +1230,16 @@
       battleStatus: 'ongoing',
     };
 
-    // Initialize RunState for skill loadout management
-    // Create a dummy encounter to satisfy RunStateManager
-    const dummyEncounter = {
-      enemies: sampleEncounter.enemies,
-      skillRewards: []
+    // Initialize DebugBattleState for character/skill management
+    let debugState = {
+      characters: [...sampleEncounter.players, ...sampleEncounter.enemies],
+      skillPool: SkillLibrary.getAllSkills()
+        .filter(s => s.id !== 'strike' && s.id !== 'defend')
+        .map(s => s.id)
     };
     
-    let runState = RunStateManager.initializeRun(
-      'demo-run',
-      sampleEncounter.players,
-      [dummyEncounter]
-    );
-    
     let selectedSkillId = null; // Track selected skill from pool
+    let nextCharacterId = 1; // For generating unique character IDs
     
     // Initialize battle controller (will update when skills are distributed)
     let battleController = new BattleController(sampleEncounter);
@@ -1258,14 +1247,31 @@
     
     // Skill color mapping
     function getSkillColor(skillId) {
-      const colors = {
-        strike: '#e74c3c',    // Red
-        defend: '#607d8b',    // Gray-blue
-        heal: '#2ecc71',      // Green
-        shield: '#3498db',    // Blue
-        poison: '#9b59b6',    // Purple
+      // Explicit color overrides for important skills
+      const explicitColors = {
+        strike: '#e74c3c',      // Red
+        defend: '#607d8b',      // Grey-blue
+        heal: '#2ecc71',        // Green
+        shield: '#3498db',      // Blue
+        poison: '#9b59b6',      // Purple
       };
-      return colors[skillId] || '#95a5a6'; // Default gray
+      
+      if (explicitColors[skillId]) {
+        return explicitColors[skillId];
+      }
+      
+      // Generate unique color from skill ID hash
+      let hash = 0;
+      for (let i = 0; i < skillId.length; i++) {
+        hash = skillId.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      
+      // Convert to HSL for good distribution (avoid too dark/light)
+      const hue = Math.abs(hash) % 360;
+      const saturation = 65 + (Math.abs(hash >> 8) % 20); // 65-85%
+      const lightness = 55 + (Math.abs(hash >> 16) % 15);  // 55-70%
+      
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
     
     // Select skill from pool
@@ -1278,45 +1284,80 @@
       renderBattle();
     };
     
-    // Assign skill to character when clicking on inventory panel (handled in renderBattle right column)
+    // Assign skill to ANY character (player or enemy) in debug mode
     window.assignSkillToCharacter = function(characterId, skillId) {
-      // BUG FIX 2: Only allow skill assignment to players (enemies are not in runState.playerParty)
-      const character = runState.playerParty.find(c => c.id === characterId);
+      if (!skillId) return;
       
-      if (!character) {
-        console.warn('Cannot assign skills to enemies - only player characters can equip skills');
-        return;
-      }
-      
-      if (canReceiveSkill(character) && skillId) {
-        try {
-          runState = distributeSkill(runState, skillId, characterId);
-          selectedSkillId = null;
-          
-          // Update battle controller with new skills
-          updateBattleWithLoadout();
-        } catch (error) {
-          console.error('Failed to distribute skill:', error.message);
-        }
+      try {
+        debugState = debugDistributeSkill(debugState, skillId, characterId);
+        selectedSkillId = null;
+        updateBattleWithLoadout();
+      } catch (error) {
+        console.error('Failed to distribute skill:', error.message);
       }
     };
     
-    // Unequip skill from character back to pool
+    // Unequip skill from ANY character back to pool
     window.unequipSkillFromCharacter = function(characterId, skillId) {
       try {
-        runState = unequipSkill(runState, skillId, characterId);
+        debugState = debugUnequipSkill(debugState, skillId, characterId);
         updateBattleWithLoadout();
       } catch (error) {
         console.error('Failed to unequip skill:', error.message);
       }
     };
     
-    // Update battle controller with current loadout
+    // Add new character to debug battle
+    window.addCharacter = function(isPlayer) {
+      const newId = `char-${nextCharacterId++}`;
+      const newCharacter = {
+        id: newId,
+        name: isPlayer ? `Player ${nextCharacterId}` : `Enemy ${nextCharacterId}`,
+        maxHp: 100,
+        currentHp: 100,
+        skills: [SkillLibrary.getSkill('strike'), SkillLibrary.getSkill('defend')],
+        statusEffects: [],
+        currentAction: null,
+        isPlayer: isPlayer
+      };
+      
+      try {
+        debugState = debugAddCharacter(debugState, newCharacter);
+        updateBattleWithLoadout();
+      } catch (error) {
+        console.error('Failed to add character:', error.message);
+      }
+    };
+    
+    // Remove character from debug battle
+    window.removeCharacter = function(characterId) {
+      try {
+        debugState = debugRemoveCharacter(debugState, characterId);
+        // Clear selection if removed character was selected
+        const instructionsState = battleController.getInstructionsState();
+        if (instructionsState.selectedCharacterId === characterId) {
+          battleController.selectCharacter(null);
+        }
+        updateBattleWithLoadout();
+      } catch (error) {
+        console.error('Failed to remove character:', error.message);
+      }
+    };
+    
+    // Update battle controller with current debug state
     function updateBattleWithLoadout() {
       // Preserve selected character across controller recreation
       const previousSelectedCharacterId = battleController.getInstructionsState().selectedCharacterId;
       
-      const updatedPlayers = runState.playerParty.map(char => ({
+      // Separate characters by isPlayer flag
+      const players = debugState.characters.filter(c => c.isPlayer).map(char => ({
+        ...char,
+        currentHp: char.maxHp, // Reset HP
+        statusEffects: [],
+        currentAction: null,
+      }));
+      
+      const enemies = debugState.characters.filter(c => !c.isPlayer).map(char => ({
         ...char,
         currentHp: char.maxHp, // Reset HP
         statusEffects: [],
@@ -1324,8 +1365,12 @@
       }));
       
       const updatedEncounter = {
-        ...sampleEncounter,
-        players: updatedPlayers,
+        players,
+        enemies,
+        tickNumber: 0,
+        actionQueue: [],
+        eventLog: [],
+        battleStatus: 'ongoing',
       };
       
       battleController = new BattleController(updatedEncounter);
@@ -1386,16 +1431,19 @@
         const selectedCharacter = battleController.getSelectedCharacter();
         const selectedInstructions = battleController.getSelectedCharacterInstructions();
         
-        // Get character from runState to show equipped skills
-        const runStateCharacter = runState.playerParty.find(c => c.id === selectedCharacterId);
+        // Get character from debugState to show equipped skills (works for both players AND enemies)
+        const debugCharacter = debugState.characters.find(c => c.id === selectedCharacterId);
+        
+        const characterType = selectedCharacter.isPlayer ? 'Player' : 'Enemy';
+        const headerColor = selectedCharacter.isPlayer ? '#4caf50' : '#f44336';
         
         rightColumnContainer.innerHTML = `
-          <div class="panel" style="margin-bottom: 15px; padding: 15px;">
+          <div class="panel" style="margin-bottom: 15px; padding: 15px; position: relative; z-index: 1000;">
             <h3 style="color: #64b5f6; margin-bottom: 10px; font-size: 1rem;">Available Skills</h3>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
-              ${runState.skillPool.length === 0
+              ${debugState.skillPool.length === 0
                 ? '<div class="empty-loadout">All skills assigned!</div>'
-                : runState.skillPool.map(skillId => {
+                : debugState.skillPool.map(skillId => {
                     const skill = SkillLibrary.getSkill(skillId);
                     const skillVM = ViewModelFactory.createSkillViewModel(skill);
                     return `<div onclick="selectSkillFromPool('${skillId}')">${renderSkillDisplay(skillVM, {
@@ -1408,11 +1456,11 @@
             </div>
           </div>
           
-          <div class="panel" style="margin-bottom: 15px; padding: 15px; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
+          <div class="panel" style="margin-bottom: 15px; padding: 15px; position: relative; z-index: 1000; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
                ${selectedSkillId ? `onclick="assignSkillToCharacter('${selectedCharacterId}', '${selectedSkillId}')"` : ''}>
-            <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 1rem;">
+            <h3 style="color: ${headerColor}; margin-bottom: 10px; font-size: 1rem;">
               🎒 ${selectedCharacter.name}'s Equipped Skills
-              <span style="color: #b0bec5; font-size: 0.85rem;">(${runStateCharacter ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length : 0}/4)</span>
+              <span style="color: #b0bec5; font-size: 0.85rem;">(${debugCharacter ? debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length : 0}/4)</span>
             </h3>
             <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);">
               <div style="font-size: 0.85rem; color: #888; margin-bottom: 4px;">Innate:</div>
@@ -1428,8 +1476,8 @@
               </div>
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
-              ${runStateCharacter && runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length > 0
-                ? runStateCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').map(skill => {
+              ${debugCharacter && debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length > 0
+                ? debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').map(skill => {
                     const skillVM = ViewModelFactory.createSkillViewModel(skill);
                     return `<div onclick="event.stopPropagation(); unequipSkillFromCharacter('${selectedCharacterId}', '${skill.id}')">${renderSkillDisplay(skillVM, {
                       showDuration: false
@@ -1438,12 +1486,19 @@
                 : `<div class="empty-loadout">${selectedSkillId ? 'Click here to assign selected skill' : 'Select a skill above to equip'}</div>`
               }
             </div>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+              <button onclick="removeCharacter('${selectedCharacterId}')"
+                      style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
+                🗑️ Remove ${characterType}
+              </button>
+            </div>
           </div>
           
           <div class="panel instructions-panel">
             <h2 style="font-size: 1.2rem;">🎮 Instructions</h2>
             ${renderInstructionsBuilder(
-              runStateCharacter || selectedCharacter,
+              debugCharacter || selectedCharacter,
               selectedInstructions,
               battleController.getEditingSkillId(),
               instructionsState.isDirty
@@ -1451,7 +1506,28 @@
           </div>
         `;
       } else {
-        rightColumnContainer.innerHTML = '';
+        // Show character management controls when no character selected
+        rightColumnContainer.innerHTML = `
+          <div class="panel" style="padding: 20px;">
+            <h3 style="color: #ffd700; margin-bottom: 15px; text-align: center;">🎮 Debug Battle Builder</h3>
+            <p style="text-align: center; color: #b0bec5; margin-bottom: 20px; font-size: 0.9rem;">
+              Add characters and assign skills to create custom battles
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button onclick="addCharacter(true)"
+                      style="padding: 15px; background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                ➕ Add Player
+              </button>
+              <button onclick="addCharacter(false)"
+                      style="padding: 15px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                ➕ Add Enemy
+              </button>
+            </div>
+            <p style="text-align: center; color: #888; margin-top: 20px; font-size: 0.85rem; font-style: italic;">
+              Click a character in the arena to manage their skills and AI instructions
+            </p>
+          </div>
+        `;
       }
       
       // Render tick display
@@ -1649,15 +1725,49 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      // Reset both battle controller and run state
-      runState = RunStateManager.initializeRun(
-        'demo-run',
-        sampleEncounter.players.map(p => ({ ...p, currentHp: p.maxHp })),
-        [dummyEncounter]
-      );
+      // Reset debug state to initial configuration
+      debugState = {
+        characters: [...sampleEncounter.players, ...sampleEncounter.enemies],
+        skillPool: SkillLibrary.getAllSkills()
+          .map(s => s.id)
+          .filter(id => id !== 'strike' && id !== 'defend')
+      };
       selectedSkillId = null;
+      nextCharacterId = 1;
       updateBattleWithLoadout();
     });
+
+    // Tooltip event delegation
+    document.addEventListener('mouseenter', (e) => {
+      const skillDisplay = e.target.closest('.skill-display');
+      if (!skillDisplay) return;
+      
+      const tooltip = skillDisplay.querySelector('.skill-tooltip');
+      if (!tooltip) return;
+      
+      const rect = skillDisplay.getBoundingClientRect();
+      const tooltipHeight = 100; // Approximate
+      
+      // Position below by default, above if near bottom
+      if (rect.bottom + tooltipHeight > window.innerHeight) {
+        tooltip.style.top = `${rect.top - tooltipHeight - 8}px`;
+      } else {
+        tooltip.style.top = `${rect.bottom + 8}px`;
+      }
+      tooltip.style.left = `${rect.left + rect.width / 2}px`;
+      tooltip.style.transform = 'translateX(-50%)';
+      tooltip.classList.add('visible');
+    }, true);
+
+    document.addEventListener('mouseleave', (e) => {
+      const skillDisplay = e.target.closest('.skill-display');
+      if (!skillDisplay) return;
+      
+      const tooltip = skillDisplay.querySelector('.skill-tooltip');
+      if (tooltip) {
+        tooltip.classList.remove('visible');
+      }
+    }, true);
 
     // Initial sync: update battle controller with runState skills
     updateBattleWithLoadout();

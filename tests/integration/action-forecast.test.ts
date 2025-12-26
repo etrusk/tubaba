@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TickExecutor } from '../../src/engine/tick-executor';
 import { SkillLibrary } from '../../src/engine/skill-library';
 import { forecastNextActions } from '../../src/ui/action-forecast-analyzer';
-import { selectAction } from '../../src/ai/enemy-brain';
+import { selectAction } from '../../src/ai/action-selector';
 import type { CombatState } from '../../src/types/combat';
 import type { Character } from '../../src/types/character';
 import type { CharacterInstructions } from '../../src/types/instructions';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { selectAction } from '../../src/ai/enemy-brain.js';
+import { selectAction } from '../../src/ai/action-selector.js';
 import { TickExecutor } from '../../src/engine/tick-executor.js';
 import { SkillLibrary } from '../../src/engine/skill-library.js';
 import type { CombatState, Character, Action, Skill } from '../../src/types/index.js';

@@ -4,6 +4,72 @@ New decisions go at the top. Keep only strategic decisions that affect future wo
 
 ---
 
+## 2025-12-26 Tooltip Z-Index Fix - Fixed Positioning
+
+**Status:** Proposed
+
+**Context:** Skill tooltips have been "fixed" 3 times but still appear behind other UI elements. The root cause is CSS stacking contexts - when ancestors have `backdrop-filter`, `overflow-y: auto`, or explicit `z-index`, child elements' z-index only works within that context.
+
+In [`battle-viewer.html`](../battle-viewer.html):
+- [`.panel`](../battle-viewer.html:67) has `backdrop-filter: blur(10px)` → creates stacking context
+- [`.instructions-panel`](../battle-viewer.html:369) has `overflow-y: auto` → creates stacking context
+- Inline `z-index: 1000` styles → creates stacking context
+
+**Options Considered:**
+
+1. **Fixed positioning + JS coordinates** ✅ - `position: fixed` escapes all stacking contexts
+2. **Body-level tooltip container** - DOM restructuring overkill for tooltips
+3. **CSS containment audit** - Would break scrolling, fragile to future changes
+4. **Popover API** - Limited browser support (Chrome 114+, Firefox 125+, Safari 17+)
+
+**Decision:** Use `position: fixed` with JS-calculated viewport coordinates.
+
+**Rationale:**
+- `position: fixed` always positions relative to viewport, escaping ALL stacking contexts
+- Simple implementation: `getBoundingClientRect()` on hover, set `top`/`left` inline
+- No browser compatibility concerns
+- Permanent fix - won't break when CSS changes
+
+**Consequences:**
+- Tooltips will ALWAYS appear above other UI elements
+- Requires ~30 lines of JS event handling (mouseenter/mouseleave)
+- Tooltip positioning is dynamic (calculated fresh on each hover)
+
+**Implementation:** See [`specs/plan.md`](../specs/plan.md) for CSS/JS changes.
+
+---
+
+## 2025-12-25 Debug Battle Builder - Parallel Debug Utilities
+
+**Status:** Proposed
+
+**Context:** The battle-viewer needs to support a "create-your-own-battle debug mode" where:
+- Both player and enemy characters can have skills equipped/unequipped
+- Characters can be added/removed on the fly
+- This is for testing/debugging the battle system
+
+Current architecture has `RunState.playerParty` for character management, which excludes enemies from skill loadout operations.
+
+**Options Considered:**
+
+1. **Extend `RunState` with `allCharacters`** - Clean but adds permanent complexity to production run management
+2. **Rename `playerParty` to `characters`** - Breaking change, too invasive for a debug tool
+3. **Create parallel debug utilities** ✅ - Non-breaking, clearly scoped to debug mode
+
+**Decision:** Create `DebugBattleState` interface and `debug-character-manager.ts` with separate functions that operate on ANY character regardless of `isPlayer` flag.
+
+**Additional Decision:** Rename `src/ai/enemy-brain.ts` → `src/ai/action-selector.ts` since the `selectAction()` function already works for any AI-controlled character, not just enemies.
+
+**Consequences:**
+- Production run management (`RunState`, `skill-loadout-manager.ts`) unchanged
+- Debug mode has its own state and utilities
+- Clear separation between "game flow" code and "testing tools"
+- File rename requires import updates but no behavior changes
+
+**Implementation:** See [`specs/plan.md`](../specs/plan.md) for full specification.
+
+---
+
 ## 2025-12-25 SkillDisplay Component with CSS Tooltips
 
 **Status:** Proposed

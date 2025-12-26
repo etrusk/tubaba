@@ -3,7 +3,7 @@ import type { Character } from '../types/character.js';
 import type { CharacterInstructions, SkillInstruction } from '../types/instructions.js';
 import type { ActionForecast, ActionTimelineEntry, CharacterForecast, RuleSummary } from '../types/forecast.js';
 import type { Condition, TargetingMode } from '../types/skill.js';
-import { selectAction } from '../ai/enemy-brain.js';
+import { selectAction } from '../ai/action-selector.js';
 
 /**
  * Forecast next actions for all characters

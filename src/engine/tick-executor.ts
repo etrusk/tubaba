@@ -14,7 +14,7 @@ import type {
 import type { CharacterInstructions } from '../types/instructions.js';
 import { ActionResolver } from './action-resolver.js';
 import { StatusEffectProcessor } from './status-effect-processor.js';
-import { selectAction } from '../ai/enemy-brain.js';
+import { selectAction } from '../ai/action-selector.js';
 import { evaluateCondition } from '../ai/rule-condition-evaluator.js';
 import { selectTargets } from '../targeting/target-selector.js';
 import _TargetFilter from '../targeting/target-filter.js';

@@ -65,7 +65,7 @@ function createTestSkill(
 }
 
 // Import actual implementation
-import { selectAction } from '../../src/ai/enemy-brain.js';
+import { selectAction } from '../../src/ai/action-selector.js';
 
 describe('EnemyBrain', () => {
   describe('selectAction - rule priority ordering', () => {

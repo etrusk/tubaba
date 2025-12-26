@@ -1,11 +1,25 @@
 /**
  * Debug type definitions for TickExecutor debug enhancement
- * 
+ *
  * These types extend the normal tick execution to capture detailed debug information
  * about rule evaluations, targeting decisions, and resolution substeps.
  */
 
 import type { CombatState } from './combat.js';
+import type { Character } from './character.js';
+
+/**
+ * Debug Battle State
+ *
+ * Lightweight state for debug mode - allows creating custom battles
+ * with both players and enemies, without run progression complexity.
+ */
+export interface DebugBattleState {
+  /** All characters in the debug battle (players and enemies) */
+  characters: Character[];
+  /** Shared skill pool for distribution */
+  skillPool: string[];
+}
 
 /** Condition type for rule evaluation */
 export type ConditionType = 

@@ -1,613 +1,398 @@
-# SkillDisplay Component with Tooltip (v2)
+# Tooltip Z-Index Fix Plan
 
-## Overview
+## Problem Analysis
 
-Create a unified SkillDisplay component for consistent skill presentation across **all** UI locations. The component renders skill name, color, duration indicator, and provides a hover tooltip with full skill details (effects, targeting, duration).
+The skill tooltip z-index has failed 3 times because the root cause was never addressed: **CSS stacking contexts**.
 
-## Status: Phase 2 Required
+### Current State
 
-Phase 1 complete: Created `renderSkillDisplay()` and migrated `skill-priority-editor.ts`.
+In [`battle-viewer.html`](../battle-viewer.html):
+- [`.skill-tooltip`](../battle-viewer.html:1059) has `position: absolute; z-index: 10000`
+- [`.panel`](../battle-viewer.html:67) has `backdrop-filter: blur(10px)` → **creates stacking context**
+- [`.instructions-panel`](../battle-viewer.html:369) has `overflow-y: auto` → **creates stacking context**
+- Inline styles at lines 1429, 1448 add `z-index: 1000` → **creates stacking context**
 
-**Phase 2 gaps identified:**
-1. Available Skills panel uses `.pool-skill` class (no tooltip)
-2. Equipped Skills panel uses `.loadout-skill` class (no tooltip)
-3. Tooltip content unhelpful for status effects ("Applies Taunting" doesn't explain what Taunting does)
+**Why z-index fails:** A child element's z-index only competes within its parent's stacking context. The tooltip's `z-index: 10000` is meaningless when its ancestor has `backdrop-filter` - it can never appear above elements outside that context.
 
-## Problem Statement
+### Options Evaluated
 
-Skills are currently rendered inconsistently in 6+ locations:
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **1. Fixed positioning + JS** | Escapes stacking contexts, works with existing DOM | Requires JS for position calculation | ✅ **Recommended** |
+| **2. Body-level tooltip container** | Complete escape from contexts | Major DOM restructuring, lifecycle management | ❌ Over-engineered |
+| **3. CSS containment audit** | Pure CSS | Breaks scrolling (`overflow-y`), fragile to future changes | ❌ Impractical |
+| **4. Popover API** | Native top-layer support | Chrome 114+, Firefox 125+, Safari 17+ only | ❌ Limited support |
 
-| Location | Current Rendering | Missing |
-|----------|------------------|---------|
-| [`character-card.ts:50-58`](../src/ui/character-card.ts:50) | `skillId.charAt(0).toUpperCase() + slice(1)` | Color, duration, tooltip |
-| [`character-circle.ts:77-84`](../src/ui/character-circle.ts:77) | `skillId` + `SKILL_COLORS` lookup + ticks | Tooltip |
-| [`skill-priority-editor.ts:113`](../src/ui/skill-priority-editor.ts:113) | `skill.name` + inline duration | Color, tooltip |
-| [`action-forecast.ts:62-64`](../src/ui/action-forecast.ts:62) | `skillName` only | Color, duration, tooltip |
-| [`debug-inspector.ts:80-81`](../src/ui/debug-inspector.ts:80) | `skillName` + priority | Color, tooltip |
-| [`event-log.ts:103-127`](../src/ui/event-log.ts:103) | Skill name in event text | Color, tooltip |
+## Chosen Approach: Fixed Positioning with JS Coordinates
 
-**Issues:**
-1. No tooltips anywhere - users can't discover what skills do
-2. Color determined inconsistently (some use `SKILL_COLORS`, some use `getSkillColor()`)
-3. Duration formatting duplicated
-4. Capitalization logic duplicated
+**Rationale:**
+1. `position: fixed` always positions relative to viewport, escaping ALL stacking contexts
+2. Minimal JS required (just `getBoundingClientRect()` on hover)
+3. No browser compatibility issues
+4. No DOM restructuring needed
+5. Permanent fix - won't break with future CSS changes
 
-## Components
+## Implementation
 
-### 1. Extended SkillViewModel
+### CSS Changes ([`battle-viewer.html`](../battle-viewer.html))
 
-**Purpose**: Add tooltip content fields to existing [`SkillViewModel`](../src/types/view-models.ts:13-24).
-
-**New fields** (all pre-formatted for display):
-
-```typescript
-// src/types/view-models.ts (extend existing)
-export interface SkillViewModel {
-  // Existing fields
-  id: string;
-  name: string;
-  baseDuration: number;
-  formattedDuration: string;  // "2 ticks"
-  color: string;              // skill-type color
-
-  // NEW: Tooltip content fields
-  /** Human-readable effect summary, e.g., "Deals 15 damage" */
-  effectsSummary: string;
-  /** Human-readable targeting description, e.g., "Targets lowest HP enemy" */
-  targetingDescription: string;
-}
-```
-
-**Effect summary examples:**
-- `"Deals 15 damage"`
-- `"Heals 30 HP"`
-- `"Applies Poisoned for 6 ticks"`
-- `"Grants 20 Shield"`
-- `"Revives with 50% HP"`
-- `"Interrupts target's action"`
-- `"Deals 25 damage, Applies Stunned for 2 ticks"` (multi-effect)
-
-**Targeting description examples:**
-- `"Targets self"`
-- `"Targets lowest HP enemy"`
-- `"Targets all enemies"`
-- `"Targets lowest HP ally (including self)"`
-- `"Targets dead ally"`
-
-### 2. SkillDisplay Component
-
-**Purpose**: Reusable function that renders a skill element with consistent styling and tooltip.
-
-**Location**: `src/ui/skill-display.ts`
-
-**Signature:**
-```typescript
-export interface SkillDisplayOptions {
-  /** Show duration indicator (default: true) */
-  showDuration?: boolean;
-  /** Additional CSS classes */
-  className?: string;
-  /** Render as inline span vs block div (default: inline) */
-  inline?: boolean;
-}
-
-/**
- * Renders a skill element with tooltip
- * @returns HTML string with skill name and CSS tooltip
- */
-export function renderSkillDisplay(
-  skill: SkillViewModel,
-  options?: SkillDisplayOptions
-): string;
-```
-
-**HTML structure (CSS tooltip approach):**
-```html
-<span class="skill-display" style="color: #f44336;" data-skill-id="strike">
-  Strike
-  <span class="skill-duration">(2 ticks)</span>
-  <span class="skill-tooltip">
-    <strong>Strike</strong> (2 ticks)<br>
-    Deals 15 damage<br>
-    <em>Targets lowest HP enemy</em>
-  </span>
-</span>
-```
-
-**CSS (add to battle-viewer.html):**
+**Before (line 1059-1082):**
 ```css
-.skill-display {
-  position: relative;
-  cursor: help;
-}
-
 .skill-tooltip {
   visibility: hidden;
   opacity: 0;
   position: absolute;
-  z-index: 1000;
-  background: #1e1e1e;
-  border: 1px solid #444;
-  border-radius: 4px;
-  padding: 8px 12px;
-  min-width: 180px;
-  max-width: 250px;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: #e0e0e0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  
-  /* Position below by default */
+  z-index: 10000;
+  /* ... */
   left: 50%;
   top: 100%;
   transform: translateX(-50%);
   margin-top: 8px;
-  
-  transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
-  pointer-events: none;
 }
 
 .skill-display:hover .skill-tooltip {
   visibility: visible;
   opacity: 1;
 }
+```
 
-.skill-tooltip strong {
-  color: inherit;
+**After:**
+```css
+.skill-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;  /* Changed from absolute */
+  z-index: 10000;
+  /* ... */
+  /* Remove left/top/transform - JS will set these */
+  pointer-events: none;
 }
 
-.skill-tooltip em {
-  color: #888;
-}
-
-.skill-duration {
-  color: #64b5f6;
-  font-size: 0.85em;
-  margin-left: 4px;
+.skill-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
 }
 ```
 
-### 3. Effect Formatter
+### JS Changes ([`battle-viewer.html`](../battle-viewer.html))
 
-**Purpose**: Convert [`SkillEffect[]`](../src/types/skill.ts:27-36) to human-readable summary.
+Add tooltip positioning logic in the script section:
 
-**Location**: Extend [`ViewModelFactory`](../src/ui/view-model-factory.ts)
+```javascript
+// Tooltip positioning - escapes stacking contexts via position:fixed
+document.addEventListener('mouseenter', (e) => {
+  const skillDisplay = e.target.closest('.skill-display');
+  if (!skillDisplay) return;
+  
+  const tooltip = skillDisplay.querySelector('.skill-tooltip');
+  if (!tooltip) return;
+  
+  const rect = skillDisplay.getBoundingClientRect();
+  const tooltipHeight = 100; // Approximate, will adjust
+  
+  // Position below by default, above if near bottom
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const showAbove = spaceBelow < tooltipHeight + 20;
+  
+  tooltip.style.left = `${rect.left + rect.width / 2}px`;
+  tooltip.style.transform = 'translateX(-50%)';
+  
+  if (showAbove) {
+    tooltip.style.top = `${rect.top - 8}px`;
+    tooltip.style.transform = 'translateX(-50%) translateY(-100%)';
+  } else {
+    tooltip.style.top = `${rect.bottom + 8}px`;
+  }
+  
+  tooltip.classList.add('visible');
+}, true);
 
-**Logic:**
+document.addEventListener('mouseleave', (e) => {
+  const skillDisplay = e.target.closest('.skill-display');
+  if (!skillDisplay) return;
+  
+  const tooltip = skillDisplay.querySelector('.skill-tooltip');
+  if (tooltip) {
+    tooltip.classList.remove('visible');
+  }
+}, true);
+```
+
+### Edge Cases Handled
+
+1. **Near bottom of viewport:** Tooltip appears above the skill
+2. **Near edges:** `translateX(-50%)` centers horizontally, contained within viewport
+3. **Scrolling:** Position is calculated fresh on each hover (no stale coordinates)
+4. **Multiple tooltips:** Only the hovered tooltip becomes visible
+
+## Files to Modify
+
+1. [`battle-viewer.html`](../battle-viewer.html) - CSS and JS changes
+
+## Test Scenarios
+
+**Critical path:**
+| Scenario | Steps | Expected |
+|----------|-------|----------|
+| Tooltip in instructions panel | Hover skill in scrollable panel | Tooltip visible above ALL UI |
+| Tooltip near bottom | Scroll so skill is near viewport bottom, hover | Tooltip appears ABOVE skill |
+| Tooltip persistence | Hover skill, scroll page | Tooltip stays correctly positioned or hides |
+| Multiple skills | Hover skill A, move to skill B | Only skill B's tooltip visible |
+
+**Standard coverage:**
+- Tooltip content displays correctly (skill name, description, duration)
+- Tooltip disappears on mouse leave
+- Works in all three column areas (left, middle, right)
+
+**Skip testing:**
+- Tooltip styling (visual only, not functional)
+- Animation timing (CSS transition)
+
+## Acceptance Criteria
+
+1. [ ] Tooltips appear above ALL UI elements regardless of container
+2. [ ] Tooltips correctly position below skills (or above near viewport bottom)
+3. [ ] No tooltip clipping or overflow issues
+4. [ ] Existing tooltip content and styling preserved
+5. [ ] Works in instructions panel, skill pool, and character inventory
+
+## Complexity Budget
+
+- **Files modified:** 1 (battle-viewer.html)
+- **New abstractions:** 0
+- **Lines of CSS changed:** ~10
+- **Lines of JS added:** ~30
+
+---
+
+# Debug Battle Builder Implementation Plan
+
+## Overview
+
+Convert battle-viewer from "run with predefined enemies" to a "create-your-own-battle debug mode" where both player and enemy characters can be freely added, removed, and modified including skill assignment. This is a debug/testing tool, not production game flow.
+
+## Current State Analysis
+
+| Component | Current Behavior | Issue |
+|-----------|-----------------|-------|
+| [`Character`](../src/types/character.ts:8) | Has `isPlayer: boolean` | ✅ Already generic |
+| [`RunState.playerParty`](../src/types/run.ts:43) | Only manages player characters | ❌ No enemy management |
+| [`skill-loadout-manager.ts`](../src/run/skill-loadout-manager.ts:43) | Hardcoded to `runState.playerParty` | ❌ Excludes enemies |
+| [`battle-viewer.html:1284`](../battle-viewer.html:1284) | Blocks enemy skill assignment | ❌ Artificial restriction |
+| [`enemy-brain.ts`](../src/ai/enemy-brain.ts:25) | `selectAction()` works for any character | ✅ Already generic |
+
+## Design Decision: Debug-Only Character Manager
+
+**Decision:** Create parallel debug utilities instead of modifying production code.
+
+**Options Considered:**
+
+1. **Extend `RunState` with `allCharacters`** - Clean but adds permanent complexity to run management
+2. **Rename `playerParty` to `characters`** - Breaking change, too invasive for a debug tool
+3. **Create debug-specific utilities** ✅ - Non-breaking, clearly scoped
+
+**Rationale:** Debug Battle Builder is a testing tool, not production game flow. Creating separate utilities:
+- Preserves existing run management integrity
+- Clearly communicates "this is for debugging"
+- Allows ad-hoc character manipulation without state machine complexity
+
+## Components
+
+### 1. DebugBattleState Interface
+
+**Purpose:** Lightweight state for debug mode (no run progression, encounters, etc.)
+
+**Location:** `src/types/debug.ts` (extend existing file)
+
 ```typescript
-private static formatEffects(effects: SkillEffect[]): string {
-  return effects.map(effect => {
-    switch (effect.type) {
-      case 'damage':
-        return `Deals ${effect.value} damage`;
-      case 'heal':
-        return `Heals ${effect.value} HP`;
-      case 'shield':
-        return `Grants ${effect.value} Shield`;
-      case 'status':
-        return `Applies ${capitalize(effect.statusType!)} for ${effect.duration} ticks`;
-      case 'revive':
-        return `Revives with ${effect.value}% HP`;
-      case 'cancel':
-        return `Interrupts target's action`;
-      default:
-        return '';
-    }
-  }).filter(Boolean).join(', ');
+export interface DebugBattleState {
+  /** All characters in the debug battle (players and enemies) */
+  characters: Character[];
+  /** Shared skill pool for distribution */
+  skillPool: string[];
 }
 ```
 
-### 4. Targeting Formatter
+### 2. Debug Character Manager
 
-**Purpose**: Convert [`TargetingMode`](../src/types/skill.ts:14-22) to human-readable description.
+**Purpose:** Manage characters and skills in debug mode (no player/enemy distinction for loadouts)
 
-**Location**: Extend [`ViewModelFactory`](../src/ui/view-model-factory.ts)
+**Location:** `src/run/debug-character-manager.ts` (new file)
 
-**Logic:**
 ```typescript
-private static formatTargeting(mode: TargetingMode): string {
-  const descriptions: Record<TargetingMode, string> = {
-    'self': 'Targets self',
-    'single-enemy-lowest-hp': 'Targets lowest HP enemy',
-    'single-enemy-highest-hp': 'Targets highest HP enemy',
-    'all-enemies': 'Targets all enemies',
-    'ally-lowest-hp': 'Targets lowest HP ally (including self)',
-    'ally-lowest-hp-damaged': 'Targets lowest HP damaged ally',
-    'ally-dead': 'Targets dead ally',
-    'all-allies': 'Targets all allies',
-  };
-  return descriptions[mode] ?? mode;
-}
+/**
+ * Distribute a skill to any character in debug mode
+ * @returns Updated state with skill moved from pool to character
+ */
+export function debugDistributeSkill(
+  state: DebugBattleState,
+  skillId: string,
+  characterId: string
+): DebugBattleState;
+
+/**
+ * Unequip a skill from any character in debug mode
+ * @returns Updated state with skill returned to pool
+ */
+export function debugUnequipSkill(
+  state: DebugBattleState,
+  skillId: string,
+  characterId: string
+): DebugBattleState;
+
+/**
+ * Add a new character to the debug battle
+ * @returns Updated state with new character
+ */
+export function debugAddCharacter(
+  state: DebugBattleState,
+  character: Character
+): DebugBattleState;
+
+/**
+ * Remove a character from the debug battle
+ * @returns Updated state with character removed, skills returned to pool
+ */
+export function debugRemoveCharacter(
+  state: DebugBattleState,
+  characterId: string
+): DebugBattleState;
 ```
+
+### 3. Rename: enemy-brain.ts → action-selector.ts
+
+**Purpose:** File name should reflect actual behavior (selects action for ANY AI-controlled character)
+
+**Changes:**
+- Rename file: `src/ai/enemy-brain.ts` → `src/ai/action-selector.ts`
+- Rename test: `tests/ai/enemy-brain.test.ts` → `tests/ai/action-selector.test.ts`
+- Update imports in:
+  - `src/engine/tick-executor.ts`
+  - `battle-viewer.html`
+  - Any other files importing from `enemy-brain.ts`
+
+**No code changes:** The `selectAction()` function already has the correct generic name.
+
+### 4. Battle Viewer UI Updates
+
+**Purpose:** Enable character/skill management for ALL characters
+
+**Changes in `battle-viewer.html`:**
+
+1. **State management:** Replace `RunState` + `CombatState` hybrid with `DebugBattleState` for debug mode
+2. **Character panel:** Show ALL characters (not just `playerParty`)
+3. **Skill assignment:** Remove line 1284 restriction (`const character = runState.playerParty.find(...)`)
+4. **Add character UI:** Button to spawn new player/enemy with defaults
+5. **Remove character UI:** X button on each character card
 
 ## Data Flow
 
 ```
-┌─────────────────┐     ┌──────────────────────────────┐     ┌─────────────────┐
-│      Skill      │ ──► │      ViewModelFactory        │ ──► │  SkillViewModel │
-│    (domain)     │     │  + formatEffects()           │     │  (extended)     │
-│                 │     │  + formatTargeting()         │     │                 │
-└─────────────────┘     └──────────────────────────────┘     └─────────────────┘
-                                                                      │
-                                                                      ▼
-                                                          ┌─────────────────────┐
-                                                          │  renderSkillDisplay │
-                                                          │  (skill-display.ts) │
-                                                          └─────────────────────┘
-                                                                      │
-                         ┌────────────────────────────────────────────┴────┐
-                         ▼                ▼                ▼               ▼
-                  ┌──────────┐     ┌──────────┐     ┌───────────┐   ┌──────────┐
-                  │ CharCard │     │ SkillEd  │     │ DebugInsp │   │ Forecast │
-                  └──────────┘     └──────────┘     └───────────┘   └──────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Debug Battle Builder                           │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  ┌─────────────────┐    ┌────────────────────────┐                   │
+│  │ DebugBattleState│◄───│ debugDistributeSkill() │                   │
+│  │  - characters[] │    │ debugUnequipSkill()    │                   │
+│  │  - skillPool[]  │    │ debugAddCharacter()    │                   │
+│  └────────┬────────┘    │ debugRemoveCharacter() │                   │
+│           │             └────────────────────────┘                   │
+│           │                                                           │
+│           ▼                                                           │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐  │
+│  │  CombatState    │───►│  tick-executor  │───►│  action-selector │  │
+│  │  (for battle)   │    │                 │    │  (was enemy-brain)│  │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘  │
+│                                                                       │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Implementation Sequence
 
-1. **Extend SkillViewModel interface** (`src/types/view-models.ts`)
-   - Add `effectsSummary: string`
-   - Add `targetingDescription: string`
-   - No breaking changes to existing fields
+### Phase 1: Infrastructure (must complete first)
+1. [ ] Extend `src/types/debug.ts` with `DebugBattleState` interface
+2. [ ] Create `src/run/debug-character-manager.ts` with all four functions
+3. [ ] Write tests for debug-character-manager
 
-2. **Add formatters to ViewModelFactory** (`src/ui/view-model-factory.ts`)
-   - Add `formatEffects()` private method
-   - Add `formatTargeting()` private method
-   - Update `createSkillViewModel()` to populate new fields
+### Phase 2: Rename (safe refactor)
+4. [ ] Rename `src/ai/enemy-brain.ts` → `src/ai/action-selector.ts`
+5. [ ] Rename `tests/ai/enemy-brain.test.ts` → `tests/ai/action-selector.test.ts`
+6. [ ] Update all imports (search for `enemy-brain`)
+7. [ ] Verify tests pass
 
-3. **Create SkillDisplay component** (`src/ui/skill-display.ts`)
-   - Export `renderSkillDisplay()` function
-   - Export `SkillDisplayOptions` interface
-   - CSS-only tooltip implementation
-
-4. **Add CSS to battle-viewer.html**
-   - `.skill-display` styles
-   - `.skill-tooltip` hover styles
-   - `.skill-duration` inline styles
-
-5. **Update unit tests** (`tests/ui/view-model-factory.test.ts`)
-   - Test effect formatting for each effect type
-   - Test targeting mode descriptions
-   - Test multi-effect skills
-
-6. **Create component tests** (`tests/ui/skill-display.test.ts`)
-   - Test HTML structure
-   - Test options handling
-   - Test tooltip content
-
-7. **Migrate UI components** (one at a time, backward compatible)
-   - `skill-priority-editor.ts` - high impact, shows all skills
-   - `character-circle.ts` - visible in main arena
-   - `debug-inspector.ts` - shows skill names in evaluations
-   - `action-forecast.ts` - shows skill names in timeline
-   - `character-card.ts` - shows current action skill
-   - `event-log.ts` - (lowest priority, inline text context)
-
-## Design Decisions
-
-### CSS-only Tooltips (vs JS)
-
-**Decision**: Use CSS `:hover` tooltips, not JS event handlers.
-
-**Rationale**:
-- Simpler implementation (no event listeners, no state)
-- Works with SSR-style string rendering (current pattern)
-- Native browser handling of show/hide timing
-- Adequate for discovery tooltips (not interactive content)
-
-**Trade-off**: Cannot reposition if tooltip goes off-screen. Acceptable for game UI where layout is controlled.
-
-### Pre-formatted Tooltip Content
-
-**Decision**: Store `effectsSummary` and `targetingDescription` as pre-formatted strings in ViewModel, not raw effect data.
-
-**Rationale**:
-- UI components never need to format - just render
-- Matches existing ViewModel pattern (pre-computed `formattedDuration`, `formattedName`)
-- Single formatting point in ViewModelFactory
-
-### Inline vs Block Rendering
-
-**Decision**: Default to inline (`<span>`) for flexibility.
-
-**Rationale**:
-- Most usages are inline (within sentences, lists)
-- `inline: false` option available for block contexts
+### Phase 3: UI Integration
+8. [ ] Update `battle-viewer.html` to use `DebugBattleState`
+9. [ ] Remove line 1284 player-only restriction
+10. [ ] Add "Add Character" button with modal/form
+11. [ ] Add "Remove Character" button on character cards
+12. [ ] Test skill equip/unequip for both players AND enemies
 
 ## Out of Scope
 
-- Interactive tooltips (click-to-pin, hover delay config)
-- Tooltip repositioning based on viewport bounds
-- Skill icons or images
-- Animation effects on skill execution
-- Detailed condition/rule display in tooltip
+- Production run management changes (keep `RunState` and `skill-loadout-manager.ts` as-is)
+- Character stat editing (HP, name) - future enhancement
+- Skill creation UI - use existing `SkillLibrary`
+- Save/load debug battle configurations
+- Multiple encounters in debug mode
+
+## Open Questions
+
+1. **Default character stats?** → Propose: HP=100, start with Strike+Defend only
+2. **Character naming?** → Propose: "Player N" or "Enemy N" auto-generated
+3. **Initial skill pool?** → Propose: All skills from `SkillLibrary.getAllSkills()`
 
 ## Test Scenarios
 
-### ViewModelFactory - Effect Formatting
+### debug-character-manager.ts
 
 **Critical path:**
 | Scenario | Input | Expected Output | Edge Case |
 |----------|-------|-----------------|-----------|
-| Damage effect | `{type: 'damage', value: 15}` | `"Deals 15 damage"` | value=0 |
-| Heal effect | `{type: 'heal', value: 30}` | `"Heals 30 HP"` | - |
-| Status effect | `{type: 'status', statusType: 'poisoned', duration: 6}` | `"Applies Poisoned for 6 ticks"` | duration=1 (singular) |
-| Shield effect | `{type: 'shield', value: 20}` | `"Grants 20 Shield"` | - |
-| Revive effect | `{type: 'revive', value: 50}` | `"Revives with 50% HP"` | - |
-| Cancel effect | `{type: 'cancel'}` | `"Interrupts target's action"` | - |
-| Multi-effect | `[damage 15, status stunned 2]` | `"Deals 15 damage, Applies Stunned for 2 ticks"` | - |
-| Empty effects | `[]` | `""` | - |
+| Distribute skill to player | valid skillId, player characterId | Skill moves pool→character | Character already has skill |
+| Distribute skill to enemy | valid skillId, enemy characterId | Skill moves pool→character | Enemy at 4-skill cap |
+| Unequip from player | equipped skill | Skill returns to pool | Cannot unequip innate |
+| Unequip from enemy | equipped skill | Skill returns to pool | Cannot unequip innate |
+| Add character | new Character | Appended to characters[] | Duplicate ID |
+| Remove character | existing characterId | Character removed, skills→pool | Remove last character |
 
 **Standard coverage:**
-- All targeting modes produce non-empty descriptions
-- Skill duration formatting matches existing behavior
+- Verify `isPlayer` flag preserved through operations
+- Verify skill pool updates correctly
 
 **Skip testing:**
-- CSS tooltip visibility (browser/CSS behavior)
-- HTML attribute escaping (framework concern)
+- UI integration (browser testing)
+- CSS tooltip visibility
 
-### SkillDisplay Component
+### action-selector.ts (rename only)
 
 **Critical path:**
-| Scenario | Input | Expected Output |
-|----------|-------|-----------------|
-| Basic render | SkillViewModel with all fields | HTML with skill name, color, tooltip |
-| No duration | `{ showDuration: false }` | No `.skill-duration` span |
-| Custom class | `{ className: 'my-skill' }` | Class added to root element |
-
-**Standard coverage:**
-- `data-skill-id` attribute present
-- Tooltip contains effectsSummary and targetingDescription
-
-**Skip testing:**
-- Hover behavior (CSS, not JS)
-- Tooltip positioning (CSS, not JS)
+| Scenario | Input | Expected |
+|----------|-------|----------|
+| All existing tests pass | - | No behavior change |
+| Imports updated | grep for 'enemy-brain' | Zero results |
 
 ## Acceptance Criteria
 
-1. [ ] `SkillViewModel` extended with `effectsSummary` and `targetingDescription`
-2. [ ] `ViewModelFactory.createSkillViewModel()` populates new fields
-3. [ ] `renderSkillDisplay()` produces consistent HTML with CSS tooltip
-4. [ ] At least one UI component migrated to use `renderSkillDisplay()`
-5. [ ] Tooltip displays skill name, duration, effects, and targeting
-6. [ ] Existing tests pass
-7. [ ] New tests cover effect formatting and component rendering
+1. [ ] `DebugBattleState` interface exists with `characters[]` and `skillPool[]`
+2. [ ] All four debug functions work for both `isPlayer: true` AND `isPlayer: false` characters
+3. [ ] `enemy-brain.ts` renamed to `action-selector.ts` with all imports updated
+4. [ ] Battle viewer allows skill equipping on enemy characters
+5. [ ] "Add Character" button spawns new characters (player or enemy)
+6. [ ] "Remove Character" removes character and returns skills to pool
+7. [ ] All existing tests pass
+8. [ ] New tests cover debug-character-manager functions
 
-## Migration Path (Backward Compatible)
+## Complexity Budget
 
-Each component can be migrated independently:
+- **New files:** 2 (debug-character-manager.ts, debug-character-manager.test.ts)
+- **New abstractions:** 1 (`DebugBattleState` interface)
+- **Modified files:** ~5 (debug.ts, battle-viewer.html, imports for rename)
 
-### Phase 1: Infrastructure (required)
-- Extend SkillViewModel (non-breaking)
-- Update ViewModelFactory
-- Create skill-display.ts
-- Add CSS
+## Risks
 
-### Phase 2: Migrate Components (incremental)
-
-**skill-priority-editor.ts** (first, highest impact):
-```typescript
-// Before
-<span class="skill-name">${skill.name} 
-  <span style="color: #64b5f6; font-size: 0.85em;">(${skill.baseDuration} ticks)</span>
-</span>
-
-// After
-${renderSkillDisplay(skill)}
-```
-
-**character-circle.ts**:
-```typescript
-// Before  
-const skillName = currentAction.skillId.charAt(0).toUpperCase() + currentAction.skillId.slice(1);
-actionColor = SKILL_COLORS[currentAction.skillId] ?? SKILL_COLORS['default'];
-
-// After (need to pass skill ViewModel from action)
-${renderSkillDisplay(actionSkill, { inline: true })}
-```
-
-**Remaining components**: Follow similar pattern, replace inline formatting with `renderSkillDisplay()`.
-
----
-
-# Phase 2: Complete UI Standardization
-
-## Problem Summary
-
-Three panels render skills differently:
-
-| Panel | Current Class | Current Look | Tooltip |
-|-------|--------------|--------------|---------|
-| Available Skills | `.pool-skill` | Gradient rounded rect | ❌ None |
-| Equipped Skills | `.loadout-skill` | Solid color rect | ❌ None |
-| Instructions (Skill Priority) | `.skill-display` | Name + duration | ✅ Has tooltip |
-
-**User expectation:** All skills should look and behave identically with helpful tooltips.
-
-## Phase 2 Requirements
-
-### 1. Enhanced Tooltip Content - Status Effect Descriptions
-
-Current tooltip for Taunt: `"Applies Taunting for 4 ticks"`
-**Problem:** Doesn't explain what Taunting does.
-
-**Solution:** Include status effect descriptions from [`src/types/status.ts`](../src/types/status.ts:1-9):
-
-| Status | Description |
-|--------|-------------|
-| `poisoned` | Deals damage over time |
-| `stunned` | Prevents action queueing |
-| `shielded` | Absorbs damage before HP |
-| `taunting` | Forces enemies to target this character |
-| `defending` | Reduces incoming damage by 50% |
-| `enraged` | Doubles outgoing damage |
-
-**Enhanced tooltip example:**
-```
-Taunt (2 ticks)
-Applies Taunting for 4 ticks
-→ Forces enemies to target this character
-Targets self
-```
-
-### 2. Unified Skill Styling
-
-Replace all skill rendering with `renderSkillDisplay()`:
-
-**Option A (Selected/Highlight variant):**
-```typescript
-export interface SkillDisplayOptions {
-  showDuration?: boolean;  // default: true
-  className?: string;      // Additional classes
-  inline?: boolean;        // default: true
-  selectable?: boolean;    // default: false - adds hover/select styles
-  selected?: boolean;      // default: false - currently selected
-  disabled?: boolean;      // default: false - greyed out, non-interactive
-}
-```
-
-**Unified CSS approach:**
-- Base `.skill-display` for all skills
-- Modifier classes: `.skill-display--selectable`, `.skill-display--selected`, `.skill-display--disabled`
-- Remove `.pool-skill` and `.loadout-skill` classes
-
-### 3. SkillViewModel Enhancement
-
-Extend effect formatting to include status descriptions:
-
-```typescript
-// In view-model-factory.ts
-private static formatStatusEffect(statusType: StatusType, duration: number): string {
-  const descriptions: Record<StatusType, string> = {
-    'poisoned': 'Deals damage over time',
-    'stunned': 'Prevents action queueing',
-    'shielded': 'Absorbs damage before HP',
-    'taunting': 'Forces enemies to target this character',
-    'defending': 'Reduces incoming damage by 50%',
-    'enraged': 'Doubles outgoing damage',
-  };
-  
-  const tickText = duration === 1 ? 'tick' : 'ticks';
-  const statusName = statusType.charAt(0).toUpperCase() + statusType.slice(1);
-  return `Applies ${statusName} for ${duration} ${tickText}\n→ ${descriptions[statusType]}`;
-}
-```
-
-## Phase 2 Implementation Sequence
-
-### Step 1: Enhance ViewModelFactory effect formatting
-File: `src/ui/view-model-factory.ts`
-- Add status effect descriptions to `formatEffects()` method
-- Include the "→ [explanation]" on new line for status effects
-
-### Step 2: Update SkillDisplayOptions
-File: `src/ui/skill-display.ts`
-- Add `selectable`, `selected`, `disabled` options
-- Add corresponding CSS class generation
-
-### Step 3: Add unified CSS
-File: `battle-viewer.html`
-- Add `.skill-display--selectable` hover styles
-- Add `.skill-display--selected` gold border
-- Add `.skill-display--disabled` opacity + strikethrough
-- Remove `.pool-skill` and `.loadout-skill` styles
-
-### Step 4: Migrate Available Skills panel
-File: `battle-viewer.html` (lines 1394-1407)
-Replace:
-```javascript
-<div class="pool-skill ${selectedSkillId === skillId ? 'selected' : ''}"
-     style="background: ${getSkillColor(skillId)};"
-     onclick="selectSkillFromPool('${skillId}')">
-  ${SkillLibrary.getSkill(skillId).name}
-</div>
-```
-With:
-```javascript
-${renderSkillDisplay(ViewModelFactory.createSkillViewModel(SkillLibrary.getSkill(skillId)), {
-  showDuration: false,
-  selectable: true,
-  selected: selectedSkillId === skillId
-})}
-```
-
-### Step 5: Migrate Equipped Skills panel
-File: `battle-viewer.html` (lines 1417-1444)
-Replace inline `.loadout-skill` divs with `renderSkillDisplay()` calls:
-- Innate skills (Strike, Defend): `{ disabled: true, showDuration: false }`
-- Equipped skills: `{ showDuration: false }` with onclick for unequip
-
-### Step 6: Update tests
-- Test status effect descriptions in view-model-factory.test.ts
-- Test new options in skill-display.test.ts
-
-## Updated CSS
-
-```css
-/* Base skill display (already exists) */
-.skill-display {
-  position: relative;
-  cursor: help;
-  display: inline-block;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
-
-/* Selectable variant (for pool/loadout) */
-.skill-display--selectable {
-  cursor: pointer;
-}
-
-.skill-display--selectable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-/* Selected state */
-.skill-display--selected {
-  border-color: #ffd700;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
-}
-
-/* Disabled state (innate skills) */
-.skill-display--disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Remove old classes (cleanup) */
-/* .pool-skill - REMOVE */
-/* .loadout-skill - REMOVE */
-```
-
-## Phase 2 Acceptance Criteria
-
-1. [ ] All three panels use `renderSkillDisplay()` for skill rendering
-2. [ ] Status effects show explanatory descriptions in tooltip
-3. [ ] Skill styling consistent across all panels (same border-radius, padding)
-4. [ ] Tooltips visible on hover in all three panels
-5. [ ] Selected state visual feedback (gold border) works in all panels
-6. [ ] Disabled state (innate skills) renders correctly
-7. [ ] All tests pass
-8. [ ] Old `.pool-skill` and `.loadout-skill` CSS removed
-
-## Test Scenarios - Phase 2
-
-### ViewModelFactory - Status Effect Descriptions
-
-| Scenario | Input | Expected effectsSummary |
-|----------|-------|------------------------|
-| Taunting status | `{type: 'status', statusType: 'taunting', duration: 4}` | `"Applies Taunting for 4 ticks\n→ Forces enemies to target this character"` |
-| Poisoned status | `{type: 'status', statusType: 'poisoned', duration: 6}` | `"Applies Poisoned for 6 ticks\n→ Deals damage over time"` |
-| Stunned status | `{type: 'status', statusType: 'stunned', duration: 2}` | `"Applies Stunned for 2 ticks\n→ Prevents action queueing"` |
-| Defending status | `{type: 'status', statusType: 'defending', duration: 3}` | `"Applies Defending for 3 ticks\n→ Reduces incoming damage by 50%"` |
-
-### SkillDisplay - New Options
-
-| Scenario | Options | Expected Classes |
-|----------|---------|-----------------|
-| Selectable | `{ selectable: true }` | `skill-display skill-display--selectable` |
-| Selected | `{ selectable: true, selected: true }` | `skill-display skill-display--selectable skill-display--selected` |
-| Disabled | `{ disabled: true }` | `skill-display skill-display--disabled` |
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+| Rename breaks imports | Medium | Search all files for 'enemy-brain' before committing |
+| UI state management complexity | Low | Keep DebugBattleState simple, derive CombatState on demand |
+| Innate skill handling for enemies | Low | Enemies also get Strike+Defend as innate |
