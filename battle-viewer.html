@@ -1023,7 +1023,6 @@
     
     /* Skill Display with Tooltip */
     .skill-display {
-      position: relative;
       cursor: help;
       display: inline-block;
       padding: 8px 16px;
@@ -1056,49 +1055,43 @@
       cursor: not-allowed;
     }
     
-    .skill-tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      z-index: 10000;
-      background: #1e1e1e;
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 8px 12px;
-      min-width: 180px;
-      max-width: 250px;
-      font-size: 0.85rem;
-      line-height: 1.4;
-      color: #e0e0e0;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      
-      /* Position below the skill display */
-      left: 50%;
-      top: calc(100% + 8px);
-      transform: translateX(-50%);
-      
-      transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
-      pointer-events: none;
-    }
-    
-    /* CSS-only hover activation */
-    .skill-display:hover .skill-tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
-    
-    .skill-tooltip strong {
-      color: inherit;
-    }
-    
-    .skill-tooltip em {
-      color: #888;
-    }
-    
     .skill-duration {
       color: #64b5f6;
       font-size: 0.85em;
       margin-left: 4px;
+    }
+    
+    /* Global Tooltip (Portal Pattern) */
+    #global-tooltip {
+      position: fixed;
+      z-index: 10000;
+      visibility: hidden;
+      opacity: 0;
+      background: #1e1e1e;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px 12px;
+      max-width: 250px;
+      min-width: 180px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: #e0e0e0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+    }
+    
+    #global-tooltip.visible {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    #global-tooltip strong {
+      color: inherit;
+    }
+    
+    #global-tooltip em {
+      color: #888;
     }
   </style>
 </head>
@@ -1144,6 +1137,9 @@
     
   </div>
 
+  <!-- Global Tooltip (Portal Pattern) -->
+  <div id="global-tooltip"></div>
+
   <script type="module">
     console.log('Battle Viewer script starting...');
     
@@ -1177,6 +1173,76 @@
     const stepBackBtn = document.getElementById('step-back-btn');
     const resetBtn = document.getElementById('reset-btn');
 
+    // Global Tooltip Management (Portal Pattern)
+    const globalTooltip = document.getElementById('global-tooltip');
+    let tooltipTimeout = null;
+
+    // Show tooltip with dynamic positioning
+    function showTooltip(element) {
+      const name = element.dataset.tooltipName;
+      const duration = element.dataset.tooltipDuration;
+      const effects = element.dataset.tooltipEffects;
+      const targeting = element.dataset.tooltipTargeting;
+      
+      if (!name) return;
+      
+      // Build tooltip content
+      globalTooltip.innerHTML = `
+        <strong>${name}</strong> (${duration})<br>
+        ${effects}<br>
+        <em>${targeting}</em>
+      `;
+      
+      // Position tooltip below the element
+      const rect = element.getBoundingClientRect();
+      const tooltipWidth = 250; // max-width from CSS
+      
+      // Center below element, but adjust if it would go off-screen
+      let left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+      let top = rect.bottom + 8;
+      
+      // Keep tooltip on screen horizontally
+      const margin = 10;
+      if (left < margin) {
+        left = margin;
+      } else if (left + tooltipWidth > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipWidth - margin;
+      }
+      
+      // If tooltip would go below viewport, show above element instead
+      const tooltipHeight = 100; // approximate
+      if (top + tooltipHeight > window.innerHeight - margin) {
+        top = rect.top - tooltipHeight - 8;
+      }
+      
+      globalTooltip.style.left = `${left}px`;
+      globalTooltip.style.top = `${top}px`;
+      globalTooltip.classList.add('visible');
+    }
+
+    // Hide tooltip
+    function hideTooltip() {
+      globalTooltip.classList.remove('visible');
+    }
+
+    // Event delegation for tooltip triggers
+    document.addEventListener('mouseenter', (e) => {
+      const skillElement = e.target.closest('[data-tooltip-name]');
+      if (skillElement) {
+        // Small delay before showing to avoid flickering on quick mouseovers
+        clearTimeout(tooltipTimeout);
+        tooltipTimeout = setTimeout(() => showTooltip(skillElement), 100);
+      }
+    }, true);
+
+    document.addEventListener('mouseleave', (e) => {
+      const skillElement = e.target.closest('[data-tooltip-name]');
+      if (skillElement) {
+        clearTimeout(tooltipTimeout);
+        hideTooltip();
+      }
+    }, true);
+
     // Load skills from library
     const strike = SkillLibrary.getSkill('strike');
     const defend = SkillLibrary.getSkill('defend');
@@ -1202,8 +1268,8 @@
         {
           id: 'enemy-1',
           name: 'Enemy 1',
-          maxHp: 80,
-          currentHp: 80,
+          maxHp: 100,
+          currentHp: 100,
           skills: [strike, defend],
           statusEffects: [],
           currentAction: null,
@@ -1427,7 +1493,7 @@
         const headerColor = selectedCharacter.isPlayer ? '#4caf50' : '#f44336';
         
         rightColumnContainer.innerHTML = `
-          <div class="panel" style="margin-bottom: 15px; padding: 15px; position: relative; z-index: 1000;">
+          <div class="panel" style="margin-bottom: 15px; padding: 15px;">
             <h3 style="color: #64b5f6; margin-bottom: 10px; font-size: 1rem;">Available Skills</h3>
             <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
               ${debugState.skillPool.length === 0
@@ -1445,7 +1511,7 @@
             </div>
           </div>
           
-          <div class="panel" style="margin-bottom: 15px; padding: 15px; position: relative; z-index: 1000; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
+          <div class="panel" style="margin-bottom: 15px; padding: 15px; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
                ${selectedSkillId ? `onclick="assignSkillToCharacter('${selectedCharacterId}', '${selectedSkillId}')"` : ''}>
             <h3 style="color: ${headerColor}; margin-bottom: 10px; font-size: 1rem;">
               🎒 ${selectedCharacter.name}'s Equipped Skills

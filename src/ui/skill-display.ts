@@ -26,24 +26,24 @@ export interface SkillDisplayOptions {
 }
 
 /**
- * Renders a skill element with tooltip
- * 
+ * Renders a skill element with tooltip via data attributes
+ *
  * Produces HTML with:
  * - Colored skill name
  * - Optional duration indicator
- * - Hover tooltip with effects and targeting
- * 
+ * - Data attributes for global tooltip (no inline tooltip element)
+ *
  * @param skill - Pre-formatted skill view model
  * @param options - Rendering options
- * @returns HTML string with skill name and CSS tooltip
- * 
+ * @returns HTML string with skill name and tooltip data attributes
+ *
  * @example
  * ```typescript
  * const html = renderSkillDisplay(skill);
- * // <span class="skill-display" style="color: #f44336;" data-skill-id="strike">
+ * // <span class="skill-display" style="color: #f44336;"
+ * //       data-skill-id="strike" data-tooltip-name="Strike" ...>
  * //   Strike
  * //   <span class="skill-duration">(2 ticks)</span>
- * //   <span class="skill-tooltip">...</span>
  * // </span>
  * ```
  */
@@ -73,15 +73,20 @@ export function renderSkillDisplay(
     ? `<span class="skill-duration">(${skill.formattedDuration})</span>`
     : '';
   
-  const tooltipHtml = `<span class="skill-tooltip">
-    <strong>${skill.name}</strong> (${skill.formattedDuration})<br>
-    ${skill.effectsSummary}<br>
-    <em>${skill.targetingDescription}</em>
-  </span>`;
+  // Escape HTML entities in tooltip content for data attributes
+  const escapeHtml = (text: string) => text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
   
-  return `<${tag} class="${classes}" style="color: ${skill.color};" data-skill-id="${skill.id}">
+  return `<${tag} class="${classes}" style="color: ${skill.color};"
+    data-skill-id="${skill.id}"
+    data-tooltip-name="${escapeHtml(skill.name)}"
+    data-tooltip-duration="${escapeHtml(skill.formattedDuration)}"
+    data-tooltip-effects="${escapeHtml(skill.effectsSummary)}"
+    data-tooltip-targeting="${escapeHtml(skill.targetingDescription)}">
   ${skill.name}
   ${durationHtml}
-  ${tooltipHtml}
 </${tag}>`;
 }
