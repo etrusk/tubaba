@@ -1059,7 +1059,7 @@
     .skill-tooltip {
       visibility: hidden;
       opacity: 0;
-      position: fixed;
+      position: absolute;
       z-index: 10000;
       background: #1e1e1e;
       border: 1px solid #444;
@@ -1072,11 +1072,17 @@
       color: #e0e0e0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4);
       
+      /* Position below the skill display */
+      left: 50%;
+      top: calc(100% + 8px);
+      transform: translateX(-50%);
+      
       transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
       pointer-events: none;
     }
     
-    .skill-tooltip.visible {
+    /* CSS-only hover activation */
+    .skill-display:hover .skill-tooltip {
       visibility: visible;
       opacity: 1;
     }
@@ -1718,38 +1724,6 @@
       selectedSkillId = null;
       updateBattleWithLoadout();
     });
-
-    // Tooltip event delegation
-    document.addEventListener('mouseover', (e) => {
-      const skillDisplay = e.target.closest('.skill-display');
-      if (!skillDisplay) return;
-      
-      const tooltip = skillDisplay.querySelector('.skill-tooltip');
-      if (!tooltip) return;
-      
-      const rect = skillDisplay.getBoundingClientRect();
-      const tooltipHeight = 100; // Approximate
-      
-      // Position below by default, above if near bottom
-      if (rect.bottom + tooltipHeight > window.innerHeight) {
-        tooltip.style.top = `${rect.top - tooltipHeight - 8}px`;
-      } else {
-        tooltip.style.top = `${rect.bottom + 8}px`;
-      }
-      tooltip.style.left = `${rect.left + rect.width / 2}px`;
-      tooltip.style.transform = 'translateX(-50%)';
-      tooltip.classList.add('visible');
-    }, true);
-
-    document.addEventListener('mouseout', (e) => {
-      const skillDisplay = e.target.closest('.skill-display');
-      if (!skillDisplay) return;
-      
-      const tooltip = skillDisplay.querySelector('.skill-tooltip');
-      if (tooltip) {
-        tooltip.classList.remove('visible');
-      }
-    }, true);
 
     // Initial sync: update battle controller with runState skills
     updateBattleWithLoadout();
