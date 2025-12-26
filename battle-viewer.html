@@ -1178,22 +1178,12 @@
     const shield = SkillLibrary.getSkill('shield');
     const poison = SkillLibrary.getSkill('poison');
 
-    // Create sample encounter
+    // Create sample encounter (1v1 with standardized names)
     const sampleEncounter = {
       players: [
         {
-          id: 'hero',
-          name: 'Alice',
-          maxHp: 100,
-          currentHp: 100,
-          skills: [strike, defend],
-          statusEffects: [],
-          currentAction: null,
-          isPlayer: true,
-        },
-        {
-          id: 'mage',
-          name: 'Bob',
+          id: 'player-1',
+          name: 'Player 1',
           maxHp: 100,
           currentHp: 100,
           skills: [strike, defend],
@@ -1204,18 +1194,8 @@
       ],
       enemies: [
         {
-          id: 'goblin',
-          name: 'Goblin',
-          maxHp: 50,
-          currentHp: 50,
-          skills: [strike, defend],
-          statusEffects: [],
-          currentAction: null,
-          isPlayer: false,
-        },
-        {
-          id: 'orc',
-          name: 'Orc',
+          id: 'enemy-1',
+          name: 'Enemy 1',
           maxHp: 80,
           currentHp: 80,
           skills: [strike, defend],
@@ -1239,7 +1219,6 @@
     };
     
     let selectedSkillId = null; // Track selected skill from pool
-    let nextCharacterId = 1; // For generating unique character IDs
     
     // Initialize battle controller (will update when skills are distributed)
     let battleController = new BattleController(sampleEncounter);
@@ -1309,10 +1288,14 @@
     
     // Add new character to debug battle
     window.addCharacter = function(isPlayer) {
-      const newId = `char-${nextCharacterId++}`;
+      // Count existing characters of this type
+      const existingOfType = debugState.characters.filter(c => c.isPlayer === isPlayer);
+      const characterNumber = existingOfType.length + 1;
+      
+      const newId = isPlayer ? `player-${characterNumber}` : `enemy-${characterNumber}`;
       const newCharacter = {
         id: newId,
-        name: isPlayer ? `Player ${nextCharacterId}` : `Enemy ${nextCharacterId}`,
+        name: isPlayer ? `Player ${characterNumber}` : `Enemy ${characterNumber}`,
         maxHp: 100,
         currentHp: 100,
         skills: [SkillLibrary.getSkill('strike'), SkillLibrary.getSkill('defend')],
@@ -1725,7 +1708,7 @@
     });
 
     resetBtn.addEventListener('click', () => {
-      // Reset debug state to initial configuration
+      // Reset debug state to initial 1v1 configuration (Player 1 vs Enemy 1)
       debugState = {
         characters: [...sampleEncounter.players, ...sampleEncounter.enemies],
         skillPool: SkillLibrary.getAllSkills()
@@ -1733,12 +1716,11 @@
           .filter(id => id !== 'strike' && id !== 'defend')
       };
       selectedSkillId = null;
-      nextCharacterId = 1;
       updateBattleWithLoadout();
     });
 
     // Tooltip event delegation
-    document.addEventListener('mouseenter', (e) => {
+    document.addEventListener('mouseover', (e) => {
       const skillDisplay = e.target.closest('.skill-display');
       if (!skillDisplay) return;
       
@@ -1759,7 +1741,7 @@
       tooltip.classList.add('visible');
     }, true);
 
-    document.addEventListener('mouseleave', (e) => {
+    document.addEventListener('mouseout', (e) => {
       const skillDisplay = e.target.closest('.skill-display');
       if (!skillDisplay) return;
       
