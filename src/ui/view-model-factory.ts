@@ -18,6 +18,7 @@ import type {
 } from '../types/view-models.js';
 import { formatCharacterName, getCharacterColor } from './character-name-formatter.js';
 import { SkillLibrary } from '../engine/skill-library.js';
+import { getSkillColor } from './skill-color-palette.js';
 
 /**
  * Status effect descriptions for tooltip enhancement
@@ -105,7 +106,7 @@ export class ViewModelFactory {
       name: skill.name,
       baseDuration: skill.baseDuration,
       formattedDuration: this.formatDuration(skill.baseDuration),
-      color: this.getSkillColor(skill),
+      color: getSkillColor(skill.id),
       effectsSummary: this.formatEffects(skill.effects),
       targetingDescription: this.formatTargeting(skill.targeting),
     };
@@ -207,35 +208,5 @@ export class ViewModelFactory {
    */
   private static capitalize(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-  
-  /**
-   * Get color for skill based on its type
-   * Determined by primary effect type
-   */
-  private static getSkillColor(skill: Skill): string {
-    // Check primary effect (first in array)
-    const primaryEffect = skill.effects[0];
-    
-    if (!primaryEffect) {
-      return '#888888'; // Gray fallback
-    }
-    
-    switch (primaryEffect.type) {
-      case 'damage':
-        return '#f44336'; // Red for damage
-      case 'heal':
-        return '#4caf50'; // Green for healing
-      case 'shield':
-        return '#2196f3'; // Blue for shields
-      case 'status':
-        return '#ff9800'; // Orange for status effects
-      case 'revive':
-        return '#9c27b0'; // Purple for revive
-      case 'cancel':
-        return '#00bcd4'; // Cyan for interrupt
-      default:
-        return '#888888'; // Gray fallback
-    }
   }
 }
