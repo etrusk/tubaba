@@ -4,9 +4,11 @@ import {
   debugUnequipSkill,
   debugAddCharacter,
   debugRemoveCharacter,
+  debugRandomizeAllSkills,
 } from '../../src/run/debug-character-manager.js';
 import type { DebugBattleState } from '../../src/types/debug.js';
 import type { Character } from '../../src/types/character.js';
+import type { Skill } from '../../src/types/skill.js';
 import { SkillLibrary } from '../../src/engine/skill-library.js';
 
 describe('Debug Character Manager', () => {
@@ -261,6 +263,123 @@ describe('Debug Character Manager', () => {
       state = debugRemoveCharacter(state, 'player2');
       expect(state.characters).toHaveLength(2);
       expect(state.skillPool).toContain('heal');
+    });
+  });
+
+  describe('debugRandomizeAllSkills', () => {
+    const ALL_TARGETING_MODES = [
+      'self',
+      'single-enemy-lowest-hp',
+      'single-enemy-highest-hp',
+      'all-enemies',
+      'ally-lowest-hp',
+      'ally-lowest-hp-damaged',
+      'ally-dead',
+      'all-allies',
+    ];
+
+    it('should assign 4 random skills to each character', () => {
+      const state = createTestState();
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Each character should have exactly 4 skills total
+      for (const character of result.characters) {
+        expect(character.skills).toHaveLength(4);
+      }
+    });
+
+    it('should select skills from the library not the pool', () => {
+      // Create state with empty skill pool
+      const state: DebugBattleState = {
+        characters: [createTestCharacter('player1', true)],
+        skillPool: [], // Empty pool - should not affect randomization
+      };
+
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Should still have 4 skills despite empty pool
+      expect(result.characters[0]!.skills).toHaveLength(4);
+    });
+
+    it('should assign a targeting mode to each skill', () => {
+      const state = createTestState();
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Each skill should have a valid targeting mode
+      for (const character of result.characters) {
+        for (const skill of character.skills) {
+          expect(ALL_TARGETING_MODES).toContain(skill.targeting);
+        }
+      }
+    });
+
+    it('should assign priorities 1-4 to skills', () => {
+      const state = createTestState();
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Each character's skills should have priorities 1-4
+      for (const character of result.characters) {
+        const priorities = character.skills.map((s: Skill & { priority?: number }) => s.priority);
+
+        // Should have priorities 1, 2, 3, 4 (in some order)
+        expect(priorities.sort()).toEqual([1, 2, 3, 4]);
+      }
+    });
+
+    it('should randomize skills for both players and enemies', () => {
+      const state = createTestState();
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Player should have 4 randomized skills
+      expect(result.characters[0]!.skills).toHaveLength(4);
+      expect(result.characters[0]!.isPlayer).toBe(true);
+
+      // Enemy should also have 4 randomized skills
+      expect(result.characters[1]!.skills).toHaveLength(4);
+      expect(result.characters[1]!.isPlayer).toBe(false);
+    });
+
+    it('should handle empty characters array gracefully', () => {
+      const state: DebugBattleState = {
+        characters: [],
+        skillPool: ['heal', 'shield'],
+      };
+
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      // Should return state unchanged
+      expect(result.characters).toEqual([]);
+      expect(result.skillPool).toEqual(['heal', 'shield']);
+    });
+
+    it('should produce different results when called multiple times', () => {
+      const state = createTestState();
+
+      // Call multiple times and collect results
+      const results: string[][] = [];
+      for (let i = 0; i < 10; i++) {
+        const result = debugRandomizeAllSkills(state) as DebugBattleState;
+        const skillIds = result.characters[0]!.skills
+          .map((s: Skill) => s.id)
+          .sort();
+        results.push(skillIds);
+      }
+
+      // At least one result should be different (statistically almost certain with 10 calls)
+      const firstResult = JSON.stringify(results[0]);
+      const hasDifferentResult = results.some(r => JSON.stringify(r) !== firstResult);
+      expect(hasDifferentResult).toBe(true);
+    });
+
+    it('should work with a single character', () => {
+      const state: DebugBattleState = {
+        characters: [createTestCharacter('solo', true)],
+        skillPool: [],
+      };
+
+      const result = debugRandomizeAllSkills(state) as DebugBattleState;
+
+      expect(result.characters[0]!.skills).toHaveLength(4);
     });
   });
 });

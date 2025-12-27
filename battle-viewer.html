@@ -1120,6 +1120,24 @@
             <button id="reset-btn">🔄 Reset</button>
           </div>
         </div>
+        
+        <!-- Debug Menu Panel -->
+        <div class="panel" style="padding: 15px;">
+          <h3 style="color: #ffd700; margin-bottom: 10px; text-align: center;">🛠️ Debug Menu</h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; gap: 8px;">
+              <button id="add-player-btn" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                ➕ Add Player
+              </button>
+              <button id="add-enemy-btn" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                ➕ Add Enemy
+              </button>
+            </div>
+            <button id="randomize-skills-btn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+              🎲 Randomize All Skills
+            </button>
+          </div>
+        </div>
       </div>
       
       <!-- Middle column: Rule Evaluations -->
@@ -1158,7 +1176,7 @@
     import { ViewModelFactory } from './dist/ui/view-model-factory.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
-    import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter } from './dist/run/debug-character-manager.js';
+    import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter, debugRandomizeAllSkills } from './dist/run/debug-character-manager.js';
 
     console.log('Imports loaded successfully');
 
@@ -1561,24 +1579,11 @@
           </div>
         `;
       } else {
-        // Show character management controls when no character selected
+        // Show message when no character selected
         rightColumnContainer.innerHTML = `
           <div class="panel" style="padding: 20px;">
-            <h3 style="color: #ffd700; margin-bottom: 15px; text-align: center;">🎮 Debug Battle Builder</h3>
-            <p style="text-align: center; color: #b0bec5; margin-bottom: 20px; font-size: 0.9rem;">
-              Add characters and assign skills to create custom battles
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-              <button onclick="addCharacter(true)"
-                      style="padding: 15px; background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                ➕ Add Player
-              </button>
-              <button onclick="addCharacter(false)"
-                      style="padding: 15px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                ➕ Add Enemy
-              </button>
-            </div>
-            <p style="text-align: center; color: #888; margin-top: 20px; font-size: 0.85rem; font-style: italic;">
+            <h3 style="color: #ffd700; margin-bottom: 15px; text-align: center;">🎮 Character Editor</h3>
+            <p style="text-align: center; color: #b0bec5; font-size: 0.9rem; font-style: italic;">
               Click a character in the arena to manage their skills and AI instructions
             </p>
           </div>
@@ -1788,6 +1793,14 @@
           .filter(id => id !== 'strike' && id !== 'defend')
       };
       selectedSkillId = null;
+      updateBattleWithLoadout();
+    });
+
+    // Debug menu button handlers
+    document.getElementById('add-player-btn').addEventListener('click', () => addCharacter(true));
+    document.getElementById('add-enemy-btn').addEventListener('click', () => addCharacter(false));
+    document.getElementById('randomize-skills-btn').addEventListener('click', () => {
+      debugState = debugRandomizeAllSkills(debugState);
       updateBattleWithLoadout();
     });
 
