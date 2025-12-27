@@ -368,8 +368,6 @@
     /* Instructions Panel */
     .instructions-panel {
       flex: 1;
-      overflow-y: auto;
-      max-height: 600px;
     }
 
     .instructions-panel h2 {
@@ -1136,6 +1134,9 @@
             <button id="randomize-skills-btn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
               🎲 Randomize All Skills
             </button>
+            <button id="remove-character-btn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none;">
+              🗑️ Remove Character
+            </button>
           </div>
         </div>
       </div>
@@ -1498,17 +1499,14 @@
         ruleEvaluationsContainer.innerHTML = '';
       }
       
-      // Render right column: Available Skills + Character Inventory + Instructions (if character selected)
+      // Render right column: Available Skills + Instructions (if character selected)
       if (selectedCharacterId) {
-        // Render skill pool, character inventory and instructions in right column
+        // Render Available Skills panel and instructions in right column
         const selectedCharacter = battleController.getSelectedCharacter();
         const selectedInstructions = battleController.getSelectedCharacterInstructions();
         
         // Get character from debugState to show equipped skills (works for both players AND enemies)
         const debugCharacter = debugState.characters.find(c => c.id === selectedCharacterId);
-        
-        const characterType = selectedCharacter.isPlayer ? 'Player' : 'Enemy';
-        const headerColor = selectedCharacter.isPlayer ? '#4caf50' : '#f44336';
         
         rightColumnContainer.innerHTML = `
           <div class="panel" style="margin-bottom: 15px; padding: 15px;">
@@ -1519,52 +1517,13 @@
                 : debugState.skillPool.map(skillId => {
                     const skill = SkillLibrary.getSkill(skillId);
                     const skillVM = ViewModelFactory.createSkillViewModel(skill);
-                    return `<div onclick="selectSkillFromPool('${skillId}')">${renderSkillDisplay(skillVM, {
+                    return `<div data-action="equip" data-skill-id="${skillId}">${renderSkillDisplay(skillVM, {
                       showDuration: false,
                       selectable: true,
                       selected: selectedSkillId === skillId
                     })}</div>`;
                   }).join('')
               }
-            </div>
-          </div>
-          
-          <div class="panel" style="margin-bottom: 15px; padding: 15px; cursor: ${selectedSkillId ? 'pointer' : 'default'};"
-               ${selectedSkillId ? `onclick="assignSkillToCharacter('${selectedCharacterId}', '${selectedSkillId}')"` : ''}>
-            <h3 style="color: ${headerColor}; margin-bottom: 10px; font-size: 1rem;">
-              🎒 ${selectedCharacter.name}'s Equipped Skills
-              <span style="color: #b0bec5; font-size: 0.85rem;">(${debugCharacter ? debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length : 0}/4)</span>
-            </h3>
-            <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2);">
-              <div style="font-size: 0.85rem; color: #888; margin-bottom: 4px;">Innate:</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                ${renderSkillDisplay(ViewModelFactory.createSkillViewModel(SkillLibrary.getSkill('strike')), {
-                  showDuration: false,
-                  disabled: true
-                })}
-                ${renderSkillDisplay(ViewModelFactory.createSkillViewModel(SkillLibrary.getSkill('defend')), {
-                  showDuration: false,
-                  disabled: true
-                })}
-              </div>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px;">
-              ${debugCharacter && debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').length > 0
-                ? debugCharacter.skills.filter(s => s.id !== 'strike' && s.id !== 'defend').map(skill => {
-                    const skillVM = ViewModelFactory.createSkillViewModel(skill);
-                    return `<div onclick="event.stopPropagation(); unequipSkillFromCharacter('${selectedCharacterId}', '${skill.id}')">${renderSkillDisplay(skillVM, {
-                      showDuration: false
-                    })}</div>`;
-                  }).join('')
-                : `<div class="empty-loadout">${selectedSkillId ? 'Click here to assign selected skill' : 'Select a skill above to equip'}</div>`
-              }
-            </div>
-            
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
-              <button onclick="removeCharacter('${selectedCharacterId}')"
-                      style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;">
-                🗑️ Remove ${characterType}
-              </button>
             </div>
           </div>
           
@@ -1599,6 +1558,20 @@
       
       // Update button states
       updateButtonStates();
+      
+      // Update Remove Character button visibility and text
+      const removeCharacterBtn = document.getElementById('remove-character-btn');
+      if (removeCharacterBtn) {
+        if (selectedCharacterId) {
+          const selectedCharacter = battleController.getSelectedCharacter();
+          const characterType = selectedCharacter.isPlayer ? 'Player' : 'Enemy';
+          removeCharacterBtn.textContent = `🗑️ Remove ${characterType}`;
+          removeCharacterBtn.style.display = 'block';
+          removeCharacterBtn.onclick = () => removeCharacter(selectedCharacterId);
+        } else {
+          removeCharacterBtn.style.display = 'none';
+        }
+      }
     }
 
     function updateButtonStates() {
@@ -1634,7 +1607,9 @@
     // Instructions panel event handlers
     document.addEventListener('click', (e) => {
       const target = e.target;
-      const action = target.dataset.action;
+      // Find closest element with data-action (handles clicks on child elements)
+      const actionElement = target.closest('[data-action]');
+      const action = actionElement?.dataset.action;
       
       if (!action) return;
       
@@ -1644,6 +1619,22 @@
       if (!characterId && action !== 'cancel') return;
       
       switch (action) {
+        case 'equip': {
+          const skillId = actionElement.dataset.skillId;
+          if (skillId && characterId) {
+            assignSkillToCharacter(characterId, skillId);
+          }
+          break;
+        }
+        
+        case 'unequip': {
+          const skillId = actionElement.dataset.skillId;
+          if (skillId && characterId) {
+            unequipSkillFromCharacter(characterId, skillId);
+          }
+          break;
+        }
+        
         case 'set-human':
           battleController.updateControlMode(characterId, 'human');
           refreshDebugInfoAndRender();
