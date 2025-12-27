@@ -23,6 +23,8 @@ export interface SkillDisplayOptions {
   selected?: boolean;
   /** Greyed out, non-interactive state for innate skills (default: false) */
   disabled?: boolean;
+  /** Override targeting description for tooltip (default: use skill's targetingDescription) */
+  targetingOverride?: string;
 }
 
 /**
@@ -80,12 +82,15 @@ export function renderSkillDisplay(
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
   
+  // Use override targeting if provided, otherwise use skill's default
+  const targetingDescription = options?.targetingOverride ?? skill.targetingDescription;
+  
   return `<${tag} class="${classes}" style="color: ${skill.color};"
     data-skill-id="${skill.id}"
     data-tooltip-name="${escapeHtml(skill.name)}"
     data-tooltip-duration="${escapeHtml(skill.formattedDuration)}"
     data-tooltip-effects="${escapeHtml(skill.effectsSummary)}"
-    data-tooltip-targeting="${escapeHtml(skill.targetingDescription)}">
+    data-tooltip-targeting="${escapeHtml(targetingDescription)}">
   ${skill.name}
   ${durationHtml}
 </${tag}>`;

@@ -72,13 +72,19 @@ export function calculatePriority(index: number, total: number): number {
 export function renderSkillPriorityEditor(
   instructions: SkillInstruction[],
   availableSkills: Skill[],
-  selectedSkillId: string | null
+  selectedSkillId: string | null,
+  poolSkills?: Skill[]
 ): string {
   // Create a map of skill IDs to skill objects for quick lookup
   const skillMap = new Map<string, Skill>();
   for (const skill of availableSkills) {
     skillMap.set(skill.id, skill);
   }
+
+  // Check if a skill is innate (cannot be unequipped)
+  const isInnateSkill = (skillId: string): boolean => {
+    return skillId === 'strike' || skillId === 'defend';
+  };
 
   // Render each skill instruction that has a corresponding skill
   const skillItems = instructions
@@ -90,6 +96,7 @@ export function renderSkillPriorityEditor(
       const isLast = index === instructions.length - 1;
       const isSelected = instruction.skillId === selectedSkillId;
       const isEnabled = instruction.enabled;
+      const isInnate = isInnateSkill(instruction.skillId);
 
       // Build class list for skill item
       const classes: string[] = ['skill-item'];
@@ -107,17 +114,54 @@ export function renderSkillPriorityEditor(
       // Checkbox checked state
       const checked = isEnabled ? ' checked' : '';
 
+      // Format targeting override if present
+      const targetingOverride = instruction.targetingOverride
+        ? ViewModelFactory.formatTargeting(instruction.targetingOverride)
+        : undefined;
+
+      // Unequip control for non-innate skills
+      const unequipButton = isInnate
+        ? ''
+        : `<span class="unequip-btn" data-action="unequip" data-skill-id="${instruction.skillId}">×</span>`;
+
       return `    <li class="${classes.join(' ')}" data-skill-id="${instruction.skillId}" data-enabled="${isEnabled}">
       <div class="skill-controls">
         <button class="move-btn" data-action="move-up"${upDisabled} title="Move up: This skill will be tried BEFORE the skill above it">↑</button>
         <button class="move-btn" data-action="move-down"${downDisabled} title="Move down: This skill will be tried AFTER the skill below it">↓</button>
       </div>
       <input type="checkbox" class="skill-enable"${checked} data-action="toggle-skill" data-skill-id="${instruction.skillId}" title="Enable/Disable: When disabled, this skill will not be used by the AI" />
-      <span class="skill-name">${renderSkillDisplay(skillViewModel)}</span>
+      <span class="skill-name">${renderSkillDisplay(skillViewModel, { targetingOverride })}</span>
       <span class="skill-priority">${instruction.priority}</span>
+      ${unequipButton}
     </li>`;
     })
     .join('\n');
+
+  // Render pool skills section if poolSkills is provided
+  let poolSection = '';
+  if (poolSkills !== undefined) {
+    if (poolSkills.length === 0) {
+      poolSection = `
+  <div class="pool-skills">
+    <h5>Available Skills</h5>
+    <p>All skills assigned!</p>
+  </div>`;
+    } else {
+      const poolItems = poolSkills
+        .map(skill => {
+          const skillViewModel = ViewModelFactory.createSkillViewModel(skill);
+          return `    <div class="pool-skill-item" data-action="equip" data-skill-id="${skill.id}">
+      ${renderSkillDisplay(skillViewModel, { selectable: true })}
+    </div>`;
+        })
+        .join('\n');
+      poolSection = `
+  <div class="pool-skills">
+    <h5>Available Skills</h5>
+${poolItems}
+  </div>`;
+    }
+  }
 
   return `<div class="skill-priority-editor">
   <h4>Skill Priority</h4>
@@ -126,7 +170,7 @@ export function renderSkillPriorityEditor(
   <ul class="skill-list">
 ${skillItems}
   </ul>
-  
+  ${poolSection}
   <div class="action-help">
     <p><strong>How priority works:</strong></p>
     <ul>

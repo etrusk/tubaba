@@ -27,13 +27,15 @@ function createDefaultSkillInstructions(availableSkills: Skill[]): SkillInstruct
  * @param instructions - Current instructions for the character (null if none)
  * @param editingSkillId - Currently editing skill ID (null if viewing all)
  * @param isDirty - Whether there are unsaved changes
+ * @param poolSkills - Optional pool of unequipped skills available for assignment
  * @returns HTML string for the instructions builder panel
  */
 export function renderInstructionsBuilder(
   selectedCharacter: Character | null,
   instructions: CharacterInstructions | null,
   editingSkillId: string | null,
-  isDirty: boolean
+  isDirty: boolean,
+  poolSkills?: Skill[]
 ): string {
   // Use character's equipped skills
   const availableSkills = selectedCharacter?.skills ?? [];
@@ -89,7 +91,8 @@ export function renderInstructionsBuilder(
       <div class="skill-priority-section" id="skill-priority-slot">${renderSkillPriorityEditor(
         skillInstructions,
         availableSkills,
-        editingSkillId
+        editingSkillId,
+        poolSkills
       )}</div>
       
       <!-- Condition/targeting (visible when editing specific skill) -->

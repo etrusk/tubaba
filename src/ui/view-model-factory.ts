@@ -189,7 +189,7 @@ export class ViewModelFactory {
   /**
    * Format targeting mode as human-readable description
    */
-  private static formatTargeting(mode: TargetingMode): string {
+  static formatTargeting(mode: TargetingMode): string {
     const descriptions: Record<TargetingMode, string> = {
       'self': 'Targets self',
       'single-enemy-lowest-hp': 'Targets lowest HP enemy',
