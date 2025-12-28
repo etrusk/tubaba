@@ -287,7 +287,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
     expect(enemyEval).toBeDefined();
   });
 
-  it('should show empty rulesChecked when character has no skills with rules', () => {
+  it('should include synthetic rule for character with skill that has no rules', () => {
     const skillNoRules = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3); // No rules
     
     const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillNoRules]);
@@ -299,10 +299,12 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
 
     const playerEval = result.debugInfo.ruleEvaluations.find(e => e.characterId === 'player-1');
     
-    // Should have evaluation but no rules to check
+    // Should have evaluation with synthetic rule (priority 0) for skill without rules
     expect(playerEval).toBeDefined();
-    expect(playerEval?.rulesChecked.length).toBe(0);
-    expect(playerEval?.selectedRule).toBeNull();
+    expect(playerEval?.rulesChecked.length).toBe(1);
+    expect(playerEval?.rulesChecked[0]?.priority).toBe(0);
+    expect(playerEval?.rulesChecked[0]?.skillId).toBe('strike');
+    expect(playerEval?.selectedSkill).toBe('strike');
   });
 });
 

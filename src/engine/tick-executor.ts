@@ -411,7 +411,15 @@ function executeTickWithDebug(
       } else {
         // Fall back to skill.rules (legacy behavior)
         for (const skill of character.skills) {
-          if (skill.rules && skill.rules.length > 0) {
+          if (!skill.rules || skill.rules.length === 0) {
+            // Skills without rules are treated as always-matching with empty conditions
+            ruleSkillPairs.push({
+              ruleIndex: globalRuleIndex++,
+              rule: { priority: 0, conditions: [] },
+              skill,
+              skillId: skill.id,
+            });
+          } else {
             for (const rule of skill.rules) {
               ruleSkillPairs.push({
                 ruleIndex: globalRuleIndex++,
