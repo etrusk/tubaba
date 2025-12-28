@@ -695,11 +695,11 @@
       justify-content: center;
       gap: 4px;
       padding: 8px 12px;
-      min-width: 180px;
-      max-width: 200px;
+      min-width: 360px;
+      max-width: 400px;
       border-radius: 8px;
       border: 2px solid;
-      font-size: 0.85rem;
+      font-size: 0.68rem;
       line-height: 1.3;
       flex-shrink: 0;
       white-space: normal;
@@ -765,7 +765,7 @@
       word-wrap: break-word;
       text-align: center;
       line-height: 1.3;
-      font-size: 0.8rem;
+      font-size: 0.64rem;
     }
 
     .event .separator {
@@ -1151,9 +1151,6 @@
                 ➕ Add Enemy
               </button>
             </div>
-            <button id="randomize-skills-btn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
-              🎲 Randomize All Skills
-            </button>
             <button id="remove-character-btn" style="width: 100%; padding: 10px; background: linear-gradient(135deg, #f44336 0%, #e57373 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none;">
               🗑️ Remove Character
             </button>
@@ -1204,7 +1201,7 @@
     import { ViewModelFactory } from './dist/ui/view-model-factory.js';
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
-    import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter, debugRandomizeAllSkills } from './dist/run/debug-character-manager.js';
+    import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter } from './dist/run/debug-character-manager.js';
     import { renderEventLog } from './dist/ui/event-log.js';
 
     console.log('Imports loaded successfully');
@@ -1293,10 +1290,6 @@
 
     // Load skills from library
     const strike = SkillLibrary.getSkill('strike');
-    const defend = SkillLibrary.getSkill('defend');
-    const heal = SkillLibrary.getSkill('heal');
-    const shield = SkillLibrary.getSkill('shield');
-    const poison = SkillLibrary.getSkill('poison');
 
     // Create sample encounter (1v1 with standardized names)
     const sampleEncounter = {
@@ -1306,7 +1299,7 @@
           name: 'Player 1',
           maxHp: 100,
           currentHp: 100,
-          skills: [strike, defend],
+          skills: [strike],
           statusEffects: [],
           currentAction: null,
           isPlayer: true,
@@ -1318,7 +1311,7 @@
           name: 'Enemy 1',
           maxHp: 100,
           currentHp: 100,
-          skills: [strike, defend],
+          skills: [strike],
           statusEffects: [],
           currentAction: null,
           isPlayer: false,
@@ -1333,9 +1326,7 @@
     // Initialize DebugBattleState for character/skill management
     let debugState = {
       characters: [...sampleEncounter.players, ...sampleEncounter.enemies],
-      skillPool: SkillLibrary.getAllSkills()
-        .filter(s => s.id !== 'strike' && s.id !== 'defend')
-        .map(s => s.id)
+      skillPool: []
     };
     
     let selectedSkillId = null; // Track selected skill from pool
@@ -1349,10 +1340,6 @@
       // Explicit color overrides for important skills
       const explicitColors = {
         strike: '#e74c3c',      // Red
-        defend: '#607d8b',      // Grey-blue
-        heal: '#2ecc71',        // Green
-        shield: '#3498db',      // Blue
-        poison: '#9b59b6',      // Purple
       };
       
       if (explicitColors[skillId]) {
@@ -1418,7 +1405,7 @@
         name: isPlayer ? `Player ${characterNumber}` : `Enemy ${characterNumber}`,
         maxHp: 100,
         currentHp: 100,
-        skills: [SkillLibrary.getSkill('strike'), SkillLibrary.getSkill('defend')],
+        skills: [SkillLibrary.getSkill('strike')],
         statusEffects: [],
         currentAction: null,
         isPlayer: isPlayer
@@ -1448,11 +1435,11 @@
     };
     
     // Update battle controller with current debug state
-    function updateBattleWithLoadout() {
+    function updateBattleWithLoadout(preserveEventLog = true) {
       // Preserve selected character across controller recreation
       const previousSelectedCharacterId = battleController.getInstructionsState().selectedCharacterId;
-      // BUG FIX: Preserve event log when updating loadout (don't clear battle history)
-      const previousEventLog = battleController.getCurrentState().eventLog;
+      // Preserve event log when updating loadout (unless resetting)
+      const previousEventLog = preserveEventLog ? battleController.getCurrentState().eventLog : [];
       
       // Separate characters by isPlayer flag
       const players = debugState.characters.filter(c => c.isPlayer).map(char => ({
@@ -1817,21 +1804,15 @@
       // Reset debug state to initial 1v1 configuration (Player 1 vs Enemy 1)
       debugState = {
         characters: [...sampleEncounter.players, ...sampleEncounter.enemies],
-        skillPool: SkillLibrary.getAllSkills()
-          .map(s => s.id)
-          .filter(id => id !== 'strike' && id !== 'defend')
+        skillPool: []
       };
       selectedSkillId = null;
-      updateBattleWithLoadout();
+      updateBattleWithLoadout(false); // Don't preserve event log on reset
     });
 
     // Debug menu button handlers
     document.getElementById('add-player-btn').addEventListener('click', () => addCharacter(true));
     document.getElementById('add-enemy-btn').addEventListener('click', () => addCharacter(false));
-    document.getElementById('randomize-skills-btn').addEventListener('click', () => {
-      debugState = debugRandomizeAllSkills(debugState);
-      updateBattleWithLoadout();
-    });
 
     // Initial sync: update battle controller with runState skills
     updateBattleWithLoadout();
