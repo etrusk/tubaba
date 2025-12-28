@@ -12,17 +12,6 @@
  */
 const SKILL_COLORS: Record<string, string> = {
   'strike': '#FF6B6B',
-  'heavy-strike': '#E53935',
-  'fireball': '#FF5722',
-  'execute': '#B71C1C',
-  'bash': '#FFC107',
-  'interrupt': '#00BCD4',
-  'poison': '#AEEA00',
-  'heal': '#4CAF50',
-  'shield': '#2196F3',
-  'defend': '#607D8B',
-  'revive': '#E040FB',
-  'taunt': '#FFD700',
 };
 
 /**

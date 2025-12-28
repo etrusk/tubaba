@@ -7,8 +7,8 @@ import { colorizeCharacterNamesInText } from './character-name-formatter.js';
  * Renders combat events as HTML
  *
  * Displays events in descending tick order (newest at top).
- * Groups all events for a tick onto a single line with compact narrative format.
- * Character names in messages are color-coded with unique colors per character.
+ * Each event entry is rendered on its own line within the tick container.
+ * Text is left-aligned. Character names are color-coded with unique colors.
  *
  * @param events - Array of combat events to display
  * @param combatState - Optional combat state for colorizing character names
@@ -31,15 +31,21 @@ export function renderEventLog(events: CombatEvent[], combatState?: CombatState)
   
   const tickHtml = tickNumbers.map(tickNumber => {
     const tickEvents = eventsByTick.get(tickNumber)!;
-    const summary = summarizeTick(tickEvents, characters, combatState);
+    const entries = summarizeTick(tickEvents, characters, combatState);
+    
+    const entriesHtml = entries.map(entry =>
+      `      <div class="entry">${entry}</div>`
+    ).join('\n');
     
     return `  <div class="event tick-summary" data-tick="${tickNumber}">
     <span class="tick">T${tickNumber}:</span>
-    <span class="message">${summary}</span>
+    <div class="message">
+${entriesHtml}
+    </div>
   </div>`;
   }).join('\n');
 
-  return `<div class="event-log">\n${tickHtml}\n</div>`;
+  return `<div class="event-log" style="text-align: left">\n${tickHtml}\n</div>`;
 }
 
 /**
@@ -59,9 +65,9 @@ function groupEventsByTick(events: CombatEvent[]): Map<number, CombatEvent[]> {
 }
 
 /**
- * Summarizes all events for a tick into a compact narrative
+ * Summarizes all events for a tick into separate entries
  */
-function summarizeTick(events: CombatEvent[], characters: Character[], combatState?: CombatState): string {
+function summarizeTick(events: CombatEvent[], characters: Character[], combatState?: CombatState): string[] {
   // Filter out meta events we don't want to show in summary
   const actionEvents = events.filter(e => 
     e.type === 'action-resolved' || 
@@ -76,7 +82,7 @@ function summarizeTick(events: CombatEvent[], characters: Character[], combatSta
   if (actionEvents.length === 0) {
     // Fallback to showing first message if no action events
     const message = events[0]?.message || 'No activity';
-    return colorizeCharacterNamesInText(message, characters);
+    return [colorizeCharacterNamesInText(message, characters)];
   }
 
   // Group by player vs enemy actions
@@ -149,16 +155,8 @@ function summarizeTick(events: CombatEvent[], characters: Character[], combatSta
     }
   }
 
-  // Combine player and enemy actions
-  const parts: string[] = [];
-  if (playerActions.length > 0) {
-    parts.push(playerActions.join('. '));
-  }
-  if (enemyActions.length > 0) {
-    parts.push(enemyActions.join('. '));
-  }
-
-  return parts.join(' <span class="separator">|</span> ');
+  // Return all actions as separate entries
+  return [...playerActions, ...enemyActions];
 }
 
 /**

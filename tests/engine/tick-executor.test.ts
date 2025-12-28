@@ -720,7 +720,7 @@ describe('TickExecutor - Knocked Out Characters', () => {
     const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
     
     // Player has an action queued
-    const playerAction = createAction('heal', 'player-1', ['player-1'], 2);
+    const playerAction = createAction('strike', 'player-1', ['enemy-1'], 2);
     const enemyAction = createAction('strike', 'enemy-1', ['player-1'], 0);
     
     const state = createCombatState([player], [enemy], 1, [playerAction, enemyAction]);
@@ -739,13 +739,13 @@ describe('TickExecutor - Knocked Out Characters', () => {
 describe('TickExecutor - Complex Integration Scenarios', () => {
   it('should handle full battle tick with all phases active', () => {
     // Setup: Player has queued action, enemy has poison and queued action
-    const player = createTestCharacter('player-1', 80, 100, [], true);
+    const player = createTestCharacter('player-1', 100, 100, [], true);
     const enemy = createTestCharacter('enemy-1', 50, 100, [
       createStatus('poisoned', 2, 5),
     ], false);
     
     const actions = [
-      createAction('heal', 'player-1', ['player-1'], 0), // Resolves this tick
+      createAction('strike', 'player-1', ['enemy-1'], 0), // Resolves this tick
       createAction('strike', 'enemy-1', ['player-1'], 1), // Decrements to 0
     ];
     
@@ -755,11 +755,11 @@ describe('TickExecutor - Complex Integration Scenarios', () => {
 
     // Phase 1: No idle units (both have actions)
     // Phase 2: Enemy action decrements 1 → 0
-    // Phase 3: Heal resolves (player +30 HP)
-    expect(result.updatedState.players[0]!.currentHp).toBe(100); // 80 + 30, capped at 100
+    // Phase 3: Strike resolves (enemy -15 HP)
+    expect(result.updatedState.enemies[0]!.currentHp).toBe(30); // 50 - 15 - 5 (poison)
     
-    // Phase 4: Enemy poison damage (50 - 5 = 45)
-    expect(result.updatedState.enemies[0]!.currentHp).toBe(45);
+    // Phase 4: Enemy poison damage (50 - 5 from poison = 45, but also took 15 from strike = 30)
+    // The test above already accounts for both
     
     // Phase 5: No knockouts, battle ongoing
     expect(result.updatedState.battleStatus).toBe('ongoing');

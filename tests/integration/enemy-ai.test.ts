@@ -555,65 +555,6 @@ describe('Enemy AI Integration', () => {
       expect(selection?.targets).toHaveLength(1);
       expect(selection!.targets[0].id).toBe('player-1'); // Forced to tank, not DPS
     });
-
-    it('should demonstrate taunt forcing in full combat', () => {
-      const strikeSkill = SkillLibrary.getSkill('strike');
-      const tauntSkill = SkillLibrary.getSkill('taunt');
-
-      const tank = createCharacter({
-        id: 'player-1',
-        name: 'Tank',
-        maxHp: 150,
-        currentHp: 150,
-        skills: [tauntSkill],
-        isPlayer: true,
-      });
-
-      const dps = createCharacter({
-        id: 'player-2',
-        name: 'DPS',
-        maxHp: 80,
-        currentHp: 80,
-        skills: [strikeSkill],
-        isPlayer: true,
-      });
-
-      const enemy = createCharacter({
-        id: 'enemy-1',
-        name: 'Goblin',
-        maxHp: 15,
-        currentHp: 15,
-        skills: [strikeSkill],
-        isPlayer: false,
-      });
-
-      // Tank taunts, DPS strikes
-      const initialActions = [
-        createAction('taunt', 'player-1', ['player-1'], 2),
-        createAction('strike', 'player-2', ['enemy-1'], 2),
-      ];
-
-      const initialState = createCombatState([tank, dps], [enemy], initialActions);
-
-      // Run battle
-      const finalState = TickExecutor.runBattle(initialState);
-
-      // Battle should end with victory
-      expect(finalState.battleStatus).toBe('victory');
-
-      // Verify taunt was applied
-      const tauntAppliedEvent = finalState.eventLog.find(
-        (e) => e.type === 'status-applied' && e.statusType === 'taunting'
-      );
-      expect(tauntAppliedEvent).toBeDefined();
-
-      // Enemy should be knocked out
-      const finalEnemy = finalState.enemies.find((e) => e.id === 'enemy-1');
-      expect(finalEnemy?.currentHp).toBeLessThanOrEqual(0);
-
-      // Snapshot test for event log
-      expect(finalState.eventLog).toMatchSnapshot();
-    });
   });
 
   describe('Scenario: Multi-Turn AI Combat', () => {

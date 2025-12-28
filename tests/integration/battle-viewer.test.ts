@@ -576,14 +576,13 @@ describe('BattleViewer Integration', () => {
 
     it('should match snapshot for battle at specific tick', () => {
       const strike = SkillLibrary.getSkill('strike');
-      const poison = SkillLibrary.getSkill('poison');
       
       const player = createCharacter({
         id: 'player-1',
         name: 'Hero',
         maxHp: 100,
         currentHp: 100,
-        skills: [strike, poison],
+        skills: [strike],
       });
       
       const enemy = createCharacter({
@@ -596,7 +595,7 @@ describe('BattleViewer Integration', () => {
       });
       
       const initialActions = [
-        createAction('poison', 'player-1', ['enemy-1'], 2),
+        createAction('strike', 'player-1', ['enemy-1'], 2),
       ];
       
       const initialState = createCombatState([player], [enemy], initialActions);

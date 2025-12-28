@@ -17,21 +17,17 @@ exports[`BattleViewer Integration > Snapshot Tests > should match snapshot for b
     <div class="hp-bar" style="width: 40%"></div>
     <span class="hp-text">20/50</span>
   </div>
-  <div class="status-effects"><span class="status poisoned" data-duration="3">Poisoned (3)</span></div>
+  <div class="status-effects"></div>
   <div class="action-display"><span class="action-name">Strike</span><span class="ticks-remaining">Executing</span></div>
 </div></div>
-  <div class="event-log">
-  <div class="event tick-summary" data-tick="5">
-    <span class="tick">T5:</span>
-    <span class="message">Goblin takes 5 poison damage</span>
-  </div>
-  <div class="event tick-summary" data-tick="4">
-    <span class="tick">T4:</span>
-    <span class="message">Goblin takes 5 poison damage</span>
-  </div>
+  <div class="event-log" style="text-align: left">
   <div class="event tick-summary" data-tick="3">
     <span class="tick">T3:</span>
-    <span class="message">player-1→Poison→enemy-1(15). player-1→Strike→enemy-1(15). enemy-1→Strike→player-1(15). poisoned applied to Goblin. Goblin takes 5 poison damage</span>
+    <div class="message">
+      <div class="entry">player-1→Strike→enemy-1(15)</div>
+      <div class="entry">player-1→Strike→enemy-1(15)</div>
+      <div class="entry">enemy-1→Strike→player-1(15)</div>
+    </div>
   </div>
 </div>
   

@@ -7,26 +7,6 @@ import type { IntentLine, SkillColorMap } from '../types/visualization.js';
 export const SKILL_COLORS: SkillColorMap = {
   // Damage skills (red spectrum)
   'strike': '#f44336',
-  'heavy-strike': '#d32f2f',
-  'fireball': '#ff5722',
-  'execute': '#b71c1c',
-  'bash': '#e91e63',
-  
-  // Healing skills (green spectrum)
-  'heal': '#4caf50',
-  'revive': '#66bb6a',
-  
-  // Buff/Shield skills (blue spectrum)
-  'shield': '#2196f3',
-  'defend': '#1976d2',
-  
-  // Debuff skills (purple spectrum)
-  'poison': '#9c27b0',
-  'stun': '#673ab7',
-  
-  // Utility (yellow/orange)
-  'taunt': '#ff9800',
-  'interrupt': '#ffc107',
   
   // Default
   'default': '#ffd700',

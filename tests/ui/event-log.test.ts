@@ -393,3 +393,75 @@ describe('EventLog - Edge Cases', () => {
     expect(html).toContain('Poison expired');
   });
 });
+
+describe('EventLog - Layout', () => {
+  it('should left-align event log text', () => {
+    const events: CombatEvent[] = [
+      createEvent(1, 'damage', 'Hero strikes Goblin'),
+    ];
+    const html = renderEventLog(events);
+    
+    // Event log should have left-aligned text style
+    expect(html).toContain('text-align: left');
+  });
+
+  it('should render each entry on its own line within a tick', () => {
+    const events: CombatEvent[] = [
+      createEvent(5, 'action-resolved', 'Attack', {
+        actorId: 'player-1',
+        skillName: 'Strike',
+      }),
+      createEvent(5, 'damage', 'Goblin takes damage', {
+        actorId: 'player-1',
+        targetId: 'goblin-1',
+        value: 25,
+      }),
+      createEvent(5, 'action-resolved', 'Slash', {
+        actorId: 'enemy-1',
+        skillName: 'Slash',
+      }),
+      createEvent(5, 'damage', 'Hero takes damage', {
+        actorId: 'enemy-1',
+        targetId: 'hero-1',
+        value: 10,
+      }),
+    ];
+    const html = renderEventLog(events);
+    const { document } = parseHTML(html);
+    
+    // Each action entry should be in its own .entry element within the tick
+    const tick5Container = document.querySelector('[data-tick="5"]');
+    const entries = tick5Container?.querySelectorAll('.entry');
+    
+    // Should have separate entries for player action and enemy action
+    expect(entries?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should not join entries with period separators', () => {
+    const events: CombatEvent[] = [
+      createEvent(5, 'damage', 'First damage'),
+      createEvent(5, 'damage', 'Second damage'),
+    ];
+    const html = renderEventLog(events);
+    
+    // Should NOT have entries joined with ". " separator
+    expect(html).not.toContain('First damage. Second damage');
+  });
+
+  it('should not join player and enemy entries with pipe separator', () => {
+    const events: CombatEvent[] = [
+      createEvent(5, 'action-resolved', 'Attack', {
+        actorId: 'player-1',
+        skillName: 'Strike',
+      }),
+      createEvent(5, 'action-resolved', 'Slash', {
+        actorId: 'enemy-1',
+        skillName: 'Slash',
+      }),
+    ];
+    const html = renderEventLog(events);
+    
+    // Should NOT have player/enemy groups separated by pipe
+    expect(html).not.toContain('<span class="separator">|</span>');
+  });
+});
