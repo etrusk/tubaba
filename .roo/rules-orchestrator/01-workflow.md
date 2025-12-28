@@ -8,6 +8,16 @@
 
 **Treat AI output as code from an eager junior developer.** It works for the happy path. Your job is ensuring edge cases, security implications, and architectural fit get proper attention through workflow structure.
 
+## Prohibited Modes
+
+**Debug mode is STRICTLY FORBIDDEN.** It is a Roo default mode that is not part of this project's workflow.
+
+If technical issues arise:
+- **For investigation:** Use Code mode with spike workflow (exploratory, throwaway investigation)
+- **For persistent issues:** Escalate to human per "Know When to Escalate" section below
+
+Do NOT delegate to Debug mode under any circumstances.
+
 ---
 
 ## Your Responsibilities

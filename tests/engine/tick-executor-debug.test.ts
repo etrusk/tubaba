@@ -380,3 +380,158 @@ describe('TickExecutor Debug Enhancement - Integration', () => {
     expect(playerEval?.selectedTargets).toContain('enemy-2');
   });
 });
+
+describe('TickExecutor Debug - Skills Without Rules (Legacy Fallback Path)', () => {
+  /**
+   * BUG: executeTickWithDebug legacy fallback path (lines 411-425) only includes
+   * skills that have rules. Skills without rules are never added to ruleSkillPairs,
+   * so characters with only rule-less skills cannot queue actions.
+   *
+   * Expected behavior (from action-selector.ts lines 70-84):
+   * Skills without rules should be treated as always-matching with priority 0
+   * and empty conditions array.
+   */
+
+  it('should queue action for character with skill that has NO rules (undefined)', () => {
+    // Create skill with no rules property (undefined)
+    const skillWithNoRules: Skill = {
+      id: 'basic-attack',
+      name: 'Basic Attack',
+      baseDuration: 3,
+      targeting: 'single-enemy-lowest-hp',
+      effects: [{ type: 'damage', value: 30 }],
+      // rules is undefined - NOT explicitly set
+    };
+    
+    const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillWithNoRules]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    
+    // No instructions provided - should use legacy fallback path
+    const state = createCombatState([player], [enemy], 0);
+    
+    const result = TickExecutorDebug.executeTickWithDebug(state);
+    
+    // Player should have queued an action since skill without rules should be treated
+    // as always-matching with priority 0
+    const playerInResult = result.updatedState.players.find(p => p.id === 'player-1');
+    expect(playerInResult?.currentAction).not.toBeNull();
+    expect(playerInResult?.currentAction?.skillId).toBe('basic-attack');
+    
+    // Action queue should contain the player's action
+    expect(result.updatedState.actionQueue.length).toBeGreaterThan(0);
+    const playerAction = result.updatedState.actionQueue.find(a => a.casterId === 'player-1');
+    expect(playerAction).toBeDefined();
+    expect(playerAction?.skillId).toBe('basic-attack');
+  });
+
+  it('should queue action for character with skill that has EMPTY rules array', () => {
+    // Create skill with empty rules array
+    const skillWithEmptyRules: Skill = {
+      id: 'slash',
+      name: 'Slash',
+      baseDuration: 2,
+      targeting: 'single-enemy-lowest-hp',
+      effects: [{ type: 'damage', value: 25 }],
+      rules: [], // Explicitly empty array
+    };
+    
+    const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillWithEmptyRules]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    
+    // No instructions provided - should use legacy fallback path
+    const state = createCombatState([player], [enemy], 0);
+    
+    const result = TickExecutorDebug.executeTickWithDebug(state);
+    
+    // Player should have queued an action since skill with empty rules array
+    // should be treated as always-matching with priority 0
+    const playerInResult = result.updatedState.players.find(p => p.id === 'player-1');
+    expect(playerInResult?.currentAction).not.toBeNull();
+    expect(playerInResult?.currentAction?.skillId).toBe('slash');
+    
+    // Action queue should contain the player's action
+    expect(result.updatedState.actionQueue.length).toBeGreaterThan(0);
+    const playerAction = result.updatedState.actionQueue.find(a => a.casterId === 'player-1');
+    expect(playerAction).toBeDefined();
+    expect(playerAction?.skillId).toBe('slash');
+  });
+
+  it('should use legacy fallback path when no instructions provided for control mode', () => {
+    // This test verifies the legacy path is used when:
+    // 1. No instructions map is provided
+    // 2. Or controlMode is not 'ai' (e.g., 'human')
+    
+    const skillWithNoRules: Skill = {
+      id: 'strike',
+      name: 'Strike',
+      baseDuration: 3,
+      targeting: 'single-enemy-lowest-hp',
+      effects: [{ type: 'damage', value: 20 }],
+      // rules undefined - should work via legacy path
+    };
+    
+    const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillWithNoRules]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    
+    const state = createCombatState([player], [enemy], 0);
+    
+    // Case 1: No instructions at all
+    const resultNoInstructions = TickExecutorDebug.executeTickWithDebug(state);
+    
+    const playerCase1 = resultNoInstructions.updatedState.players.find(p => p.id === 'player-1');
+    expect(playerCase1?.currentAction).not.toBeNull();
+    expect(playerCase1?.currentAction?.skillId).toBe('strike');
+    
+    // Case 2: Instructions with controlMode 'human' (should fall back to skill.rules)
+    const humanInstructions = new Map();
+    humanInstructions.set('player-1', {
+      characterId: 'player-1',
+      controlMode: 'human' as const,
+      skillInstructions: [], // Empty - player controls manually
+    });
+    
+    // Re-create fresh state for second case
+    const state2 = createCombatState([player], [enemy], 0);
+    const resultHumanMode = TickExecutorDebug.executeTickWithDebug(state2, humanInstructions);
+    
+    const playerCase2 = resultHumanMode.updatedState.players.find(p => p.id === 'player-1');
+    expect(playerCase2?.currentAction).not.toBeNull();
+    expect(playerCase2?.currentAction?.skillId).toBe('strike');
+  });
+
+  it('should include skill without rules in debug ruleEvaluations with priority 0', () => {
+    // Skills without rules should appear in the debug output as having been evaluated
+    // with a synthetic rule of priority 0 and empty conditions
+    const skillWithNoRules: Skill = {
+      id: 'basic-attack',
+      name: 'Basic Attack',
+      baseDuration: 3,
+      targeting: 'single-enemy-lowest-hp',
+      effects: [{ type: 'damage', value: 30 }],
+      // rules undefined
+    };
+    
+    const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillWithNoRules]);
+    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
+    
+    const state = createCombatState([player], [enemy], 0);
+    
+    const result = TickExecutorDebug.executeTickWithDebug(state);
+    
+    const playerEval = result.debugInfo.ruleEvaluations.find(e => e.characterId === 'player-1');
+    expect(playerEval).toBeDefined();
+    
+    // Should have at least one rule checked (the synthetic rule for the skill)
+    expect(playerEval?.rulesChecked.length).toBeGreaterThan(0);
+    
+    // The rule should have priority 0 (default for skills without rules)
+    const ruleCheck = playerEval?.rulesChecked[0];
+    expect(ruleCheck?.priority).toBe(0);
+    expect(ruleCheck?.skillId).toBe('basic-attack');
+    expect(ruleCheck?.status).toBe('selected');
+    
+    // Selected skill should be set
+    expect(playerEval?.selectedSkill).toBe('basic-attack');
+    expect(playerEval?.selectedTargets).toContain('enemy-1');
+  });
+});

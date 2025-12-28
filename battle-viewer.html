@@ -15,8 +15,9 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
       color: #fff;
-      min-height: 100vh;
+      height: 100vh;
       padding: 20px;
+      overflow: hidden;
     }
 
     .battle-viewer {
@@ -26,13 +27,16 @@
       gap: 20px;
       max-width: 100vw;
       width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
 
     h1 {
       text-align: center;
-      font-size: 2.5rem;
+      font-size: 2rem;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
       margin-bottom: 10px;
+      flex-shrink: 0;
     }
 
     /* Three-column layout */
@@ -40,7 +44,9 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 20px;
-      min-height: 500px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
     }
 
     /* Left column: stacked enemies and players */
@@ -653,15 +659,26 @@
       border-radius: 4px;
     }
 
-    /* Event Log */
+    /* Event Log - Horizontal scroll at bottom */
+    .event-log-container {
+      flex-shrink: 0;
+      height: 150px;
+      margin-top: auto;
+    }
+    
     .event-log {
       background: rgba(0, 0, 0, 0.3);
       border-radius: 12px;
       padding: 15px;
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      max-height: 600px;
-      overflow-y: auto;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      display: flex;
+      flex-direction: row-reverse;
+      gap: 8px;
+      align-items: center;
     }
 
     .event-log h2 {
@@ -673,15 +690,24 @@
 
     .event {
       display: flex;
-      align-items: flex-start;
-      flex-wrap: nowrap;
-      gap: 8px;
-      padding: 4px 8px;
-      margin-bottom: 2px;
-      border-radius: 4px;
-      border-left: 3px solid;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 12px;
+      min-width: 180px;
+      max-width: 200px;
+      border-radius: 8px;
+      border: 2px solid;
       font-size: 0.85rem;
       line-height: 1.3;
+      flex-shrink: 0;
+      white-space: normal;
+    }
+    
+    .event.tick-summary {
+      background: rgba(33, 150, 243, 0.15);
+      border-color: #2196f3;
     }
 
     .event.action-queued { 
@@ -729,24 +755,17 @@
     .event .tick {
       font-weight: bold;
       color: #64b5f6;
-      font-size: 0.8rem;
-      min-width: 28px;
-      flex-shrink: 0;
+      font-size: 1rem;
       white-space: nowrap;
-      align-self: flex-start;
-      padding-top: 1px;
     }
 
     .event .message {
       color: #fff;
-      flex: 1;
       overflow-wrap: break-word;
       word-wrap: break-word;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      text-align: center;
       line-height: 1.3;
+      font-size: 0.8rem;
     }
 
     .event .separator {
@@ -1154,6 +1173,13 @@
       </div>
     </div>
     
+    <!-- Event Log at bottom (full width, horizontal scroll) -->
+    <div class="event-log-container">
+      <div id="event-log-display" class="event-log">
+        <p style="color: #888; font-style: italic;">No events yet</p>
+      </div>
+    </div>
+    
   </div>
 
   <!-- Global Tooltip (Portal Pattern) -->
@@ -1178,6 +1204,7 @@
     import { TickExecutor } from './dist/engine/tick-executor.js';
     import { SkillLibrary } from './dist/engine/skill-library.js';
     import { debugDistributeSkill, debugUnequipSkill, debugAddCharacter, debugRemoveCharacter, debugRandomizeAllSkills } from './dist/run/debug-character-manager.js';
+    import { renderEventLog } from './dist/ui/event-log.js';
 
     console.log('Imports loaded successfully');
 
@@ -1187,6 +1214,7 @@
     const ruleEvaluationsContainer = document.getElementById('rule-evaluations-container');
     const tickDisplay = document.getElementById('tick-display');
     const battleStatus = document.getElementById('battle-status');
+    const eventLogDisplay = document.getElementById('event-log-display');
     
     const stepBtn = document.getElementById('step-btn');
     const stepBackBtn = document.getElementById('step-back-btn');
@@ -1422,6 +1450,8 @@
     function updateBattleWithLoadout() {
       // Preserve selected character across controller recreation
       const previousSelectedCharacterId = battleController.getInstructionsState().selectedCharacterId;
+      // BUG FIX: Preserve event log when updating loadout (don't clear battle history)
+      const previousEventLog = battleController.getCurrentState().eventLog;
       
       // Separate characters by isPlayer flag
       const players = debugState.characters.filter(c => c.isPlayer).map(char => ({
@@ -1443,7 +1473,7 @@
         enemies,
         tickNumber: 0,
         actionQueue: [],
-        eventLog: [],
+        eventLog: previousEventLog, // Preserve event log
         battleStatus: 'ongoing',
       };
       
@@ -1547,6 +1577,13 @@
             </p>
           </div>
         `;
+      }
+      
+      // Render event log at bottom
+      if (eventLogDisplay) {
+        eventLogDisplay.innerHTML = renderEventLog(state.eventLog, state);
+        // Auto-scroll to newest (rightmost) event
+        eventLogDisplay.scrollLeft = eventLogDisplay.scrollWidth;
       }
       
       // Render tick display

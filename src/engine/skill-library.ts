@@ -51,17 +51,7 @@ const skills: Skill[] = [
         value: 50,
       },
     ],
-    rules: [
-      {
-        priority: 1,
-        conditions: [
-          {
-            type: 'hp-below',
-            threshold: 25,
-          },
-        ],
-      },
-    ],
+    // BUG FIX: Removed hp-below condition - now unconditional high-damage skill
   },
   {
     id: 'poison',

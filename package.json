@@ -4,6 +4,7 @@
   "description": "A research-validated setup for AI-assisted development with Roo Code.",
   "type": "module",
   "scripts": {
+    "dev": "npx serve -l 3000",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:critical": "vitest run --reporter=verbose",
