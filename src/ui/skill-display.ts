@@ -28,12 +28,12 @@ export interface SkillDisplayOptions {
 }
 
 /**
- * Renders a skill element with tooltip via data attributes
+ * Renders a skill element with tooltip data attributes (Portal Pattern)
  *
  * Produces HTML with:
  * - Colored skill name
  * - Optional duration indicator
- * - Data attributes for global tooltip (no inline tooltip element)
+ * - Data attributes for global tooltip portal
  *
  * @param skill - Pre-formatted skill view model
  * @param options - Rendering options
@@ -43,7 +43,11 @@ export interface SkillDisplayOptions {
  * ```typescript
  * const html = renderSkillDisplay(skill);
  * // <span class="skill-display" style="color: #f44336;"
- * //       data-skill-id="strike" data-tooltip-name="Strike" ...>
+ * //   data-skill-id="strike"
+ * //   data-tooltip-name="Strike"
+ * //   data-tooltip-duration="2 ticks"
+ * //   data-tooltip-effects="Deals 15 damage"
+ * //   data-tooltip-targeting="Targets lowest HP enemy">
  * //   Strike
  * //   <span class="skill-duration">(2 ticks)</span>
  * // </span>
@@ -75,22 +79,13 @@ export function renderSkillDisplay(
     ? `<span class="skill-duration">(${skill.formattedDuration})</span>`
     : '';
   
-  // Escape HTML entities in tooltip content for data attributes
-  const escapeHtml = (text: string) => text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-  
   // Use override targeting if provided, otherwise use skill's default
   const targetingDescription = options?.targetingOverride ?? skill.targetingDescription;
   
-  return `<${tag} class="${classes}" style="color: ${skill.color};"
-    data-skill-id="${skill.id}"
-    data-tooltip-name="${escapeHtml(skill.name)}"
-    data-tooltip-duration="${escapeHtml(skill.formattedDuration)}"
-    data-tooltip-effects="${escapeHtml(skill.effectsSummary)}"
-    data-tooltip-targeting="${escapeHtml(targetingDescription)}">
+  // Build tooltip data attributes for global portal tooltip
+  const tooltipAttrs = `data-tooltip-name="${skill.name}" data-tooltip-duration="${skill.formattedDuration}" data-tooltip-effects="${skill.effectsSummary}" data-tooltip-targeting="${targetingDescription}"`;
+  
+  return `<${tag} class="${classes}" style="color: ${skill.color};" data-skill-id="${skill.id}" ${tooltipAttrs}>
   ${skill.name}
   ${durationHtml}
 </${tag}>`;

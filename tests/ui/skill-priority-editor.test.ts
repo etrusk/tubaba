@@ -557,7 +557,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // The tooltip should show the OVERRIDE targeting description
+    // The tooltip should show the OVERRIDE targeting description in data attribute
     // Expected: "Targets highest HP enemy" (from override)
     // Bug: Currently shows "Targets lowest HP enemy" (from skill default)
     expect(html).toContain('data-tooltip-targeting="Targets highest HP enemy"');
@@ -588,7 +588,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Without override, tooltip should show the skill's default targeting
+    // Without override, tooltip should show the skill's default targeting in data attribute
     expect(html).toContain('data-tooltip-targeting="Targets lowest HP ally (including self)"');
   });
 
@@ -659,7 +659,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Each skill's tooltip should show its respective override
+    // Each skill's tooltip should show its respective override in data attributes
     expect(html).toContain('data-tooltip-targeting="Targets all enemies"');
     expect(html).toContain('data-tooltip-targeting="Targets all allies"');
     

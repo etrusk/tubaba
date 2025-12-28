@@ -77,8 +77,8 @@ describe('renderSkillDisplay', () => {
     });
   });
   
-  describe('tooltip content', () => {
-    it('should include tooltip with skill details', () => {
+  describe('tooltip data attributes (Portal Pattern)', () => {
+    it('should include tooltip data attributes', () => {
       // Given: Skill view model
       const skill = SkillLibrary.getSkill('strike');
       const viewModel = ViewModelFactory.createSkillViewModel(skill);
@@ -86,11 +86,14 @@ describe('renderSkillDisplay', () => {
       // When: Render skill display
       const html = renderSkillDisplay(viewModel);
       
-      // Then: Should contain tooltip
-      expect(html).toContain('skill-tooltip');
+      // Then: Should contain tooltip data attributes
+      expect(html).toContain('data-tooltip-name');
+      expect(html).toContain('data-tooltip-duration');
+      expect(html).toContain('data-tooltip-effects');
+      expect(html).toContain('data-tooltip-targeting');
     });
     
-    it('should display skill name in tooltip', () => {
+    it('should include skill name in tooltip data', () => {
       // Given: Skill view model
       const skill = SkillLibrary.getSkill('heal');
       const viewModel = ViewModelFactory.createSkillViewModel(skill);
@@ -98,11 +101,11 @@ describe('renderSkillDisplay', () => {
       // When: Render skill display
       const html = renderSkillDisplay(viewModel);
       
-      // Then: Tooltip should contain skill name
-      expect(html).toContain('<strong>Heal</strong>');
+      // Then: Tooltip data should contain skill name
+      expect(html).toContain('data-tooltip-name="Heal"');
     });
     
-    it('should display duration in tooltip', () => {
+    it('should include duration in tooltip data', () => {
       // Given: Skill view model
       const skill = SkillLibrary.getSkill('defend');
       const viewModel = ViewModelFactory.createSkillViewModel(skill);
@@ -110,11 +113,11 @@ describe('renderSkillDisplay', () => {
       // When: Render skill display
       const html = renderSkillDisplay(viewModel);
       
-      // Then: Tooltip should contain duration
-      expect(html).toContain('(1 tick)');
+      // Then: Tooltip data should contain duration
+      expect(html).toContain('data-tooltip-duration="1 tick"');
     });
     
-    it('should display effects summary in tooltip', () => {
+    it('should include effects summary in tooltip data', () => {
       // Given: Skill view model
       const skill = SkillLibrary.getSkill('strike');
       const viewModel = ViewModelFactory.createSkillViewModel(skill);
@@ -122,11 +125,11 @@ describe('renderSkillDisplay', () => {
       // When: Render skill display
       const html = renderSkillDisplay(viewModel);
       
-      // Then: Tooltip should contain effects
-      expect(html).toContain('Deals 15 damage');
+      // Then: Tooltip data should contain effects
+      expect(html).toContain('data-tooltip-effects="Deals 15 damage"');
     });
     
-    it('should display targeting description in tooltip', () => {
+    it('should include targeting description in tooltip data', () => {
       // Given: Skill view model
       const skill = SkillLibrary.getSkill('strike');
       const viewModel = ViewModelFactory.createSkillViewModel(skill);
@@ -134,8 +137,8 @@ describe('renderSkillDisplay', () => {
       // When: Render skill display
       const html = renderSkillDisplay(viewModel);
       
-      // Then: Tooltip should contain targeting
-      expect(html).toContain('<em>Targets lowest HP enemy</em>');
+      // Then: Tooltip data should contain targeting
+      expect(html).toContain('data-tooltip-targeting="Targets lowest HP enemy"');
     });
   });
   
