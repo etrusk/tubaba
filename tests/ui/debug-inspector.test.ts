@@ -74,7 +74,7 @@ function createTargetFilterResult(
 function createTargetingDecision(
   casterId: string,
   skillId: string,
-  targetingMode: 'self' | 'single-enemy-lowest-hp' | 'single-enemy-highest-hp' | 'all-enemies' | 'ally-lowest-hp' | 'ally-dead' | 'all-allies',
+  targetingMode: 'self' | 'nearest-enemy',
   candidates: string[],
   filtersApplied: TargetFilterResult[],
   finalTargets: string[],

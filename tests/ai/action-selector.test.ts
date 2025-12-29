@@ -81,7 +81,7 @@ describe('EnemyBrain', () => {
       };
       
       const healSkill = createTestSkill('heal', 'Heal', 'self', [highPriorityRule]);
-      const attackSkill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [lowPriorityRule]);
+      const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [lowPriorityRule]);
       
       const enemy = createTestCharacter('e1', 'Enemy', 20, 100, false, [healSkill, attackSkill]);
       const player = createTestCharacter('p1', 'Player', 100, 100, true);
@@ -106,7 +106,7 @@ describe('EnemyBrain', () => {
       };
       
       const healSkill = createTestSkill('heal', 'Heal', 'self', [highPriorityRule]);
-      const attackSkill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [lowPriorityRule]);
+      const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [lowPriorityRule]);
       
       const enemy = createTestCharacter('e1', 'Enemy', 40, 100, false, [healSkill, attackSkill]);
       const player = createTestCharacter('p1', 'Player', 100, 100, true);
@@ -123,10 +123,10 @@ describe('EnemyBrain', () => {
       const skill1 = createTestSkill('skill1', 'Skill 1', 'self', [
         { priority: 3, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
-      const skill2 = createTestSkill('skill2', 'Skill 2', 'all-enemies', [
+      const skill2 = createTestSkill('skill2', 'Skill 2', 'nearest-enemy', [
         { priority: 7, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
-      const skill3 = createTestSkill('skill3', 'Skill 3', 'single-enemy-highest-hp', [
+      const skill3 = createTestSkill('skill3', 'Skill 3', 'nearest-enemy', [
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
       
@@ -147,7 +147,7 @@ describe('EnemyBrain', () => {
       const skill1 = createTestSkill('first', 'First Skill', 'self', [
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
-      const skill2 = createTestSkill('second', 'Second Skill', 'all-enemies', [
+      const skill2 = createTestSkill('second', 'Second Skill', 'nearest-enemy', [
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
       
@@ -182,7 +182,7 @@ describe('EnemyBrain', () => {
 
   describe('selectAction - targeting', () => {
     it('should use skill default targeting mode', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -199,11 +199,11 @@ describe('EnemyBrain', () => {
     });
 
     it('should use rule targetingOverride when specified', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [
-        { 
-          priority: 5, 
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
+        {
+          priority: 5,
           conditions: [],
-          targetingOverride: 'all-enemies' // Override to target all enemies
+          targetingOverride: 'self' // Override to target self
         }
       ]);
       
@@ -215,12 +215,12 @@ describe('EnemyBrain', () => {
       const result = selectAction(enemy, combatState);
 
       expect(result).not.toBeNull();
-      expect(result?.targets).toHaveLength(2); // All players targeted
-      expect(result?.targets.map((t: Character) => t.id).sort()).toEqual(['p1', 'p2']);
+      expect(result?.targets).toHaveLength(1); // Self targeted
+      expect(result?.targets[0].id).toBe('e1');
     });
 
     it('should apply taunt forcing through TargetFilter', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-highest-hp', [
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -255,7 +255,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should handle ally targeting for enemies', () => {
-      const skill = createTestSkill('buff-ally', 'Buff Ally', 'ally-lowest-hp', [
+      const skill = createTestSkill('buff-ally', 'Buff Ally', 'self', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -269,7 +269,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('e2'); // Lowest HP enemy ally
+      expect(result?.targets[0].id).toBe('e1'); // Self targeting
     });
   });
 
@@ -293,7 +293,7 @@ describe('EnemyBrain', () => {
       const skill1 = createTestSkill('skill1', 'Skill 1', 'self', [
         { priority: 10, conditions: [{ type: 'hp-below', threshold: 20 }] }
       ]);
-      const skill2 = createTestSkill('skill2', 'Skill 2', 'all-enemies', [
+      const skill2 = createTestSkill('skill2', 'Skill 2', 'nearest-enemy', [
         { priority: 5, conditions: [{ type: 'ally-count', threshold: 2 }] }
       ]);
       
@@ -309,7 +309,7 @@ describe('EnemyBrain', () => {
 
   describe('selectAction - rules without conditions', () => {
     it('should always match rule with empty conditions array', () => {
-      const skill = createTestSkill('basic-attack', 'Basic Attack', 'single-enemy-lowest-hp', [
+      const skill = createTestSkill('basic-attack', 'Basic Attack', 'nearest-enemy', [
         { priority: 1, conditions: [] } // Empty conditions = always match
       ]);
       
@@ -324,10 +324,10 @@ describe('EnemyBrain', () => {
     });
 
     it('should use empty-condition rule as fallback when higher priority rules fail', () => {
-      const skill1 = createTestSkill('special', 'Special Attack', 'all-enemies', [
+      const skill1 = createTestSkill('special', 'Special Attack', 'nearest-enemy', [
         { priority: 10, conditions: [{ type: 'hp-below', threshold: 30 }] }
       ]);
-      const skill2 = createTestSkill('basic', 'Basic Attack', 'single-enemy-lowest-hp', [
+      const skill2 = createTestSkill('basic', 'Basic Attack', 'nearest-enemy', [
         { priority: 1, conditions: [] } // Fallback
       ]);
       
@@ -344,7 +344,7 @@ describe('EnemyBrain', () => {
 
   describe('selectAction - AND logic for conditions', () => {
     it('should require all conditions to be true for rule to match', () => {
-      const skill = createTestSkill('conditional-skill', 'Conditional Skill', 'all-enemies', [
+      const skill = createTestSkill('conditional-skill', 'Conditional Skill', 'nearest-enemy', [
         {
           priority: 5,
           conditions: [
@@ -366,7 +366,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should not match when one condition is false', () => {
-      const skill = createTestSkill('conditional-skill', 'Conditional Skill', 'all-enemies', [
+      const skill = createTestSkill('conditional-skill', 'Conditional Skill', 'nearest-enemy', [
         {
           priority: 5,
           conditions: [
@@ -424,7 +424,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should match skill with no rules (default behavior)', () => {
-      const skill = createTestSkill('unrestricted', 'Unrestricted Skill', 'single-enemy-lowest-hp');
+      const skill = createTestSkill('unrestricted', 'Unrestricted Skill', 'nearest-enemy');
       // No rules property set
       
       const enemy = createTestCharacter('e1', 'Enemy', 100, 100, false, [skill]);
@@ -438,7 +438,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should match skill with empty rules array', () => {
-      const skill = createTestSkill('no-rules', 'No Rules Skill', 'all-enemies', []);
+      const skill = createTestSkill('no-rules', 'No Rules Skill', 'nearest-enemy', []);
       
       const enemy = createTestCharacter('e1', 'Enemy', 100, 100, false, [skill]);
       const player = createTestCharacter('p1', 'Player', 100, 100, true);
@@ -451,7 +451,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should return null when no valid targets exist', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -464,7 +464,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should return null when enemy is knocked out (HP 0)', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -477,8 +477,8 @@ describe('EnemyBrain', () => {
       expect(result).toBeNull(); // Dead enemies can't act
     });
 
-    it('should return null when targets would be dead allies for ally-dead targeting', () => {
-      const skill = createTestSkill('revive', 'Revive', 'ally-dead', [
+    it('should handle self-targeting when no enemies exist', () => {
+      const skill = createTestSkill('self-buff', 'Self Buff', 'self', [
         { priority: 10, conditions: [] }
       ]);
       
@@ -489,11 +489,12 @@ describe('EnemyBrain', () => {
 
       const result = selectAction(enemy1, combatState);
 
-      expect(result).toBeNull(); // No dead allies to revive
+      expect(result).not.toBeNull();
+      expect(result?.targets[0].id).toBe('e1'); // Self targeting
     });
 
     it('should handle multiple knocked-out players when targeting', () => {
-      const skill = createTestSkill('attack', 'Attack', 'single-enemy-lowest-hp', [
+      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       
@@ -515,7 +516,7 @@ describe('EnemyBrain', () => {
     it('should handle priority ties with rule order within skill', () => {
       const skill = createTestSkill('multi-option', 'Multi Option', 'self', [
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }], targetingOverride: 'self' },
-        { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }], targetingOverride: 'all-enemies' },
+        { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }], targetingOverride: 'nearest-enemy' },
       ]);
       
       const enemy = createTestCharacter('e1', 'Enemy', 50, 100, false, [skill]);
@@ -534,7 +535,7 @@ describe('EnemyBrain', () => {
         { priority: 10, conditions: [{ type: 'hp-below', threshold: 20 }] }, // Emergency
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 50 }] }, // Normal heal
       ]);
-      const attackSkill = createTestSkill('attack', 'Attack', 'all-enemies', [
+      const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
         { priority: 3, conditions: [] }, // Default action
       ]);
       
@@ -552,10 +553,10 @@ describe('EnemyBrain', () => {
       const skill1 = createTestSkill('s1', 'Skill 1', 'self', [
         { priority: 2, conditions: [{ type: 'hp-below', threshold: 30 }] }
       ]);
-      const skill2 = createTestSkill('s2', 'Skill 2', 'all-enemies', [
+      const skill2 = createTestSkill('s2', 'Skill 2', 'nearest-enemy', [
         { priority: 8, conditions: [{ type: 'ally-count', threshold: 0 }] }
       ]);
-      const skill3 = createTestSkill('s3', 'Skill 3', 'single-enemy-highest-hp', [
+      const skill3 = createTestSkill('s3', 'Skill 3', 'nearest-enemy', [
         { priority: 5, conditions: [] }
       ]);
       

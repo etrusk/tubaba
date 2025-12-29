@@ -29,14 +29,14 @@ function createTestSkills(): Skill[] {
       name: 'Heal',
       baseDuration: 15,
       effects: [{ type: 'heal', value: 20 }],
-      targeting: 'ally-lowest-hp',
+      targeting: 'self',
     },
     {
       id: 'strike',
       name: 'Strike',
       baseDuration: 10,
       effects: [{ type: 'damage', value: 10 }],
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
     },
     {
       id: 'shield',
@@ -541,7 +541,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         name: 'Strike',
         baseDuration: 10,
         effects: [{ type: 'damage', value: 10 }],
-        targeting: 'single-enemy-lowest-hp', // Default: "Targets lowest HP enemy"
+        targeting: 'self', // Default: "Targets self"
       },
     ];
 
@@ -551,17 +551,17 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         priority: 100,
         conditions: [],
         enabled: true,
-        targetingOverride: 'single-enemy-highest-hp', // Override: "Targets highest HP enemy"
+        targetingOverride: 'nearest-enemy', // Override: "Targets nearest enemy"
       },
     ];
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // The tooltip should show the OVERRIDE targeting description in data attribute
-    // Expected: "Targets highest HP enemy" (from override)
-    // Bug: Currently shows "Targets lowest HP enemy" (from skill default)
-    expect(html).toContain('data-tooltip-targeting="Targets highest HP enemy"');
-    expect(html).not.toContain('data-tooltip-targeting="Targets lowest HP enemy"');
+    // Expected: "Targets nearest enemy" (from override)
+    // Bug: Currently shows "Targets self" (from skill default)
+    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
+    expect(html).not.toContain('data-tooltip-targeting="Targets self"');
   });
 
   it('should display default targeting description in tooltip when no override is set', () => {
@@ -572,7 +572,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         name: 'Heal',
         baseDuration: 15,
         effects: [{ type: 'heal', value: 20 }],
-        targeting: 'ally-lowest-hp', // Default: "Targets lowest HP ally (including self)"
+        targeting: 'self', // Default: "Targets self"
       },
     ];
 
@@ -589,7 +589,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // Without override, tooltip should show the skill's default targeting in data attribute
-    expect(html).toContain('data-tooltip-targeting="Targets lowest HP ally (including self)"');
+    expect(html).toContain('data-tooltip-targeting="Targets self"');
   });
 
   it('should display correct targeting when override equals default', () => {
@@ -601,7 +601,7 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         name: 'Strike',
         baseDuration: 10,
         effects: [{ type: 'damage', value: 10 }],
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
       },
     ];
 
@@ -611,14 +611,14 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         priority: 100,
         conditions: [],
         enabled: true,
-        targetingOverride: 'single-enemy-lowest-hp', // Same as default
+        targetingOverride: 'nearest-enemy', // Same as default
       },
     ];
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // Should still work correctly (showing the override, which happens to match default)
-    expect(html).toContain('data-tooltip-targeting="Targets lowest HP enemy"');
+    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
   });
 
   it('should display override targeting for each skill when multiple skills have overrides', () => {
@@ -629,14 +629,14 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         name: 'Strike',
         baseDuration: 10,
         effects: [{ type: 'damage', value: 10 }],
-        targeting: 'single-enemy-lowest-hp', // Default: lowest HP
+        targeting: 'self', // Default: self
       },
       {
         id: 'shield',
         name: 'Shield',
         baseDuration: 5,
         effects: [{ type: 'shield', value: 15 }],
-        targeting: 'self', // Default: self
+        targeting: 'nearest-enemy', // Default: nearest enemy
       },
     ];
 
@@ -646,26 +646,26 @@ describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', (
         priority: 100,
         conditions: [],
         enabled: true,
-        targetingOverride: 'all-enemies', // Override: "Targets all enemies"
+        targetingOverride: 'nearest-enemy', // Override: "Targets nearest enemy"
       },
       {
         skillId: 'shield',
         priority: 50,
         conditions: [],
         enabled: true,
-        targetingOverride: 'all-allies', // Override: "Targets all allies"
+        targetingOverride: 'self', // Override: "Targets self"
       },
     ];
 
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // Each skill's tooltip should show its respective override in data attributes
-    expect(html).toContain('data-tooltip-targeting="Targets all enemies"');
-    expect(html).toContain('data-tooltip-targeting="Targets all allies"');
+    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
+    expect(html).toContain('data-tooltip-targeting="Targets self"');
     
-    // Should NOT show default targeting descriptions
-    expect(html).not.toContain('data-tooltip-targeting="Targets lowest HP enemy"');
-    expect(html).not.toContain('data-tooltip-targeting="Targets self"');
+    // Should NOT show default targeting descriptions (reversed from override)
+    expect(html).not.toContain('data-tooltip-targeting="Targets self"' + ' data-skill-id="strike"');
+    expect(html).not.toContain('data-tooltip-targeting="Targets nearest enemy"' + ' data-skill-id="shield"');
   });
 });
 
@@ -687,7 +687,7 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
         name: 'Strike',
         baseDuration: 2,
         effects: [{ type: 'damage', value: 15 }],
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
       },
       {
         id: 'defend',
@@ -706,7 +706,7 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
       name: 'Heal',
       baseDuration: 3,
       effects: [{ type: 'heal', value: 30 }],
-      targeting: 'ally-lowest-hp-damaged',
+      targeting: 'self',
     };
   }
 
@@ -717,7 +717,7 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
       name: 'Fireball',
       baseDuration: 4,
       effects: [{ type: 'damage', value: 20 }],
-      targeting: 'all-enemies',
+      targeting: 'nearest-enemy',
     };
   }
 
@@ -728,7 +728,7 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
       name: 'Shield',
       baseDuration: 2,
       effects: [{ type: 'shield', value: 30 }],
-      targeting: 'ally-lowest-hp',
+      targeting: 'self',
     };
   }
 
@@ -745,14 +745,14 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
         name: 'Poison',
         baseDuration: 2,
         effects: [{ type: 'status', statusType: 'poisoned', duration: 6 }],
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
       },
       {
         id: 'revive',
         name: 'Revive',
         baseDuration: 4,
         effects: [{ type: 'revive', value: 40 }],
-        targeting: 'ally-dead',
+        targeting: 'self',
       },
     ];
   }

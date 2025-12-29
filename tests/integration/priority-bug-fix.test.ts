@@ -17,7 +17,7 @@ describe('Bug Fix: Instructions Priorities Used by Action Selection', () => {
     const strike: Skill = {
       id: 'strike',
       name: 'Strike',
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       baseDuration: 2,
       effects: [{ type: 'damage', value: 10 }],
       rules: [{ priority: 10, conditions: [] }] // Default priority
@@ -101,7 +101,7 @@ describe('Bug Fix: Instructions Priorities Used by Action Selection', () => {
     const strike: Skill = {
       id: 'strike',
       name: 'Strike',
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       baseDuration: 2,
       effects: [{ type: 'damage', value: 10 }],
       rules: [{ priority: 10, conditions: [] }]
@@ -181,7 +181,7 @@ describe('Bug Fix: Instructions Priorities Used by Action Selection', () => {
     const strike: Skill = {
       id: 'strike',
       name: 'Strike',
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       baseDuration: 2,
       effects: [{ type: 'damage', value: 10 }],
       rules: [{ priority: 10, conditions: [] }]

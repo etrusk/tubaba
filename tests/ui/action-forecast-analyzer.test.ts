@@ -87,7 +87,7 @@ function createInstructions(
 describe('ActionForecastAnalyzer', () => {
   describe('forecastNextActions - timeline with queued actions', () => {
     it('should include queued actions in timeline', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       player.currentAction = {
         skillId: 'strike',
@@ -114,7 +114,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should order timeline by tick number', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const healSkill = createTestSkill('heal', 'Heal', 'self');
       
       const player1 = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
@@ -147,7 +147,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should handle multiple actions at same tick with deterministic ordering', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       
       const player1 = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       player1.currentAction = {
@@ -182,7 +182,7 @@ describe('ActionForecastAnalyzer', () => {
 
   describe('forecastNextActions - prediction accuracy', () => {
     it('should predict next action using actual AI logic', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp', [
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 10, conditions: [] }
       ]);
       
@@ -210,7 +210,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should combine queued and predicted actions in timeline', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp', [
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 10, conditions: [] }
       ]);
       
@@ -252,7 +252,7 @@ describe('ActionForecastAnalyzer', () => {
       const healSkill = createTestSkill('heal', 'Heal', 'self', [
         { priority: 100, conditions: [{ type: 'hp-below', threshold: 50 }] }
       ]);
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp', [
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 50, conditions: [] }
       ]);
       
@@ -286,7 +286,7 @@ describe('ActionForecastAnalyzer', () => {
 
   describe('forecastNextActions - character forecasts', () => {
     it('should include current action for character with queued action', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       player.currentAction = {
         skillId: 'strike',
@@ -309,7 +309,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should have null current action for idle character', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -322,7 +322,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should include all alive characters in forecasts', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player1 = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const player2 = createTestCharacter('p2', 'Mage', 80, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false, [strikeSkill]);
@@ -336,7 +336,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should exclude dead characters from forecasts', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player1 = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const player2 = createTestCharacter('p2', 'Mage', 0, 100, true, [strikeSkill]); // Dead
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false, [strikeSkill]);
@@ -382,7 +382,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should format multiple conditions with AND logic', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -407,7 +407,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should show "Always" for empty conditions', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -429,7 +429,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should include targeting override in rule summary', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -440,7 +440,7 @@ describe('ActionForecastAnalyzer', () => {
           skillId: 'strike',
           priority: 50,
           conditions: [],
-          targetingOverride: 'all-enemies',
+          targetingOverride: 'self',
           enabled: true,
         }
       ]));
@@ -448,11 +448,11 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary[0].targetingMode).toBe('All Enemies');
+      expect(p1Forecast?.rulesSummary[0].targetingMode).toBe('Self');
     });
 
     it('should mark disabled rules', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -476,7 +476,7 @@ describe('ActionForecastAnalyzer', () => {
 
   describe('forecastNextActions - edge cases', () => {
     it('should handle character with no instructions (human mode)', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);
@@ -514,7 +514,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should limit timeline to next 5 actions', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp', [
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 10, conditions: [] }
       ]);
       
@@ -545,7 +545,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should handle stunned character prediction', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp', [
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 10, conditions: [] }
       ]);
       
@@ -572,7 +572,7 @@ describe('ActionForecastAnalyzer', () => {
     });
 
     it('should handle empty instruction map', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'single-enemy-lowest-hp');
+      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
       const state = createTestCombatState([player], [enemy], 10);

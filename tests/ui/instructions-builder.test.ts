@@ -45,7 +45,7 @@ function createTestSkill(
     name,
     baseDuration: 10,
     effects: [{ type: 'damage', value: 10 }],
-    targeting: 'single-enemy-lowest-hp',
+    targeting: 'nearest-enemy',
   };
 }
 

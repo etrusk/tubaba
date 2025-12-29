@@ -21,7 +21,7 @@ function createTestCharacter(): Character {
         name: 'Attack',
         baseDuration: 10,
         effects: [{ type: 'damage', value: 10 }],
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         rules: [{ priority: 1, conditions: [] }], // Existing rule
       },
       {
@@ -29,7 +29,7 @@ function createTestCharacter(): Character {
         name: 'Heal',
         baseDuration: 15,
         effects: [{ type: 'heal', value: 20 }],
-        targeting: 'ally-lowest-hp',
+        targeting: 'self',
         rules: [{ priority: 2, conditions: [{ type: 'hp-below', threshold: 50 }] }], // Existing rule
       },
       {
@@ -102,7 +102,7 @@ describe('instructions-converter', () => {
               skillId: 'skill2',
               priority: 20,
               conditions: [{ type: 'ally-count', threshold: 2 }],
-              targetingOverride: 'all-allies',
+              targetingOverride: 'self',
               enabled: true,
             },
           ],
@@ -123,7 +123,7 @@ describe('instructions-converter', () => {
         expect(result.skills[1].rules![0]).toEqual({
           priority: 20,
           conditions: [{ type: 'ally-count', threshold: 2 }],
-          targetingOverride: 'all-allies',
+          targetingOverride: 'self',
         });
 
         // skill3 has no instruction, should have empty rules
@@ -184,7 +184,7 @@ describe('instructions-converter', () => {
               skillId: 'skill1',
               priority: 10,
               conditions: [],
-              targetingOverride: 'single-enemy-highest-hp',
+              targetingOverride: 'nearest-enemy',
               enabled: true,
             },
           ],
@@ -192,7 +192,7 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules![0].targetingOverride).toBe('single-enemy-highest-hp');
+        expect(result.skills[0].rules![0].targetingOverride).toBe('nearest-enemy');
       });
     });
 
@@ -399,13 +399,13 @@ describe('instructions-converter', () => {
         skillId: 'skill1',
         priority: 20,
         conditions: [],
-        targetingOverride: 'all-enemies',
+        targetingOverride: 'nearest-enemy',
         enabled: true,
       };
 
       const rule = skillInstructionToRule(instruction);
 
-      expect(rule.targetingOverride).toBe('all-enemies');
+      expect(rule.targetingOverride).toBe('nearest-enemy');
     });
 
     it('preserves conditions array', () => {

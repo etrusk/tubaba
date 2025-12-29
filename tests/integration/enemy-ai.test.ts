@@ -63,7 +63,7 @@ describe('Enemy AI Integration', () => {
         id: 'aggressive-strike',
         name: 'Aggressive Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 20 }],
         rules: [
           {
@@ -106,7 +106,7 @@ describe('Enemy AI Integration', () => {
         id: 'enemy-heal',
         name: 'Enemy Heal',
         baseDuration: 3,
-        targeting: 'ally-lowest-hp',
+        targeting: 'self',
         effects: [{ type: 'heal', value: 30 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -138,13 +138,13 @@ describe('Enemy AI Integration', () => {
 
       const state = createCombatState([player], [enemy1, enemy2]);
 
-      // AI should select heal and target the wounded ally
+      // AI should select heal and target self
       const selection = selectAction(enemy1, state);
 
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('enemy-heal');
       expect(selection?.targets).toHaveLength(1);
-      expect(selection!.targets[0].id).toBe('enemy-2'); // Lowest HP ally
+      expect(selection!.targets[0].id).toBe('enemy-1'); // Self targeting
     });
   });
 
@@ -154,7 +154,7 @@ describe('Enemy AI Integration', () => {
         id: 'basic-strike',
         name: 'Basic Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 10 }],
         rules: [
           {
@@ -168,7 +168,7 @@ describe('Enemy AI Integration', () => {
         id: 'berserk',
         name: 'Berserk Attack',
         baseDuration: 3,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 50 }],
         rules: [
           {
@@ -214,7 +214,7 @@ describe('Enemy AI Integration', () => {
         id: 'basic-strike',
         name: 'Basic Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 10 }],
         rules: [
           {
@@ -228,7 +228,7 @@ describe('Enemy AI Integration', () => {
         id: 'berserk',
         name: 'Berserk Attack',
         baseDuration: 3,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 50 }],
         rules: [
           {
@@ -295,7 +295,7 @@ describe('Enemy AI Integration', () => {
         id: 'attack',
         name: 'Attack',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 15 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -332,7 +332,7 @@ describe('Enemy AI Integration', () => {
         id: 'shield-breaker',
         name: 'Shield Breaker',
         baseDuration: 3,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 25 }],
         rules: [
           {
@@ -351,7 +351,7 @@ describe('Enemy AI Integration', () => {
         id: 'normal-strike',
         name: 'Normal Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 15 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -394,7 +394,7 @@ describe('Enemy AI Integration', () => {
         id: 'teamwork-strike',
         name: 'Teamwork Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 40 }],
         rules: [
           {
@@ -413,7 +413,7 @@ describe('Enemy AI Integration', () => {
         id: 'solo-attack',
         name: 'Solo Attack',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 15 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -458,7 +458,7 @@ describe('Enemy AI Integration', () => {
         id: 'teamwork-strike',
         name: 'Teamwork Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 40 }],
         rules: [
           {
@@ -477,7 +477,7 @@ describe('Enemy AI Integration', () => {
         id: 'solo-attack',
         name: 'Solo Attack',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 15 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -564,7 +564,7 @@ describe('Enemy AI Integration', () => {
         id: 'aggressive',
         name: 'Aggressive Strike',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 20 }],
         rules: [
           {
@@ -682,7 +682,7 @@ describe('Enemy AI Integration', () => {
         id: 'power-strike',
         name: 'Power Strike',
         baseDuration: 3,
-        targeting: 'single-enemy-lowest-hp',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 30 }],
         rules: [
           {
@@ -754,7 +754,7 @@ describe('Enemy AI Integration', () => {
         id: 'aoe-blast',
         name: 'AOE Blast',
         baseDuration: 3,
-        targeting: 'all-enemies',
+        targeting: 'nearest-enemy',
         effects: [{ type: 'damage', value: 15 }],
         rules: [{ priority: 1, conditions: [] }],
       };
@@ -786,15 +786,13 @@ describe('Enemy AI Integration', () => {
 
       const state = createCombatState([player1, player2], [enemy]);
 
-      // AI should select all-enemies targeting
+      // AI should select nearest-enemy targeting
       const selection = selectAction(enemy, state);
 
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('aoe-blast');
-      expect(selection?.targets).toHaveLength(2); // All enemies (both players)
-      expect(selection?.targets.map((t) => t.id)).toEqual(
-        expect.arrayContaining(['player-1', 'player-2'])
-      );
+      expect(selection?.targets).toHaveLength(1); // Single nearest enemy
+      expect(['player-1', 'player-2']).toContain(selection?.targets[0].id);
     });
 
     it('should apply targetingOverride from rules', () => {
@@ -802,7 +800,7 @@ describe('Enemy AI Integration', () => {
         id: 'strike-with-override',
         name: 'Strike with Override',
         baseDuration: 2,
-        targeting: 'single-enemy-lowest-hp', // Default
+        targeting: 'nearest-enemy', // Default
         effects: [{ type: 'damage', value: 20 }],
         rules: [
           {
@@ -810,10 +808,10 @@ describe('Enemy AI Integration', () => {
             conditions: [
               {
                 type: 'enemy-has-status',
-                statusType: 'taunting',
+                statusType: 'shielded',
               },
             ],
-            targetingOverride: 'single-enemy-highest-hp', // Override when player taunting
+            targetingOverride: 'self', // Override to self when enemy is shielded
           },
           {
             priority: 1,
@@ -823,20 +821,20 @@ describe('Enemy AI Integration', () => {
         ],
       };
 
-      const tank = createCharacter({
+      const shieldedPlayer = createCharacter({
         id: 'player-1',
-        name: 'Tank',
+        name: 'Shielded Hero',
         maxHp: 200,
         currentHp: 200,
-        statusEffects: [{ type: 'taunting', duration: 3 }],
+        statusEffects: [{ type: 'shielded', duration: 3, value: 20 }],
         isPlayer: true,
       });
 
-      const dps = createCharacter({
+      const normalPlayer = createCharacter({
         id: 'player-2',
-        name: 'DPS',
+        name: 'Normal Hero',
         maxHp: 80,
-        currentHp: 50, // Lower HP
+        currentHp: 50,
         isPlayer: true,
       });
 
@@ -849,15 +847,15 @@ describe('Enemy AI Integration', () => {
         isPlayer: false,
       });
 
-      const state = createCombatState([tank, dps], [enemy]);
+      const state = createCombatState([shieldedPlayer, normalPlayer], [enemy]);
 
-      // Should use override targeting (highest HP) because player is taunting
+      // Should use override targeting (self) when player is shielded
       const selection = selectAction(enemy, state);
 
       expect(selection).not.toBeNull();
       expect(selection?.targets).toHaveLength(1);
-      // Note: TargetFilter will force to taunter regardless of targeting mode
-      expect(selection!.targets[0].id).toBe('player-1');
+      // Override changes targeting to self when condition is met
+      expect(selection!.targets[0].id).toBe('enemy-1'); // Self-targeting due to override
     });
 
     it('should exclude dead targets from selection', () => {
