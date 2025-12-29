@@ -1,4 +1,4 @@
-import type { Condition } from '../types/skill.js';
+import type { Condition, ConditionGroup } from '../types/skill.js';
 import type { Character } from '../types/character.js';
 import type { CombatState } from '../types/combat.js';
 
@@ -42,63 +42,26 @@ export function evaluateCondition(
       return allyCount > condition.threshold;
     }
 
-    case 'enemy-has-status': {
-      // Safe default if statusType is undefined
-      if (!condition.statusType) {
-        return false;
-      }
-      
-      // Determine which array contains enemies
-      const enemies = evaluator.isPlayer ? combatState.enemies : combatState.players;
-      
-      // Check if any living enemy has the status
-      return enemies.some((enemy) => {
-        if (enemy.currentHp <= 0) return false;
-        
-        return enemy.statusEffects.some(
-          (status) =>
-            status.type === condition.statusType &&
-            (status.duration > 0 || status.duration === -1)
-        );
-      });
-    }
-
-    case 'self-has-status': {
-      // Safe default if statusType is undefined
-      if (!condition.statusType) {
-        return false;
-      }
-      
-      return evaluator.statusEffects.some(
-        (status) =>
-          status.type === condition.statusType &&
-          (status.duration > 0 || status.duration === -1)
-      );
-    }
-
-    case 'ally-has-status': {
-      // Safe default if statusType is undefined
-      if (!condition.statusType) {
-        return false;
-      }
-      
-      // Determine which array contains allies
-      const allies = evaluator.isPlayer ? combatState.players : combatState.enemies;
-      
-      // Check if any living ally (excluding self) has the status
-      return allies.some((ally) => {
-        if (ally.id === evaluator.id) return false;
-        if (ally.currentHp <= 0) return false;
-        
-        return ally.statusEffects.some(
-          (status) =>
-            status.type === condition.statusType &&
-            (status.duration > 0 || status.duration === -1)
-        );
-      });
-    }
-
     default:
       return false;
   }
+}
+
+export function evaluateConditionGroups(
+  groups: ConditionGroup[] | undefined,
+  evaluator: Character,
+  combatState: CombatState
+): boolean {
+  if (!groups || groups.length === 0) {
+    return true;
+  }
+  
+  return groups.some((group) => {
+    if (group.conditions.length === 0) {
+      return true;
+    }
+    return group.conditions.every((condition) =>
+      evaluateCondition(condition, evaluator, combatState)
+    );
+  });
 }

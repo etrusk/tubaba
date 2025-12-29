@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Character } from '../../src/types/character.js';
 import type { CombatState } from '../../src/types/combat.js';
 import type { Condition } from '../../src/types/skill.js';
-import type { StatusEffect } from '../../src/types/status.js';
+import type { StatusEffect } from '../../src/types/index.js';
 
 /**
  * Test helper: Create a mock character with minimal required fields
@@ -273,479 +273,6 @@ describe('RuleConditionEvaluator', () => {
     });
   });
 
-  describe('enemy-has-status condition', () => {
-    it('should return true when any enemy has the specified status', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const enemy1 = createTestCharacter('e1', 'Enemy 1', 100, 100, false);
-      const enemy2 = createTestCharacter(
-        'e2',
-        'Shielded Enemy',
-        100,
-        100,
-        false,
-        [{ type: 'shielded', duration: 2, value: 30 }]
-      );
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'shielded',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when no enemy has the status', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const enemy1 = createTestCharacter('e1', 'Enemy 1', 100, 100, false);
-      const enemy2 = createTestCharacter('e2', 'Enemy 2', 100, 100, false);
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'shielded',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false when status has expired (duration 0)', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const enemy = createTestCharacter(
-        'e1',
-        'Enemy',
-        100,
-        100,
-        false,
-        [{ type: 'shielded', duration: 0, value: 30 }]
-      );
-      const combatState = createTestCombatState([player], [enemy]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'shielded',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should work when evaluator is an enemy checking player statuses', () => {
-      const enemy = createTestCharacter('e1', 'Enemy Evaluator', 100, 100, false);
-      const player1 = createTestCharacter('p1', 'Player 1', 100, 100, true);
-      const player2 = createTestCharacter(
-        'p2',
-        'Defending Player',
-        100,
-        100,
-        true,
-        [{ type: 'defending', duration: 2 }]
-      );
-      const combatState = createTestCombatState([player1, player2], [enemy]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, enemy, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when enemy has different status', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const enemy = createTestCharacter(
-        'e1',
-        'Enemy',
-        100,
-        100,
-        false,
-        [{ type: 'poisoned', duration: 3, value: 5 }]
-      );
-      const combatState = createTestCombatState([player], [enemy]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'stunned',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return true when multiple enemies have the status', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const enemy1 = createTestCharacter(
-        'e1',
-        'Enemy 1',
-        100,
-        100,
-        false,
-        [{ type: 'taunting', duration: 2 }]
-      );
-      const enemy2 = createTestCharacter(
-        'e2',
-        'Enemy 2',
-        100,
-        100,
-        false,
-        [{ type: 'taunting', duration: 1 }]
-      );
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'taunting',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when no enemies exist', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], []);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'stunned',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should ignore knocked-out enemies', () => {
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const deadEnemy = createTestCharacter(
-        'e1',
-        'Dead Enemy',
-        0,
-        100,
-        false,
-        [{ type: 'enraged', duration: 5 }]
-      );
-      const aliveEnemy = createTestCharacter('e2', 'Alive Enemy', 50, 100, false);
-      const combatState = createTestCombatState([player], [deadEnemy, aliveEnemy]);
-      const condition: Condition = {
-        type: 'enemy-has-status',
-        statusType: 'enraged',
-      };
-
-      const result = evaluateCondition(condition, player, combatState);
-
-      expect(result).toBe(false); // Dead enemy's status shouldn't count
-    });
-  });
-
-  describe('self-has-status condition', () => {
-    it('should return true when evaluating character has the status', () => {
-      const character = createTestCharacter(
-        'c1',
-        'Character',
-        100,
-        100,
-        true,
-        [{ type: 'defending', duration: 2 }]
-      );
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when evaluating character lacks the status', () => {
-      const character = createTestCharacter('c1', 'Character', 100, 100, true);
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false when status has expired (duration 0)', () => {
-      const character = createTestCharacter(
-        'c1',
-        'Character',
-        100,
-        100,
-        true,
-        [{ type: 'stunned', duration: 0 }]
-      );
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'stunned',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false when character has different status', () => {
-      const character = createTestCharacter(
-        'c1',
-        'Character',
-        100,
-        100,
-        true,
-        [{ type: 'poisoned', duration: 3, value: 5 }]
-      );
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'enraged',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return true when character has multiple statuses including the target status', () => {
-      const character = createTestCharacter(
-        'c1',
-        'Character',
-        100,
-        100,
-        true,
-        [
-          { type: 'poisoned', duration: 3, value: 5 },
-          { type: 'defending', duration: 2 },
-          { type: 'enraged', duration: 1 },
-        ]
-      );
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should work for enemy evaluators', () => {
-      const enemy = createTestCharacter(
-        'e1',
-        'Enemy',
-        100,
-        100,
-        false,
-        [{ type: 'taunting', duration: 2 }]
-      );
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy]);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'taunting',
-      };
-
-      const result = evaluateCondition(condition, enemy, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should handle permanent status (duration -1)', () => {
-      const character = createTestCharacter(
-        'c1',
-        'Character',
-        100,
-        100,
-        true,
-        [{ type: 'shielded', duration: -1, value: 50 }]
-      );
-      const combatState = createTestCombatState([character], []);
-      const condition: Condition = {
-        type: 'self-has-status',
-        statusType: 'shielded',
-      };
-
-      const result = evaluateCondition(condition, character, combatState);
-
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('ally-has-status condition', () => {
-    it('should return true when any ally (excluding self) has the status', () => {
-      const evaluator = createTestCharacter('p1', 'Evaluator', 100, 100, true);
-      const ally1 = createTestCharacter('p2', 'Ally 1', 80, 100, true);
-      const ally2 = createTestCharacter(
-        'p3',
-        'Ally 2',
-        60,
-        100,
-        true,
-        [{ type: 'defending', duration: 2 }]
-      );
-      const combatState = createTestCombatState([evaluator, ally1, ally2], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when no ally has the status', () => {
-      const evaluator = createTestCharacter('p1', 'Evaluator', 100, 100, true);
-      const ally1 = createTestCharacter('p2', 'Ally 1', 80, 100, true);
-      const ally2 = createTestCharacter('p3', 'Ally 2', 60, 100, true);
-      const combatState = createTestCombatState([evaluator, ally1, ally2], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should exclude self from ally check even if self has the status', () => {
-      const evaluator = createTestCharacter(
-        'p1',
-        'Evaluator',
-        100,
-        100,
-        true,
-        [{ type: 'taunting', duration: 2 }]
-      );
-      const ally = createTestCharacter('p2', 'Ally', 80, 100, true);
-      const combatState = createTestCombatState([evaluator, ally], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'taunting',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(false); // Self has status but should be excluded
-    });
-
-    it('should ignore knocked-out allies', () => {
-      const evaluator = createTestCharacter('p1', 'Evaluator', 100, 100, true);
-      const deadAlly = createTestCharacter(
-        'p2',
-        'Dead Ally',
-        0,
-        100,
-        true,
-        [{ type: 'enraged', duration: 5 }]
-      );
-      const aliveAlly = createTestCharacter('p3', 'Alive Ally', 50, 100, true);
-      const combatState = createTestCombatState([evaluator, deadAlly, aliveAlly], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'enraged',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(false); // Dead ally's status shouldn't count
-    });
-
-    it('should return false when status has expired on ally', () => {
-      const evaluator = createTestCharacter('p1', 'Evaluator', 100, 100, true);
-      const ally = createTestCharacter(
-        'p2',
-        'Ally',
-        80,
-        100,
-        true,
-        [{ type: 'stunned', duration: 0 }]
-      );
-      const combatState = createTestCombatState([evaluator, ally], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'stunned',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should work for enemy evaluators checking other enemies', () => {
-      const enemy1 = createTestCharacter('e1', 'Enemy Evaluator', 100, 100, false);
-      const enemy2 = createTestCharacter(
-        'e2',
-        'Enemy Ally',
-        80,
-        100,
-        false,
-        [{ type: 'shielded', duration: 3, value: 40 }]
-      );
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'shielded',
-      };
-
-      const result = evaluateCondition(condition, enemy1, combatState);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false when evaluator has no allies', () => {
-      const evaluator = createTestCharacter('p1', 'Solo Character', 100, 100, true);
-      const combatState = createTestCombatState([evaluator], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'defending',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(false);
-    });
-
-    it('should return true when multiple allies have the status', () => {
-      const evaluator = createTestCharacter('p1', 'Evaluator', 100, 100, true);
-      const ally1 = createTestCharacter(
-        'p2',
-        'Ally 1',
-        80,
-        100,
-        true,
-        [{ type: 'poisoned', duration: 3, value: 5 }]
-      );
-      const ally2 = createTestCharacter(
-        'p3',
-        'Ally 2',
-        60,
-        100,
-        true,
-        [{ type: 'poisoned', duration: 2, value: 5 }]
-      );
-      const combatState = createTestCombatState([evaluator, ally1, ally2], []);
-      const condition: Condition = {
-        type: 'ally-has-status',
-        statusType: 'poisoned',
-      };
-
-      const result = evaluateCondition(condition, evaluator, combatState);
-
-      expect(result).toBe(true);
-    });
-  });
 
   describe('edge cases and validation', () => {
     it('should handle missing threshold for hp-below condition', () => {
@@ -797,6 +324,279 @@ describe('RuleConditionEvaluator', () => {
 
       expect(result1).toBe(result2);
       expect(result1).toBe(true);
+    });
+  });
+
+  /**
+   * Tests for evaluateConditionGroups function
+   *
+   * Condition Groups enable OR logic between groups:
+   * - Skill activates if ANY group passes (OR logic)
+   * - Group passes if ALL its conditions are true (AND logic)
+   * - Empty group = always true
+   * - Empty conditionGroups = always true
+   */
+  describe('evaluateConditionGroups', () => {
+    // Type alias for tests until implementation exists
+    type ConditionGroup = { conditions: Condition[] };
+
+    describe('happy path - single group scenarios', () => {
+      it('should activate when single group with one passing condition', async () => {
+        // Import will fail until evaluateConditionGroups is implemented
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 25% HP, condition: hp-below 30% → passes
+        const character = createTestCharacter('c1', 'Low HP Character', 25, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 30 }] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+
+      it('should not activate when single group with one failing condition', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 50% HP, condition: hp-below 30% → fails
+        const character = createTestCharacter('c1', 'Normal HP Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 30 }] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('happy path - OR logic between groups', () => {
+      it('should activate when first group passes (OR logic)', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 25% HP
+        // Group 1: hp-below 30% → passes
+        // Group 2: hp-below 10% → fails
+        // Result: TRUE (OR)
+        const character = createTestCharacter('c1', 'Low HP Character', 25, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 30 }] },
+          { conditions: [{ type: 'hp-below', threshold: 10 }] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+
+      it('should activate when second group passes (OR logic)', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 25% HP
+        // Group 1: hp-below 10% → fails
+        // Group 2: hp-below 30% → passes
+        // Result: TRUE (OR)
+        const character = createTestCharacter('c1', 'Low HP Character', 25, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 10 }] },
+          { conditions: [{ type: 'hp-below', threshold: 30 }] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+
+      it('should not activate when all groups fail', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 50% HP
+        // Group 1: hp-below 30% → fails
+        // Group 2: hp-below 10% → fails
+        // Result: FALSE (both fail)
+        const character = createTestCharacter('c1', 'Normal HP Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 30 }] },
+          { conditions: [{ type: 'hp-below', threshold: 10 }] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('happy path - AND logic within groups', () => {
+
+      it('should fail group when any condition in group fails (AND logic)', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Character at 25% HP WITHOUT defending status
+        // Group 1: hp-below 30% (passes) AND self-has-status:defending (fails) → group fails
+        // Result: FALSE
+        const character = createTestCharacter('c1', 'Low HP No Defense', 25, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          {
+            conditions: [
+              { type: 'hp-below', threshold: 30 },
+              { type: 'self-has-status', statusType: 'defending' }
+            ]
+          }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('edge cases - empty groups', () => {
+      it('should always activate when conditionGroups array is empty', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Empty conditionGroups = always true (preserves "no conditions" behavior)
+        const character = createTestCharacter('c1', 'Any Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+
+      it('should pass when group has empty conditions array', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Empty group = always true
+        const character = createTestCharacter('c1', 'Any Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+
+      it('should activate when first group fails but second group is empty', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[], evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // Group 1: hp-below 30% → fails (char at 50%)
+        // Group 2: empty conditions → always true
+        // Result: TRUE (empty group = true, OR logic)
+        const character = createTestCharacter('c1', 'Normal HP Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+        const groups: ConditionGroup[] = [
+          { conditions: [{ type: 'hp-below', threshold: 30 }] },
+          { conditions: [] }
+        ];
+
+        const result = evaluateConditionGroups(groups, character, combatState);
+
+        expect(result).toBe(true);
+      });
+    });
+
+    describe('error conditions', () => {
+      it('should handle undefined conditionGroups gracefully', async () => {
+        const evaluatorModule = await import('../../src/ai/rule-condition-evaluator.js');
+        const evaluateConditionGroups = (evaluatorModule as Record<string, unknown>).evaluateConditionGroups as
+          ((groups: ConditionGroup[] | undefined, evaluator: Character, combatState: CombatState) => boolean) | undefined;
+
+        expect(evaluateConditionGroups).toBeDefined();
+
+        if (!evaluateConditionGroups) {
+          throw new Error('evaluateConditionGroups is not exported');
+        }
+
+        // undefined conditionGroups should behave like empty (always true)
+        const character = createTestCharacter('c1', 'Any Character', 50, 100, true);
+        const combatState = createTestCombatState([character], []);
+
+        const result = evaluateConditionGroups(undefined, character, combatState);
+
+        expect(result).toBe(true);
+      });
     });
   });
 });

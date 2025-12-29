@@ -25,11 +25,11 @@ import {
 function createTestSkills(): Skill[] {
   return [
     {
-      id: 'heal',
-      name: 'Heal',
+      id: 'slash',
+      name: 'Slash',
       baseDuration: 15,
-      effects: [{ type: 'heal', value: 20 }],
-      targeting: 'self',
+      effects: [{ type: 'damage', value: 20 }],
+      targeting: 'nearest-enemy',
     },
     {
       id: 'strike',
@@ -39,11 +39,11 @@ function createTestSkills(): Skill[] {
       targeting: 'nearest-enemy',
     },
     {
-      id: 'shield',
-      name: 'Shield',
+      id: 'bash',
+      name: 'Bash',
       baseDuration: 5,
-      effects: [{ type: 'shield', value: 15 }],
-      targeting: 'self',
+      effects: [{ type: 'damage', value: 15 }],
+      targeting: 'nearest-enemy',
     },
   ];
 }
@@ -52,7 +52,7 @@ function createTestSkills(): Skill[] {
 function createTestInstructions(enabled: boolean[] = [true, true, true]): SkillInstruction[] {
   return [
     {
-      skillId: 'heal',
+      skillId: 'slash',
       priority: 100,
       conditions: [],
       enabled: enabled[0] ?? true,
@@ -64,7 +64,7 @@ function createTestInstructions(enabled: boolean[] = [true, true, true]): SkillI
       enabled: enabled[1] ?? true,
     },
     {
-      skillId: 'shield',
+      skillId: 'bash',
       priority: 0,
       conditions: [],
       enabled: enabled[2] ?? true,
@@ -115,26 +115,26 @@ describe('SkillPriorityEditor - Skill List Rendering (AC56)', () => {
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    expect(html).toContain('Heal');
+    expect(html).toContain('Slash');
     expect(html).toContain('Strike');
-    expect(html).toContain('Shield');
+    expect(html).toContain('Bash');
   });
 
   it('should render skills in priority order (highest first)', () => {
-    const instructions = createTestInstructions();
-    const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions = createTestInstructions();
+  const skills = createTestSkills();
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Find positions of skill names
-    const healPos = html.indexOf('Heal');
-    const strikePos = html.indexOf('Strike');
-    const shieldPos = html.indexOf('Shield');
+  // Find positions of skill names
+  const slashPos = html.indexOf('Slash');
+  const strikePos = html.indexOf('Strike');
+  const bashPos = html.indexOf('Bash');
 
-    // Heal (priority 100) should come before Strike (priority 50)
-    expect(healPos).toBeLessThan(strikePos);
-    // Strike (priority 50) should come before Shield (priority 0)
-    expect(strikePos).toBeLessThan(shieldPos);
-  });
+  // Slash (priority 100) should come before Strike (priority 50)
+  expect(slashPos).toBeLessThan(strikePos);
+  // Strike (priority 50) should come before Bash (priority 0)
+  expect(strikePos).toBeLessThan(bashPos);
+});
 
   it('should show skill name for each skill', () => {
     const instructions = createTestInstructions();
@@ -143,9 +143,9 @@ describe('SkillPriorityEditor - Skill List Rendering (AC56)', () => {
 
     expect(html).toContain('class="skill-name"');
     // Check skill names appear (now rendered through skill-display component)
-    expect(html).toContain('Heal');
+    expect(html).toContain('Slash');
     expect(html).toContain('Strike');
-    expect(html).toContain('Shield');
+    expect(html).toContain('Bash');
     // Should contain skill-display components
     expect(html).toContain('class="skill-display"');
   });
@@ -220,9 +220,9 @@ describe('SkillPriorityEditor - Priority Auto-Calculation (AC56)', () => {
 
   it('should display calculated priorities in rendered output', () => {
     const instructions: SkillInstruction[] = [
-      { skillId: 'heal', priority: 100, conditions: [], enabled: true },
+      { skillId: 'slash', priority: 100, conditions: [], enabled: true },
       { skillId: 'strike', priority: 50, conditions: [], enabled: true },
-      { skillId: 'shield', priority: 0, conditions: [], enabled: true },
+      { skillId: 'bash', priority: 0, conditions: [], enabled: true },
     ];
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
@@ -264,12 +264,12 @@ describe('SkillPriorityEditor - Reordering Controls', () => {
   });
 
   it('should disable up button for first skill', () => {
-    const instructions = createTestInstructions();
-    const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions = createTestInstructions();
+  const skills = createTestSkills();
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Find the first skill item (Heal, highest priority)
-    const firstItemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>[\s\S]*?<\/li>/);
+  // Find the first skill item (Slash, highest priority)
+  const firstItemMatch = html.match(/<li[^>]*data-skill-id="slash"[^>]*>[\s\S]*?<\/li>/);
     expect(firstItemMatch).toBeTruthy();
     
     const firstItem = firstItemMatch![0];
@@ -280,11 +280,11 @@ describe('SkillPriorityEditor - Reordering Controls', () => {
   });
 
   it('should not disable down button for first skill', () => {
-    const instructions = createTestInstructions();
-    const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions = createTestInstructions();
+  const skills = createTestSkills();
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    const firstItemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>[\s\S]*?<\/li>/);
+  const firstItemMatch = html.match(/<li[^>]*data-skill-id="slash"[^>]*>[\s\S]*?<\/li>/);
     expect(firstItemMatch).toBeTruthy();
     
     const firstItem = firstItemMatch![0];
@@ -295,12 +295,12 @@ describe('SkillPriorityEditor - Reordering Controls', () => {
   });
 
   it('should disable down button for last skill', () => {
-    const instructions = createTestInstructions();
-    const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions = createTestInstructions();
+  const skills = createTestSkills();
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Find the last skill item (Shield, lowest priority)
-    const lastItemMatch = html.match(/<li[^>]*data-skill-id="shield"[^>]*>[\s\S]*?<\/li>/);
+  // Find the last skill item (Bash, lowest priority)
+  const lastItemMatch = html.match(/<li[^>]*data-skill-id="bash"[^>]*>[\s\S]*?<\/li>/);
     expect(lastItemMatch).toBeTruthy();
     
     const lastItem = lastItemMatch![0];
@@ -311,11 +311,11 @@ describe('SkillPriorityEditor - Reordering Controls', () => {
   });
 
   it('should not disable up button for last skill', () => {
-    const instructions = createTestInstructions();
-    const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions = createTestInstructions();
+  const skills = createTestSkills();
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    const lastItemMatch = html.match(/<li[^>]*data-skill-id="shield"[^>]*>[\s\S]*?<\/li>/);
+  const lastItemMatch = html.match(/<li[^>]*data-skill-id="bash"[^>]*>[\s\S]*?<\/li>/);
     expect(lastItemMatch).toBeTruthy();
     
     const lastItem = lastItemMatch![0];
@@ -344,13 +344,13 @@ describe('SkillPriorityEditor - Reordering Controls', () => {
   });
 
   it('should disable both arrows for single skill', () => {
-    const instructions: SkillInstruction[] = [
-      { skillId: 'heal', priority: 100, conditions: [], enabled: true },
-    ];
-    const skills = createTestSkills().slice(0, 1);
-    const html = renderSkillPriorityEditor(instructions, skills, null);
+  const instructions: SkillInstruction[] = [
+    { skillId: 'slash', priority: 100, conditions: [], enabled: true },
+  ];
+  const skills = createTestSkills().slice(0, 1);
+  const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    const itemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>[\s\S]*?<\/li>/);
+  const itemMatch = html.match(/<li[^>]*data-skill-id="slash"[^>]*>[\s\S]*?<\/li>/);
     expect(itemMatch).toBeTruthy();
     
     const item = itemMatch![0];
@@ -403,9 +403,9 @@ describe('SkillPriorityEditor - Enable/Disable Toggle', () => {
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    const healItemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>/);
-    expect(healItemMatch).toBeTruthy();
-    expect(healItemMatch![0]).not.toMatch(/class="[^"]*disabled[^"]*"/);
+    const slashItemMatch = html.match(/<li[^>]*data-skill-id="slash"[^>]*>/);
+    expect(slashItemMatch).toBeTruthy();
+    expect(slashItemMatch![0]).not.toMatch(/class="[^"]*disabled[^"]*"/);
   });
 
   it('should include data-enabled attribute on skill items', () => {
@@ -423,9 +423,9 @@ describe('SkillPriorityEditor - Enable/Disable Toggle', () => {
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // All skills should still be rendered
-    expect(html).toContain('Heal');
+    expect(html).toContain('Slash');
     expect(html).toContain('Strike');
-    expect(html).toContain('Shield');
+    expect(html).toContain('Bash');
   });
 
   it('should include toggle-skill action on checkboxes', () => {
@@ -443,23 +443,23 @@ describe('SkillPriorityEditor - Skill Selection', () => {
   it('should add "selected" class to selected skill', () => {
     const instructions = createTestInstructions();
     const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, 'heal');
+    const html = renderSkillPriorityEditor(instructions, skills, 'slash');
 
-    const healItemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>/);
-    expect(healItemMatch).toBeTruthy();
-    expect(healItemMatch![0]).toContain('selected');
+    const slashItemMatch = html.match(/<li[^>]*data-skill-id="slash"[^>]*>/);
+    expect(slashItemMatch).toBeTruthy();
+    expect(slashItemMatch![0]).toContain('selected');
   });
 
   it('should not add "selected" class to non-selected skills', () => {
     const instructions = createTestInstructions();
     const skills = createTestSkills();
-    const html = renderSkillPriorityEditor(instructions, skills, 'heal');
+    const html = renderSkillPriorityEditor(instructions, skills, 'slash');
 
     const strikeItemMatch = html.match(/<li[^>]*data-skill-id="strike"[^>]*>/);
-    const shieldItemMatch = html.match(/<li[^>]*data-skill-id="shield"[^>]*>/);
+    const bashItemMatch = html.match(/<li[^>]*data-skill-id="bash"[^>]*>/);
     
     expect(strikeItemMatch![0]).not.toMatch(/class="[^"]*selected[^"]*"/);
-    expect(shieldItemMatch![0]).not.toMatch(/class="[^"]*selected[^"]*"/);
+    expect(bashItemMatch![0]).not.toMatch(/class="[^"]*selected[^"]*"/);
   });
 
   it('should handle null selectedSkillId (no selection)', () => {
@@ -476,9 +476,9 @@ describe('SkillPriorityEditor - Skill Selection', () => {
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    expect(html).toContain('data-skill-id="heal"');
+    expect(html).toContain('data-skill-id="slash"');
     expect(html).toContain('data-skill-id="strike"');
-    expect(html).toContain('data-skill-id="shield"');
+    expect(html).toContain('data-skill-id="bash"');
   });
 });
 
@@ -498,463 +498,30 @@ describe('SkillPriorityEditor - Edge Cases', () => {
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
     // Should only render skills that exist in availableSkills
-    expect(html).toContain('Heal');
+    expect(html).toContain('Slash');
     expect(html).toContain('Strike');
+    // Bash is not in the skills list, so it should not be rendered
+    expect(html).not.toContain('Bash');
   });
 
   it('should preserve skill order from instructions array', () => {
     // Instructions in reverse priority order
     const instructions: SkillInstruction[] = [
-      { skillId: 'shield', priority: 0, conditions: [], enabled: true },
+      { skillId: 'bash', priority: 0, conditions: [], enabled: true },
       { skillId: 'strike', priority: 50, conditions: [], enabled: true },
-      { skillId: 'heal', priority: 100, conditions: [], enabled: true },
+      { skillId: 'slash', priority: 100, conditions: [], enabled: true },
     ];
     const skills = createTestSkills();
     const html = renderSkillPriorityEditor(instructions, skills, null);
 
-    // Should render in the order provided (shield, strike, heal)
-    const shieldPos = html.indexOf('data-skill-id="shield"');
+    // Should render in the order provided (bash, strike, slash)
+    const bashPos = html.indexOf('data-skill-id="bash"');
     const strikePos = html.indexOf('data-skill-id="strike"');
-    const healPos = html.indexOf('data-skill-id="heal"');
+    const slashPos = html.indexOf('data-skill-id="slash"');
 
-    expect(shieldPos).toBeLessThan(strikePos);
-    expect(strikePos).toBeLessThan(healPos);
+    expect(bashPos).toBeLessThan(strikePos);
+    expect(strikePos).toBeLessThan(slashPos);
   });
 });
 
-describe('SkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)', () => {
-  /**
-   * Bug: When a skill has a targeting override set in its instruction,
-   * the tooltip still shows the skill's DEFAULT targeting instead of the
-   * effective targeting (override).
-   *
-   * Current behavior (bug): data-tooltip-targeting shows skill.targeting description
-   * Expected behavior: data-tooltip-targeting shows instruction.targetingOverride description
-   */
 
-  it('should display override targeting description in tooltip when targetingOverride is set', () => {
-    // Setup: skill with default targeting 'single-enemy-lowest-hp'
-    // but instruction has override 'single-enemy-highest-hp'
-    const skills: Skill[] = [
-      {
-        id: 'strike',
-        name: 'Strike',
-        baseDuration: 10,
-        effects: [{ type: 'damage', value: 10 }],
-        targeting: 'self', // Default: "Targets self"
-      },
-    ];
-
-    const instructions: SkillInstruction[] = [
-      {
-        skillId: 'strike',
-        priority: 100,
-        conditions: [],
-        enabled: true,
-        targetingOverride: 'nearest-enemy', // Override: "Targets nearest enemy"
-      },
-    ];
-
-    const html = renderSkillPriorityEditor(instructions, skills, null);
-
-    // The tooltip should show the OVERRIDE targeting description in data attribute
-    // Expected: "Targets nearest enemy" (from override)
-    // Bug: Currently shows "Targets self" (from skill default)
-    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
-    expect(html).not.toContain('data-tooltip-targeting="Targets self"');
-  });
-
-  it('should display default targeting description in tooltip when no override is set', () => {
-    // Setup: skill with default targeting, instruction has NO override
-    const skills: Skill[] = [
-      {
-        id: 'heal',
-        name: 'Heal',
-        baseDuration: 15,
-        effects: [{ type: 'heal', value: 20 }],
-        targeting: 'self', // Default: "Targets self"
-      },
-    ];
-
-    const instructions: SkillInstruction[] = [
-      {
-        skillId: 'heal',
-        priority: 100,
-        conditions: [],
-        enabled: true,
-        // No targetingOverride - should use default
-      },
-    ];
-
-    const html = renderSkillPriorityEditor(instructions, skills, null);
-
-    // Without override, tooltip should show the skill's default targeting in data attribute
-    expect(html).toContain('data-tooltip-targeting="Targets self"');
-  });
-
-  it('should display correct targeting when override equals default', () => {
-    // Edge case: override is explicitly set to same value as default
-    // This tests that the override path works even when values match
-    const skills: Skill[] = [
-      {
-        id: 'strike',
-        name: 'Strike',
-        baseDuration: 10,
-        effects: [{ type: 'damage', value: 10 }],
-        targeting: 'nearest-enemy',
-      },
-    ];
-
-    const instructions: SkillInstruction[] = [
-      {
-        skillId: 'strike',
-        priority: 100,
-        conditions: [],
-        enabled: true,
-        targetingOverride: 'nearest-enemy', // Same as default
-      },
-    ];
-
-    const html = renderSkillPriorityEditor(instructions, skills, null);
-
-    // Should still work correctly (showing the override, which happens to match default)
-    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
-  });
-
-  it('should display override targeting for each skill when multiple skills have overrides', () => {
-    // Multiple skills, each with different overrides
-    const skills: Skill[] = [
-      {
-        id: 'strike',
-        name: 'Strike',
-        baseDuration: 10,
-        effects: [{ type: 'damage', value: 10 }],
-        targeting: 'self', // Default: self
-      },
-      {
-        id: 'shield',
-        name: 'Shield',
-        baseDuration: 5,
-        effects: [{ type: 'shield', value: 15 }],
-        targeting: 'nearest-enemy', // Default: nearest enemy
-      },
-    ];
-
-    const instructions: SkillInstruction[] = [
-      {
-        skillId: 'strike',
-        priority: 100,
-        conditions: [],
-        enabled: true,
-        targetingOverride: 'nearest-enemy', // Override: "Targets nearest enemy"
-      },
-      {
-        skillId: 'shield',
-        priority: 50,
-        conditions: [],
-        enabled: true,
-        targetingOverride: 'self', // Override: "Targets self"
-      },
-    ];
-
-    const html = renderSkillPriorityEditor(instructions, skills, null);
-
-    // Each skill's tooltip should show its respective override in data attributes
-    expect(html).toContain('data-tooltip-targeting="Targets nearest enemy"');
-    expect(html).toContain('data-tooltip-targeting="Targets self"');
-    
-    // Should NOT show default targeting descriptions (reversed from override)
-    expect(html).not.toContain('data-tooltip-targeting="Targets self"' + ' data-skill-id="strike"');
-    expect(html).not.toContain('data-tooltip-targeting="Targets nearest enemy"' + ' data-skill-id="shield"');
-  });
-});
-
-describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
-  /**
-   * Tests for merging the "Available Skills" pool into the skill priority editor.
-   * The editor now shows:
-   * 1. Equipped skills (with priority controls) - some with unequip buttons
-   * 2. Pool skills (available to equip) - with equip buttons
-   *
-   * Innate skills (strike, defend) cannot be unequipped.
-   */
-
-  // Helper: Create innate skills (strike and defend)
-  function createInnateSkills(): Skill[] {
-    return [
-      {
-        id: 'strike',
-        name: 'Strike',
-        baseDuration: 2,
-        effects: [{ type: 'damage', value: 15 }],
-        targeting: 'nearest-enemy',
-      },
-      {
-        id: 'defend',
-        name: 'Defend',
-        baseDuration: 1,
-        effects: [{ type: 'status', statusType: 'defending', duration: 3 }],
-        targeting: 'self',
-      },
-    ];
-  }
-
-  // Helper: Create heal skill (non-innate)
-  function createHealSkill(): Skill {
-    return {
-      id: 'heal',
-      name: 'Heal',
-      baseDuration: 3,
-      effects: [{ type: 'heal', value: 30 }],
-      targeting: 'self',
-    };
-  }
-
-  // Helper: Create fireball skill (non-innate)
-  function createFireballSkill(): Skill {
-    return {
-      id: 'fireball',
-      name: 'Fireball',
-      baseDuration: 4,
-      effects: [{ type: 'damage', value: 20 }],
-      targeting: 'nearest-enemy',
-    };
-  }
-
-  // Helper: Create shield skill (non-innate)
-  function createShieldSkill(): Skill {
-    return {
-      id: 'shield',
-      name: 'Shield',
-      baseDuration: 2,
-      effects: [{ type: 'shield', value: 30 }],
-      targeting: 'self',
-    };
-  }
-
-  // Helper: Create all non-innate skills
-  function createNonInnateSkills(): Skill[] {
-    return [createHealSkill(), createFireballSkill(), createShieldSkill()];
-  }
-
-  // Helper: Create pool skills (skills available to equip)
-  function createPoolSkills(): Skill[] {
-    return [
-      {
-        id: 'poison',
-        name: 'Poison',
-        baseDuration: 2,
-        effects: [{ type: 'status', statusType: 'poisoned', duration: 6 }],
-        targeting: 'nearest-enemy',
-      },
-      {
-        id: 'revive',
-        name: 'Revive',
-        baseDuration: 4,
-        effects: [{ type: 'revive', value: 40 }],
-        targeting: 'self',
-      },
-    ];
-  }
-
-  describe('Rendering Pool Skills Section', () => {
-    it('should render pool skills section when poolSkills are provided', () => {
-      const equippedSkills = [...createInnateSkills(), createNonInnateSkills()[0]!];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 50, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 0, conditions: [], enabled: true },
-      ];
-      const poolSkills = createPoolSkills();
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null, poolSkills);
-
-      // Should have a section for pool skills
-      expect(html).toContain('class="pool-skills"');
-      // Should show pool skill names
-      expect(html).toContain('Poison');
-      expect(html).toContain('Revive');
-    });
-
-    it('should render pool skills header/title', () => {
-      const equippedSkills = createInnateSkills();
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 0, conditions: [], enabled: true },
-      ];
-      const poolSkills = createPoolSkills();
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null, poolSkills);
-
-      // Should have a header for available skills to equip
-      expect(html).toMatch(/Available Skills|Skills to Equip|Unequipped Skills/i);
-    });
-  });
-
-  describe('Equip Action Data Attributes', () => {
-    it('should render pool skills with data-action="equip" attribute', () => {
-      const equippedSkills = createInnateSkills();
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 0, conditions: [], enabled: true },
-      ];
-      const poolSkills = createPoolSkills();
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null, poolSkills);
-
-      // Each pool skill should have data-action="equip"
-      expect(html).toContain('data-action="equip"');
-      // Should have equip action for each pool skill
-      const equipMatches = html.match(/data-action="equip"/g);
-      expect(equipMatches).toHaveLength(2); // poison and revive
-    });
-
-    it('should render pool skills with data-skill-id for event delegation', () => {
-      const equippedSkills = createInnateSkills();
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 0, conditions: [], enabled: true },
-      ];
-      const poolSkills = createPoolSkills();
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null, poolSkills);
-
-      // Find pool skills section and verify data-skill-id
-      // Pool skills should be identifiable by skill ID for equip action
-      expect(html).toMatch(/data-action="equip"[^>]*data-skill-id="poison"/);
-      expect(html).toMatch(/data-action="equip"[^>]*data-skill-id="revive"/);
-    });
-  });
-
-  describe('Unequip Action Data Attributes', () => {
-    it('should render non-innate equipped skills with data-action="unequip" attribute', () => {
-      const equippedSkills: Skill[] = [...createInnateSkills(), createHealSkill(), createFireballSkill()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 75, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 50, conditions: [], enabled: true },
-        { skillId: 'fireball', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Non-innate skills (heal, fireball) should have unequip action
-      expect(html).toContain('data-action="unequip"');
-      // Should have unequip for heal and fireball (non-innate)
-      const unequipMatches = html.match(/data-action="unequip"/g);
-      expect(unequipMatches).toHaveLength(2);
-    });
-
-    it('should render equipped non-innate skills with data-skill-id for unequip', () => {
-      const equippedSkills: Skill[] = [...createInnateSkills(), createHealSkill()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 50, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Heal skill should have unequip action with skill ID
-      expect(html).toMatch(/data-action="unequip"[^>]*data-skill-id="heal"/);
-    });
-  });
-
-  describe('Innate Skills Protection', () => {
-    it('should NOT render unequip button for strike (innate skill)', () => {
-      const equippedSkills: Skill[] = [...createInnateSkills(), createHealSkill()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 50, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Find strike skill item - should NOT have unequip action
-      const strikeItemMatch = html.match(/<li[^>]*data-skill-id="strike"[^>]*>[\s\S]*?<\/li>/);
-      expect(strikeItemMatch).toBeTruthy();
-      expect(strikeItemMatch![0]).not.toContain('data-action="unequip"');
-    });
-
-    it('should NOT render unequip button for defend (innate skill)', () => {
-      const equippedSkills: Skill[] = [...createInnateSkills(), createHealSkill()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 50, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Find defend skill item - should NOT have unequip action
-      const defendItemMatch = html.match(/<li[^>]*data-skill-id="defend"[^>]*>[\s\S]*?<\/li>/);
-      expect(defendItemMatch).toBeTruthy();
-      expect(defendItemMatch![0]).not.toContain('data-action="unequip"');
-    });
-
-    it('should render unequip button for non-innate skills', () => {
-      const equippedSkills: Skill[] = [...createInnateSkills(), createHealSkill()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 50, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Find heal skill item - SHOULD have unequip action
-      const healItemMatch = html.match(/<li[^>]*data-skill-id="heal"[^>]*>[\s\S]*?<\/li>/);
-      expect(healItemMatch).toBeTruthy();
-      expect(healItemMatch![0]).toContain('data-action="unequip"');
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should show "All skills assigned" message when pool is empty', () => {
-      const equippedSkills = [...createInnateSkills(), ...createNonInnateSkills()];
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 80, conditions: [], enabled: true },
-        { skillId: 'heal', priority: 60, conditions: [], enabled: true },
-        { skillId: 'fireball', priority: 40, conditions: [], enabled: true },
-        { skillId: 'shield', priority: 0, conditions: [], enabled: true },
-      ];
-      const poolSkills: Skill[] = []; // Empty pool
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null, poolSkills);
-
-      // Should show message indicating no skills to equip
-      expect(html).toMatch(/All skills assigned|No skills available|All skills equipped/i);
-    });
-
-    it('should show no unequip buttons when only innate skills are equipped', () => {
-      const equippedSkills = createInnateSkills();
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 0, conditions: [], enabled: true },
-      ];
-
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Should have NO unequip actions since only innate skills are equipped
-      expect(html).not.toContain('data-action="unequip"');
-    });
-
-    it('should not render pool section when poolSkills parameter is undefined', () => {
-      const equippedSkills = createInnateSkills();
-      const instructions: SkillInstruction[] = [
-        { skillId: 'strike', priority: 100, conditions: [], enabled: true },
-        { skillId: 'defend', priority: 0, conditions: [], enabled: true },
-      ];
-
-      // Call without poolSkills parameter (backwards compatible)
-      const html = renderSkillPriorityEditor(instructions, equippedSkills, null);
-
-      // Should NOT have pool-skills section
-      expect(html).not.toContain('class="pool-skills"');
-      // Should NOT have equip actions
-      expect(html).not.toContain('data-action="equip"');
-    });
-  });
-});

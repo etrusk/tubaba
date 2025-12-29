@@ -38,18 +38,6 @@ function createTestCharacter(
   };
 }
 
-function createStatusEffect(
-  type: 'poisoned' | 'stunned' | 'shielded' | 'taunting' | 'defending' | 'enraged',
-  duration: number,
-  value?: number
-): StatusEffect {
-  return {
-    type,
-    duration,
-    value,
-  };
-}
-
 function createAction(
   skillId: string,
   casterId: string,
@@ -121,96 +109,6 @@ describe('CharacterCard - HP Bar Rendering', () => {
   });
 });
 
-describe('CharacterCard - Status Icon Display', () => {
-  it('should render icon for poisoned status', () => {
-    const poisoned = createStatusEffect('poisoned', 3, 5);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [poisoned]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('poisoned');
-    expect(html).toContain('3');
-  });
-
-  it('should render icon for stunned status', () => {
-    const stunned = createStatusEffect('stunned', 2);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [stunned]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('stunned');
-    expect(html).toContain('2');
-  });
-
-  it('should render icon for shielded status with shield value', () => {
-    const shielded = createStatusEffect('shielded', 5, 20);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [shielded]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('shielded');
-    expect(html).toContain('20');
-    expect(html).toContain('5');
-  });
-
-  it('should render icon for taunting status', () => {
-    const taunting = createStatusEffect('taunting', 4);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [taunting]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('taunting');
-  });
-
-  it('should render icon for defending status', () => {
-    const defending = createStatusEffect('defending', 1);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [defending]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('defending');
-  });
-
-  it('should render icon for enraged status', () => {
-    const enraged = createStatusEffect('enraged', 6);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [enraged]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('enraged');
-  });
-
-  it('should show multiple status icons when character has multiple statuses', () => {
-    const poisoned = createStatusEffect('poisoned', 3, 5);
-    const shielded = createStatusEffect('shielded', 2, 15);
-    const enraged = createStatusEffect('enraged', 4);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [poisoned, shielded, enraged]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('poisoned');
-    expect(html).toContain('shielded');
-    expect(html).toContain('enraged');
-  });
-
-  it('should show no icons when character has no statuses', () => {
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, []);
-    const html = renderCharacterCard(character);
-    
-    expect(html).not.toContain('poisoned');
-    expect(html).not.toContain('stunned');
-  });
-
-  it('should show status duration text if applicable', () => {
-    const stunned = createStatusEffect('stunned', 5);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [stunned]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('5');
-  });
-
-  it('should handle permanent status (duration -1)', () => {
-    const permanentShield = createStatusEffect('shielded', -1, 50);
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, [permanentShield]);
-    const html = renderCharacterCard(character);
-    
-    expect(html).toContain('shielded');
-    expect(html).toContain('50');
-  });
-});
 
 describe('CharacterCard - Action Progress Display', () => {
   it('should show action name when character has queued action', () => {
@@ -313,22 +211,6 @@ describe('CharacterCard - Edge Cases', () => {
     expect(html).toContain(longName);
   });
 
-  it('should handle character with maximum statuses', () => {
-    const allStatuses = [
-      createStatusEffect('poisoned', 3, 5),
-      createStatusEffect('stunned', 2),
-      createStatusEffect('shielded', 4, 30),
-      createStatusEffect('taunting', 5),
-      createStatusEffect('defending', 1),
-      createStatusEffect('enraged', 6),
-    ];
-    const character = createTestCharacter('player-1', 'Hero', 100, 100, allStatuses);
-    const html = renderCharacterCard(character);
-    
-    allStatuses.forEach(status => {
-      expect(html).toContain(status.type);
-    });
-  });
 
   it('should handle very high HP values', () => {
     const character = createTestCharacter('boss-1', 'Ancient Dragon', 9999, 9999);

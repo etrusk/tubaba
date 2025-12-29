@@ -1,10 +1,19 @@
-import type { Condition } from '../types/skill.js';
-import type { StatusType } from '../types/status.js';
+import type { Condition, ConditionGroup } from '../types/skill.js';
+
+/**
+ * Maximum number of OR groups allowed in condition builder
+ */
+const MAX_GROUPS = 4;
+
+/**
+ * Maximum number of conditions allowed per group
+ */
+const MAX_CONDITIONS_PER_GROUP = 4;
 
 /**
  * All possible status types for condition configuration
  */
-const STATUS_TYPES: StatusType[] = [
+const STATUS_TYPES: string[] = [
   'poisoned',
   'stunned',
   'shielded',
@@ -78,6 +87,27 @@ function validateCondition(condition: Condition): string | null {
 }
 
 /**
+ * Render condition type select options
+ * @param selectedType - Currently selected type (optional, defaults to hp-below)
+ * @returns HTML string for option elements
+ */
+function renderConditionTypeOptions(selectedType?: Condition['type']): string {
+  const types: { value: Condition['type']; label: string }[] = [
+    { value: 'hp-below', label: 'HP Below' },
+    { value: 'ally-count', label: 'Ally Count' },
+    { value: 'enemy-has-status', label: 'Enemy Has Status' },
+    { value: 'self-has-status', label: 'Self Has Status' },
+    { value: 'ally-has-status', label: 'Ally Has Status' },
+  ];
+
+  return types
+    .map(({ value, label }) =>
+      `<option value="${value}" ${selectedType === value ? 'selected' : ''}>${label}</option>`
+    )
+    .join('');
+}
+
+/**
  * Render the form inputs for a specific condition type
  * @param type - Condition type
  * @param currentValue - Current values (threshold or statusType)
@@ -85,7 +115,7 @@ function validateCondition(condition: Condition): string | null {
  */
 export function renderConditionInputs(
   type: Condition['type'],
-  currentValue?: { threshold?: number; statusType?: StatusType }
+  currentValue?: { threshold?: number; statusType?: string }
 ): string {
   if (type === 'hp-below') {
     const value = currentValue?.threshold ?? 50;
@@ -177,11 +207,7 @@ export function renderConditionBuilder(
                 <li class="condition-item editing" data-index="${index}">
                   <div class="condition-edit-form">
                     <select data-input="type">
-                      <option value="hp-below" ${condition.type === 'hp-below' ? 'selected' : ''}>HP Below</option>
-                      <option value="ally-count" ${condition.type === 'ally-count' ? 'selected' : ''}>Ally Count</option>
-                      <option value="enemy-has-status" ${condition.type === 'enemy-has-status' ? 'selected' : ''}>Enemy Has Status</option>
-                      <option value="self-has-status" ${condition.type === 'self-has-status' ? 'selected' : ''}>Self Has Status</option>
-                      <option value="ally-has-status" ${condition.type === 'ally-has-status' ? 'selected' : ''}>Ally Has Status</option>
+                      ${renderConditionTypeOptions(condition.type)}
                     </select>
                     ${renderConditionInputs(condition.type, {
                       threshold: condition.threshold,
@@ -212,11 +238,7 @@ export function renderConditionBuilder(
           <li class="condition-item editing" data-index="-1">
             <div class="condition-edit-form">
               <select data-input="type">
-                <option value="hp-below">HP Below</option>
-                <option value="ally-count">Ally Count</option>
-                <option value="enemy-has-status">Enemy Has Status</option>
-                <option value="self-has-status">Self Has Status</option>
-                <option value="ally-has-status">Ally Has Status</option>
+                ${renderConditionTypeOptions()}
               </select>
               ${renderConditionInputs('hp-below')}
               <button data-action="save-condition" data-index="-1">Save</button>
@@ -235,6 +257,134 @@ export function renderConditionBuilder(
       <div class="validation-errors" data-visible="${validationError !== null}">
         ${validationError ? `<p class="error">${validationError}</p>` : ''}
       </div>
+    </div>
+  `;
+}
+
+/**
+ * Render the condition builder with group support (OR between groups, AND within groups)
+ *
+ * @param conditionGroups - Array of condition groups
+ * @param editingGroupIndex - Index of group being edited (or null if not editing)
+ * @param editingConditionIndex - Index of condition within group being edited (or -1 for adding new)
+ * @returns HTML string for the condition builder with groups
+ */
+export function renderConditionBuilderWithGroups(
+  conditionGroups: ConditionGroup[],
+  editingGroupIndex: number | null,
+  editingConditionIndex: number | null
+): string {
+  // If empty, render a single empty group
+  const groups = conditionGroups.length === 0
+    ? [{ conditions: [] }]
+    : conditionGroups;
+
+  const showRemoveGroupButton = groups.length > 1;
+  const showAddGroupButton = groups.length < MAX_GROUPS;
+
+  const renderConditionItem = (
+    condition: Condition,
+    groupIndex: number,
+    conditionIndex: number,
+    isEditing: boolean
+  ): string => {
+    if (isEditing) {
+      return `
+        <li class="condition-item editing" data-group-index="${groupIndex}" data-condition-index="${conditionIndex}">
+          <div class="condition-edit-form">
+            <select data-input="type">
+              ${renderConditionTypeOptions(condition.type)}
+            </select>
+            ${renderConditionInputs(condition.type, {
+              threshold: condition.threshold,
+              statusType: condition.statusType,
+            })}
+            <button data-action="save-condition-to-group" data-group-index="${groupIndex}" data-condition-index="${conditionIndex}">Save</button>
+            <button data-action="cancel-edit">Cancel</button>
+          </div>
+        </li>
+      `;
+    }
+
+    return `
+      <li class="condition-item" data-group-index="${groupIndex}" data-condition-index="${conditionIndex}">
+        <span class="condition-summary">${formatConditionSummary(condition)}</span>
+        <div class="condition-actions">
+          <button data-action="edit-condition-in-group" data-group-index="${groupIndex}" data-condition-index="${conditionIndex}">Edit</button>
+          <button data-action="remove-condition-from-group" data-group-index="${groupIndex}" data-condition-index="${conditionIndex}">Remove</button>
+        </div>
+      </li>
+    `;
+  };
+
+  const renderAddConditionForm = (groupIndex: number): string => {
+    return `
+      <li class="condition-item editing" data-group-index="${groupIndex}" data-condition-index="-1">
+        <div class="condition-edit-form">
+          <select data-input="type">
+            ${renderConditionTypeOptions()}
+          </select>
+          ${renderConditionInputs('hp-below')}
+          <button data-action="save-condition-to-group" data-group-index="${groupIndex}">Save</button>
+          <button data-action="cancel-edit">Cancel</button>
+        </div>
+      </li>
+    `;
+  };
+
+  const renderGroup = (group: ConditionGroup, groupIndex: number): string => {
+    const isAddingToThisGroup = editingGroupIndex === groupIndex && editingConditionIndex === -1;
+    const showAddConditionButton = group.conditions.length < MAX_CONDITIONS_PER_GROUP && !isAddingToThisGroup;
+
+    return `
+      <div class="condition-group" data-group-index="${groupIndex}">
+        <div class="group-header">
+          <span class="group-title">Group ${groupIndex + 1}</span>
+          ${showRemoveGroupButton ? `<button data-action="remove-group" data-group-index="${groupIndex}">Remove Group</button>` : ''}
+        </div>
+        <p class="group-help-text">All conditions must be true (AND)</p>
+        <ul class="condition-list">
+          ${group.conditions.length === 0 && !isAddingToThisGroup
+            ? '<li class="empty-state">No conditions in this group</li>'
+            : ''
+          }
+          ${group.conditions
+            .map((condition, conditionIndex) => {
+              const isEditing = editingGroupIndex === groupIndex && editingConditionIndex === conditionIndex;
+              return renderConditionItem(condition, groupIndex, conditionIndex, isEditing);
+            })
+            .join('')}
+          ${isAddingToThisGroup ? renderAddConditionForm(groupIndex) : ''}
+        </ul>
+        ${showAddConditionButton
+          ? `<button data-action="add-condition-to-group" data-group-index="${groupIndex}">+ Add condition</button>`
+          : ''
+        }
+      </div>
+    `;
+  };
+
+  const groupsHtml = groups
+    .map((group, index) => {
+      const groupHtml = renderGroup(group, index);
+      // Add OR divider after each group except the last one
+      if (index < groups.length - 1) {
+        return groupHtml + '<div class="or-divider">OR</div>';
+      }
+      return groupHtml;
+    })
+    .join('');
+
+  return `
+    <div class="condition-builder">
+      <h4>Use this skill when</h4>
+      
+      ${groupsHtml}
+      
+      ${showAddGroupButton
+        ? '<button data-action="add-group">+ Add another OR group</button>'
+        : ''
+      }
     </div>
   `;
 }

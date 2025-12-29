@@ -45,43 +45,6 @@ const TargetSelectorStub: TargetSelector = {
 };
 
 describe('TargetSelector', () => {
-  describe('self targeting', () => {
-    it('should always select the caster', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 80, 100, true),
-        createTestCharacter('p3', 'Player 3', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy 1', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('self', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1');
-    });
-
-    it('should work even with no allies or enemies', () => {
-      const caster = createTestCharacter('p1', 'Solo Caster', 50, 100, true);
-
-      const targets = TargetSelectorStub.selectTargets('self', caster, [caster], []);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1');
-    });
-
-    it('should work when caster has low HP', () => {
-      const caster = createTestCharacter('p1', 'Dying Caster', 1, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('self', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1');
-    });
-  });
-
   describe('nearest-enemy targeting', () => {
     it('should select first living enemy', () => {
       const caster = createTestCharacter('p1', 'Player', 100, 100, true);
@@ -254,17 +217,6 @@ describe('TargetSelector', () => {
   });
 
   describe('deterministic behavior', () => {
-    it('should return same results for identical inputs (self)', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Enemy 1', 50, 100, false)];
-
-      const targets1 = TargetSelectorStub.selectTargets('self', caster, players, enemies);
-      const targets2 = TargetSelectorStub.selectTargets('self', caster, players, enemies);
-
-      expect(targets1).toEqual(targets2);
-    });
-
     it('should return same results for identical inputs (nearest-enemy)', () => {
       const caster = createTestCharacter('p1', 'Player', 100, 100, true);
       const players = [caster];

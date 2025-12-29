@@ -1292,32 +1292,10 @@
     // Load skills from library
     const strike = SkillLibrary.getSkill('strike');
 
-    // Create sample encounter (1v1 with standardized names)
+    // Create sample encounter (empty - characters added via placement)
     const sampleEncounter = {
-      players: [
-        {
-          id: 'player-1',
-          name: 'Player 1',
-          maxHp: 100,
-          currentHp: 100,
-          skills: [strike],
-          statusEffects: [],
-          currentAction: null,
-          isPlayer: true,
-        },
-      ],
-      enemies: [
-        {
-          id: 'enemy-1',
-          name: 'Enemy 1',
-          maxHp: 100,
-          currentHp: 100,
-          skills: [strike],
-          statusEffects: [],
-          currentAction: null,
-          isPlayer: false,
-        },
-      ],
+      players: [],
+      enemies: [],
       tickNumber: 0,
       actionQueue: [],
       eventLog: [],
@@ -1331,6 +1309,7 @@
     };
     
     let selectedSkillId = null; // Track selected skill from pool
+    let placementMode = null; // null | 'player' | 'enemy' - tracks if we're placing a character
     
     // Initialize battle controller (will update when skills are distributed)
     let battleController = new BattleController(sampleEncounter);
@@ -1394,9 +1373,17 @@
       }
     };
     
-    // Add new character to debug battle
+    // Enter placement mode for new character
     window.addCharacter = function(isPlayer) {
-      // Count existing characters of this type
+      placementMode = isPlayer ? 'player' : 'enemy';
+      renderBattle();
+    };
+    
+    // Actually create and place the character at a grid position
+    window.placeCharacterAt = function(gridX, gridY) {
+      if (!placementMode) return;
+      
+      const isPlayer = placementMode === 'player';
       const existingOfType = debugState.characters.filter(c => c.isPlayer === isPlayer);
       const characterNumber = existingOfType.length + 1;
       
@@ -1409,14 +1396,18 @@
         skills: [SkillLibrary.getSkill('strike')],
         statusEffects: [],
         currentAction: null,
-        isPlayer: isPlayer
+        isPlayer: isPlayer,
+        position: { x: gridX, y: gridY }
       };
       
       try {
         debugState = debugAddCharacter(debugState, newCharacter);
+        placementMode = null; // Exit placement mode
         updateBattleWithLoadout();
       } catch (error) {
         console.error('Failed to add character:', error.message);
+        placementMode = null;
+        renderBattle();
       }
     };
     
@@ -1502,6 +1493,30 @@
       // Render battle arena (new circle visualization) with forecast for predicted lines
       const visualization = analyzeVisualization(state, forecast);
       battleArenaContainer.innerHTML = renderBattleVisualization(visualization);
+      
+      // Add placement mode overlay if active
+      if (placementMode) {
+        const svg = battleArenaContainer.querySelector('svg');
+        if (svg) {
+          const characterType = placementMode === 'player' ? 'Player' : 'Enemy';
+          const messageColor = placementMode === 'player' ? '#4caf50' : '#f44336';
+          
+          // Add placement instruction text
+          const messageText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          messageText.setAttribute('x', '275');
+          messageText.setAttribute('y', '30');
+          messageText.setAttribute('text-anchor', 'middle');
+          messageText.setAttribute('fill', messageColor);
+          messageText.setAttribute('font-size', '18');
+          messageText.setAttribute('font-weight', 'bold');
+          messageText.textContent = `Click a cell to place ${characterType}`;
+          svg.appendChild(messageText);
+          
+          // Add click handler to SVG
+          svg.style.cursor = 'crosshair';
+          svg.addEventListener('click', handlePlacementClick);
+        }
+      }
       
       // After rendering, mark selected character
       if (selectedCharacterId) {
@@ -1597,6 +1612,52 @@
         } else {
           removeCharacterBtn.style.display = 'none';
         }
+      }
+      
+      // Update Add Player/Enemy button text when in placement mode
+      const addPlayerBtn = document.getElementById('add-player-btn');
+      const addEnemyBtn = document.getElementById('add-enemy-btn');
+      if (placementMode === 'player') {
+        addPlayerBtn.textContent = '⏹️ Cancel Placement';
+        addPlayerBtn.style.background = 'linear-gradient(135deg, #ff9800 0%, #fb8c00 100%)';
+      } else {
+        addPlayerBtn.textContent = '➕ Add Player';
+        addPlayerBtn.style.background = 'linear-gradient(135deg, #4caf50 0%, #66bb6a 100%)';
+      }
+      
+      if (placementMode === 'enemy') {
+        addEnemyBtn.textContent = '⏹️ Cancel Placement';
+        addEnemyBtn.style.background = 'linear-gradient(135deg, #ff9800 0%, #fb8c00 100%)';
+      } else {
+        addEnemyBtn.textContent = '➕ Add Enemy';
+        addEnemyBtn.style.background = 'linear-gradient(135deg, #f44336 0%, #e57373 100%)';
+      }
+    }
+    
+    // Handle click on SVG arena for placement
+    function handlePlacementClick(e) {
+      if (!placementMode) return;
+      
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Convert pixel coordinates to grid position
+      // Formula: gridPos = floor((pixel - GRID_PADDING) / CELL_SIZE)
+      const GRID_PADDING = 25;
+      const CELL_SIZE = 50;
+      const GRID_SIZE = 10;
+      
+      const gridX = Math.floor((x - GRID_PADDING) / CELL_SIZE);
+      const gridY = Math.floor((y - GRID_PADDING) / CELL_SIZE);
+      
+      // Validate grid position
+      if (gridX >= 0 && gridX < GRID_SIZE && gridY >= 0 && gridY < GRID_SIZE) {
+        console.log(`Placing character at grid position (${gridX}, ${gridY})`);
+        placeCharacterAt(gridX, gridY);
+      } else {
+        console.log('Click outside grid bounds');
       }
     }
 
@@ -1811,9 +1872,34 @@
       updateBattleWithLoadout(false); // Don't preserve event log on reset
     });
 
-    // Debug menu button handlers
-    document.getElementById('add-player-btn').addEventListener('click', () => addCharacter(true));
-    document.getElementById('add-enemy-btn').addEventListener('click', () => addCharacter(false));
+    // Debug menu button handlers - toggle placement mode
+    document.getElementById('add-player-btn').addEventListener('click', () => {
+      if (placementMode === 'player') {
+        // Cancel placement mode
+        placementMode = null;
+        renderBattle();
+      } else {
+        addCharacter(true);
+      }
+    });
+    
+    document.getElementById('add-enemy-btn').addEventListener('click', () => {
+      if (placementMode === 'enemy') {
+        // Cancel placement mode
+        placementMode = null;
+        renderBattle();
+      } else {
+        addCharacter(false);
+      }
+    });
+    
+    // ESC key to cancel placement mode
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && placementMode) {
+        placementMode = null;
+        renderBattle();
+      }
+    });
 
     // Initial sync: update battle controller with runState skills
     updateBattleWithLoadout();

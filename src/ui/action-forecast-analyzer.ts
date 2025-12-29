@@ -174,12 +174,6 @@ function predictNextAction(
     return null;
   }
   
-  // Check if stunned
-  const isStunned = character.statusEffects.some(se => se.type === 'stunned');
-  if (isStunned) {
-    return null;
-  }
-  
   // selectAction expects enemies perspective (enemies array = allies, players array = enemies)
   // For player characters, we need to swap the arrays
   const adjustedState = character.isPlayer
@@ -286,7 +280,7 @@ function buildRuleSummaries(
     
     const targetingMode = instruction.targetingOverride
       ?? skill?.targeting
-      ?? 'self';
+      ?? 'nearest-enemy';
     
     return {
       priority: instruction.priority,
@@ -304,8 +298,6 @@ function buildRuleSummaries(
  */
 function formatTargetingMode(mode: TargetingMode): string {
   switch (mode) {
-    case 'self':
-      return 'Self';
     case 'nearest-enemy':
       return 'Nearest Enemy';
     default:

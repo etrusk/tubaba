@@ -2,9 +2,6 @@
  * Central export for all type definitions
  */
 
-// Status types
-export type { StatusType, StatusEffect } from './status.js';
-
 // Skill types
 export type {
   TargetingMode,
@@ -15,7 +12,7 @@ export type {
 } from './skill.js';
 
 // Character types
-export type { Character } from './character.js';
+export type { Character, StatusEffect } from './character.js';
 
 // Combat types
 export type {

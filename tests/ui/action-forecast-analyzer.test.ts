@@ -3,7 +3,6 @@ import type { Character } from '../../src/types/character.js';
 import type { CombatState, Action } from '../../src/types/combat.js';
 import type { Skill } from '../../src/types/skill.js';
 import type { CharacterInstructions } from '../../src/types/instructions.js';
-import type { StatusEffect } from '../../src/types/status.js';
 import { forecastNextActions } from '../../src/ui/action-forecast-analyzer.js';
 
 /**
@@ -16,7 +15,6 @@ function createTestCharacter(
   maxHp: number,
   isPlayer: boolean,
   skills: Skill[] = [],
-  statusEffects: StatusEffect[] = [],
   currentAction: Action | null = null
 ): Character {
   return {
@@ -25,7 +23,7 @@ function createTestCharacter(
     maxHp,
     currentHp,
     skills,
-    statusEffects,
+    statusEffects: [],
     currentAction,
     isPlayer,
   };
@@ -115,7 +113,7 @@ describe('ActionForecastAnalyzer', () => {
 
     it('should order timeline by tick number', () => {
       const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
-      const healSkill = createTestSkill('heal', 'Heal', 'self');
+      const slashSkill = createTestSkill('slash', 'Slash', 'nearest-enemy');
       
       const player1 = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
       player1.currentAction = {
@@ -125,11 +123,11 @@ describe('ActionForecastAnalyzer', () => {
         ticksRemaining: 3,
       };
       
-      const player2 = createTestCharacter('p2', 'Mage', 80, 100, true, [healSkill]);
+      const player2 = createTestCharacter('p2', 'Mage', 80, 100, true, [slashSkill]);
       player2.currentAction = {
-        skillId: 'heal',
+        skillId: 'slash',
         casterId: 'p2',
-        targets: ['p2'],
+        targets: ['e1'],
         ticksRemaining: 1,
       };
       
@@ -140,7 +138,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       expect(forecast.timeline).toHaveLength(2);
-      expect(forecast.timeline[0]!.tickNumber).toBe(11); // Mage heals first
+      expect(forecast.timeline[0]!.tickNumber).toBe(11); // Mage attacks first
       expect(forecast.timeline[0]!.characterName).toBe('Mage');
       expect(forecast.timeline[1]!.tickNumber).toBe(13); // Warrior strikes later
       expect(forecast.timeline[1]!.characterName).toBe('Warrior');
@@ -248,40 +246,6 @@ describe('ActionForecastAnalyzer', () => {
       expect(predictedAction!.characterId).toBe('p2');
     });
 
-    it('should predict based on conditions matching current state', () => {
-      const healSkill = createTestSkill('heal', 'Heal', 'self', [
-        { priority: 100, conditions: [{ type: 'hp-below', threshold: 50 }] }
-      ]);
-      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
-        { priority: 50, conditions: [] }
-      ]);
-      
-      const player = createTestCharacter('p1', 'Warrior', 40, 100, true, [healSkill, strikeSkill]);
-      const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
-      const state = createTestCombatState([player], [enemy], 10);
-      
-      const instructions = new Map<string, CharacterInstructions>();
-      instructions.set('p1', createInstructions('p1', 'ai', [
-        {
-          skillId: 'heal',
-          priority: 100,
-          conditions: [{ type: 'hp-below', threshold: 50 }],
-          enabled: true,
-        },
-        {
-          skillId: 'strike',
-          priority: 50,
-          conditions: [],
-          enabled: true,
-        }
-      ]));
-      
-      const forecast = forecastNextActions(state, instructions);
-      
-      const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast!.nextAction!.skillName).toBe('Heal');
-      expect(p1Forecast!.nextAction!.reason).toContain('HP < 50%');
-    });
   });
 
   describe('forecastNextActions - character forecasts', () => {
@@ -351,36 +315,6 @@ describe('ActionForecastAnalyzer', () => {
   });
 
   describe('forecastNextActions - rule summaries', () => {
-    it('should generate human-readable rule summaries', () => {
-      const healSkill = createTestSkill('heal', 'Heal', 'self');
-      const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [healSkill]);
-      const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
-      const state = createTestCombatState([player], [enemy], 10);
-      
-      const instructions = new Map<string, CharacterInstructions>();
-      instructions.set('p1', createInstructions('p1', 'ai', [
-        {
-          skillId: 'heal',
-          priority: 100,
-          conditions: [{ type: 'hp-below', threshold: 50 }],
-          enabled: true,
-        }
-      ]));
-      
-      const forecast = forecastNextActions(state, instructions);
-      
-      const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast!.rulesSummary).toHaveLength(1);
-      expect(p1Forecast?.rulesSummary[0]).toEqual({
-        priority: 100,
-        skillName: 'Heal',
-        tickCost: 3,
-        conditionsText: 'If HP < 50%',
-        targetingMode: 'Self',
-        enabled: true,
-      });
-    });
-
     it('should format multiple conditions with AND logic', () => {
       const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
@@ -428,29 +362,6 @@ describe('ActionForecastAnalyzer', () => {
       expect(p1Forecast!.rulesSummary[0]!.conditionsText).toBe('Always');
     });
 
-    it('should include targeting override in rule summary', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
-      const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
-      const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
-      const state = createTestCombatState([player], [enemy], 10);
-      
-      const instructions = new Map<string, CharacterInstructions>();
-      instructions.set('p1', createInstructions('p1', 'ai', [
-        {
-          skillId: 'strike',
-          priority: 50,
-          conditions: [],
-          targetingOverride: 'self',
-          enabled: true,
-        }
-      ]));
-      
-      const forecast = forecastNextActions(state, instructions);
-      
-      const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast!.rulesSummary[0]!.targetingMode).toBe('Self');
-    });
-
     it('should mark disabled rules', () => {
       const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy');
       const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill]);
@@ -491,28 +402,6 @@ describe('ActionForecastAnalyzer', () => {
       expect(p1Forecast?.rulesSummary).toHaveLength(0);
     });
 
-    it('should handle character with no matching rules', () => {
-      const healSkill = createTestSkill('heal', 'Heal', 'self');
-      const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [healSkill]);
-      const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
-      const state = createTestCombatState([player], [enemy], 10);
-      
-      const instructions = new Map<string, CharacterInstructions>();
-      instructions.set('p1', createInstructions('p1', 'ai', [
-        {
-          skillId: 'heal',
-          priority: 100,
-          conditions: [{ type: 'hp-below', threshold: 30 }],
-          enabled: true,
-        }
-      ]));
-      
-      const forecast = forecastNextActions(state, instructions);
-      
-      const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.nextAction).toBeNull();
-    });
-
     it('should limit timeline to next 5 actions', () => {
       const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
         { priority: 10, conditions: [] }
@@ -542,33 +431,6 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       expect(forecast.timeline.length).toBeLessThanOrEqual(5);
-    });
-
-    it('should handle stunned character prediction', () => {
-      const strikeSkill = createTestSkill('strike', 'Strike', 'nearest-enemy', [
-        { priority: 10, conditions: [] }
-      ]);
-      
-      const player = createTestCharacter('p1', 'Warrior', 100, 100, true, [strikeSkill], [
-        { type: 'stunned', duration: 2 }
-      ]);
-      const enemy = createTestCharacter('e1', 'Goblin', 50, 50, false);
-      const state = createTestCombatState([player], [enemy], 10);
-      
-      const instructions = new Map<string, CharacterInstructions>();
-      instructions.set('p1', createInstructions('p1', 'ai', [
-        {
-          skillId: 'strike',
-          priority: 100,
-          conditions: [],
-          enabled: true,
-        }
-      ]));
-      
-      const forecast = forecastNextActions(state, instructions);
-      
-      const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.nextAction).toBeNull(); // Stunned characters can't act
     });
 
     it('should handle empty instruction map', () => {

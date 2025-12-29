@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import type { Character } from '../../src/types/character.js';
 import type { CombatState } from '../../src/types/combat.js';
 import type { Skill, Rule } from '../../src/types/skill.js';
-import type { StatusEffect } from '../../src/types/status.js';
 
 /**
  * Test helper: Create a mock character with minimal required fields
@@ -13,8 +12,7 @@ function createTestCharacter(
   currentHp: number,
   maxHp: number,
   isPlayer: boolean,
-  skills: Skill[] = [],
-  statusEffects: StatusEffect[] = []
+  skills: Skill[] = []
 ): Character {
   return {
     id,
@@ -22,7 +20,7 @@ function createTestCharacter(
     maxHp,
     currentHp,
     skills,
-    statusEffects,
+    statusEffects: [],
     currentAction: null,
     isPlayer,
   };
@@ -80,18 +78,18 @@ describe('EnemyBrain', () => {
         conditions: [{ type: 'hp-below', threshold: 50 }],
       };
       
-      const healSkill = createTestSkill('heal', 'Heal', 'self', [highPriorityRule]);
+      const strongSkill = createTestSkill('strong', 'Strong Attack', 'nearest-enemy', [highPriorityRule]);
       const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [lowPriorityRule]);
       
-      const enemy = createTestCharacter('e1', 'Enemy', 20, 100, false, [healSkill, attackSkill]);
+      const enemy = createTestCharacter('e1', 'Enemy', 20, 100, false, [strongSkill, attackSkill]);
       const player = createTestCharacter('p1', 'Player', 100, 100, true);
       const combatState = createTestCombatState([player], [enemy]);
 
       const result = selectAction(enemy, combatState);
 
       expect(result).not.toBeNull();
-      expect(result?.skill.id).toBe('heal'); // Higher priority rule wins
-      expect(result?.skill.name).toBe('Heal');
+      expect(result?.skill.id).toBe('strong'); // Higher priority rule wins
+      expect(result?.skill.name).toBe('Strong Attack');
     });
 
     it('should select lower priority rule when only its condition is met', () => {
@@ -105,10 +103,10 @@ describe('EnemyBrain', () => {
         conditions: [{ type: 'hp-below', threshold: 50 }],
       };
       
-      const healSkill = createTestSkill('heal', 'Heal', 'self', [highPriorityRule]);
+      const strongSkill = createTestSkill('strong', 'Strong Attack', 'nearest-enemy', [highPriorityRule]);
       const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [lowPriorityRule]);
       
-      const enemy = createTestCharacter('e1', 'Enemy', 40, 100, false, [healSkill, attackSkill]);
+      const enemy = createTestCharacter('e1', 'Enemy', 40, 100, false, [strongSkill, attackSkill]);
       const player = createTestCharacter('p1', 'Player', 100, 100, true);
       const combatState = createTestCombatState([player], [enemy]);
 
@@ -120,7 +118,7 @@ describe('EnemyBrain', () => {
 
     it('should evaluate rules across all skills by priority', () => {
       // Multiple skills with different priority rules
-      const skill1 = createTestSkill('skill1', 'Skill 1', 'self', [
+      const skill1 = createTestSkill('skill1', 'Skill 1', 'nearest-enemy', [
         { priority: 3, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
       const skill2 = createTestSkill('skill2', 'Skill 2', 'nearest-enemy', [
@@ -144,7 +142,7 @@ describe('EnemyBrain', () => {
   describe('selectAction - skill selection', () => {
     it('should select first skill with matching rule when same priority', () => {
       // Both skills have priority 5 rules that match
-      const skill1 = createTestSkill('first', 'First Skill', 'self', [
+      const skill1 = createTestSkill('first', 'First Skill', 'nearest-enemy', [
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }] }
       ]);
       const skill2 = createTestSkill('second', 'Second Skill', 'nearest-enemy', [
@@ -162,7 +160,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should select skill with multiple rules based on highest matching priority', () => {
-      const skill = createTestSkill('multi-rule', 'Multi Rule Skill', 'self', [
+      const skill = createTestSkill('multi-rule', 'Multi Rule Skill', 'nearest-enemy', [
         { priority: 3, conditions: [{ type: 'hp-below', threshold: 100 }] },
         { priority: 8, conditions: [{ type: 'hp-below', threshold: 50 }] },
         { priority: 5, conditions: [{ type: 'hp-below', threshold: 75 }] },
@@ -197,86 +195,12 @@ describe('EnemyBrain', () => {
       expect(result?.targets).toHaveLength(1);
       expect(result!.targets[0]!.id).toBe('p1'); // Lowest HP player
     });
-
-    it('should use rule targetingOverride when specified', () => {
-      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
-        {
-          priority: 5,
-          conditions: [],
-          targetingOverride: 'self' // Override to target self
-        }
-      ]);
-      
-      const enemy = createTestCharacter('e1', 'Enemy', 100, 100, false, [skill]);
-      const player1 = createTestCharacter('p1', 'Player 1', 30, 100, true);
-      const player2 = createTestCharacter('p2', 'Player 2', 80, 100, true);
-      const combatState = createTestCombatState([player1, player2], [enemy]);
-
-      const result = selectAction(enemy, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result?.targets).toHaveLength(1); // Self targeted
-      expect(result!.targets[0]!.id).toBe('e1');
-    });
-
-    it('should apply taunt forcing through TargetFilter', () => {
-      const skill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
-        { priority: 5, conditions: [] }
-      ]);
-      
-      const enemy = createTestCharacter('e1', 'Enemy', 100, 100, false, [skill]);
-      const player1 = createTestCharacter('p1', 'Player 1', 100, 100, true); // Highest HP
-      const player2 = createTestCharacter('p2', 'Player 2', 50, 100, true, [], [
-        { type: 'taunting', duration: 2 }
-      ]);
-      const combatState = createTestCombatState([player1, player2], [enemy]);
-
-      const result = selectAction(enemy, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result?.targets).toHaveLength(1);
-      expect(result!.targets[0]!.id).toBe('p2'); // Forced to target taunting player
-    });
-
-    it('should handle self-targeting', () => {
-      const skill = createTestSkill('heal', 'Heal Self', 'self', [
-        { priority: 5, conditions: [] }
-      ]);
-      
-      const enemy = createTestCharacter('e1', 'Enemy', 50, 100, false, [skill]);
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy]);
-
-      const result = selectAction(enemy, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result?.targets).toHaveLength(1);
-      expect(result!.targets[0]!.id).toBe('e1'); // Targets self
-    });
-
-    it('should handle ally targeting for enemies', () => {
-      const skill = createTestSkill('buff-ally', 'Buff Ally', 'self', [
-        { priority: 5, conditions: [] }
-      ]);
-      
-      const enemy1 = createTestCharacter('e1', 'Enemy 1', 100, 100, false, [skill]);
-      const enemy2 = createTestCharacter('e2', 'Enemy 2', 30, 100, false);
-      const enemy3 = createTestCharacter('e3', 'Enemy 3', 70, 100, false);
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy1, enemy2, enemy3]);
-
-      const result = selectAction(enemy1, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result?.targets).toHaveLength(1);
-      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting
-    });
   });
 
   describe('selectAction - no matching rules', () => {
     it('should return null when no rules match', () => {
       // Rule condition doesn't match (HP not below 30%)
-      const skill = createTestSkill('emergency-heal', 'Emergency Heal', 'self', [
+      const skill = createTestSkill('emergency-attack', 'Emergency Attack', 'nearest-enemy', [
         { priority: 10, conditions: [{ type: 'hp-below', threshold: 30 }] }
       ]);
       
@@ -290,7 +214,7 @@ describe('EnemyBrain', () => {
     });
 
     it('should return null when all rules fail conditions', () => {
-      const skill1 = createTestSkill('skill1', 'Skill 1', 'self', [
+      const skill1 = createTestSkill('skill1', 'Skill 1', 'nearest-enemy', [
         { priority: 10, conditions: [{ type: 'hp-below', threshold: 20 }] }
       ]);
       const skill2 = createTestSkill('skill2', 'Skill 2', 'nearest-enemy', [
@@ -386,30 +310,6 @@ describe('EnemyBrain', () => {
       expect(result).toBeNull(); // HP < 50% is true but ally count (1) is not > 2
     });
 
-    it('should handle three conditions with AND logic', () => {
-      const skill = createTestSkill('triple-condition', 'Triple Condition', 'self', [
-        {
-          priority: 5,
-          conditions: [
-            { type: 'hp-below', threshold: 80 },
-            { type: 'ally-count', threshold: 0 },
-            { type: 'enemy-has-status', statusType: 'defending' }
-          ]
-        }
-      ]);
-      
-      const enemy1 = createTestCharacter('e1', 'Enemy 1', 70, 100, false, [skill]);
-      const enemy2 = createTestCharacter('e2', 'Enemy 2', 90, 100, false);
-      const player = createTestCharacter('p1', 'Player', 100, 100, true, [], [
-        { type: 'defending', duration: 2 }
-      ]);
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-
-      const result = selectAction(enemy1, combatState);
-
-      expect(result).not.toBeNull(); // All three conditions met
-      expect(result?.skill.id).toBe('triple-condition');
-    });
   });
 
   describe('selectAction - edge cases', () => {
@@ -457,7 +357,6 @@ describe('EnemyBrain', () => {
       
       const enemy = createTestCharacter('e1', 'Enemy', 100, 100, false, [skill]);
       const combatState = createTestCombatState([], [enemy]); // No players to target
-
       const result = selectAction(enemy, combatState);
 
       expect(result).toBeNull(); // No valid targets available
@@ -475,22 +374,6 @@ describe('EnemyBrain', () => {
       const result = selectAction(enemy, combatState);
 
       expect(result).toBeNull(); // Dead enemies can't act
-    });
-
-    it('should handle self-targeting when no enemies exist', () => {
-      const skill = createTestSkill('self-buff', 'Self Buff', 'self', [
-        { priority: 10, conditions: [] }
-      ]);
-      
-      const enemy1 = createTestCharacter('e1', 'Enemy 1', 100, 100, false, [skill]);
-      const enemy2 = createTestCharacter('e2', 'Enemy 2', 80, 100, false); // Alive ally
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy1, enemy2]);
-
-      const result = selectAction(enemy1, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting
     });
 
     it('should handle multiple knocked-out players when targeting', () => {
@@ -513,44 +396,8 @@ describe('EnemyBrain', () => {
   });
 
   describe('selectAction - complex scenarios', () => {
-    it('should handle priority ties with rule order within skill', () => {
-      const skill = createTestSkill('multi-option', 'Multi Option', 'self', [
-        { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }], targetingOverride: 'self' },
-        { priority: 5, conditions: [{ type: 'hp-below', threshold: 100 }], targetingOverride: 'nearest-enemy' },
-      ]);
-      
-      const enemy = createTestCharacter('e1', 'Enemy', 50, 100, false, [skill]);
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy]);
-
-      const result = selectAction(enemy, combatState);
-
-      expect(result).not.toBeNull();
-      // First matching rule at priority 5 should be selected
-      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting from first rule
-    });
-
-    it('should handle skill with mixed rule priorities and conditions', () => {
-      const healSkill = createTestSkill('heal', 'Heal', 'self', [
-        { priority: 10, conditions: [{ type: 'hp-below', threshold: 20 }] }, // Emergency
-        { priority: 5, conditions: [{ type: 'hp-below', threshold: 50 }] }, // Normal heal
-      ]);
-      const attackSkill = createTestSkill('attack', 'Attack', 'nearest-enemy', [
-        { priority: 3, conditions: [] }, // Default action
-      ]);
-      
-      const enemy = createTestCharacter('e1', 'Enemy', 40, 100, false, [healSkill, attackSkill]);
-      const player = createTestCharacter('p1', 'Player', 100, 100, true);
-      const combatState = createTestCombatState([player], [enemy]);
-
-      const result = selectAction(enemy, combatState);
-
-      expect(result).not.toBeNull();
-      expect(result?.skill.id).toBe('heal'); // Priority 5 heal rule matches (HP < 50%)
-    });
-
     it('should correctly evaluate across all skills and all rules', () => {
-      const skill1 = createTestSkill('s1', 'Skill 1', 'self', [
+      const skill1 = createTestSkill('s1', 'Skill 1', 'nearest-enemy', [
         { priority: 2, conditions: [{ type: 'hp-below', threshold: 30 }] }
       ]);
       const skill2 = createTestSkill('s2', 'Skill 2', 'nearest-enemy', [

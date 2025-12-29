@@ -1,5 +1,7 @@
-import type { Condition, TargetingMode, Skill } from './skill.js';
+import type { Condition, TargetingMode, Skill, ConditionGroup } from './skill.js';
 import type { Character } from './character.js';
+
+export type { ConditionGroup } from './skill.js';
 
 /**
  * Per-character instruction configuration
@@ -19,6 +21,7 @@ export interface SkillInstruction {
   skillId: string;                   // Which skill this instruction applies to
   priority: number;                  // Higher = evaluated first (1-100 scale)
   conditions: Condition[];           // When to use this skill (reuses existing type)
+  conditionGroups?: ConditionGroup[]; // Optional OR groups of conditions
   targetingOverride?: TargetingMode; // Optional targeting mode override
   enabled: boolean;                  // Allow disabling rules without deleting
 }

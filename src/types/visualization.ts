@@ -1,4 +1,4 @@
-import type { StatusEffect } from './status.js';
+import type { StatusEffect } from './character.js';
 import type { Action } from './combat.js';
 
 /**

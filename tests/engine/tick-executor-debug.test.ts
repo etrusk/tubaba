@@ -60,14 +60,6 @@ function createAction(
   };
 }
 
-function createStatus(
-  type: 'poisoned' | 'stunned' | 'shielded' | 'taunting' | 'defending' | 'enraged',
-  duration: number,
-  value?: number
-): StatusEffect {
-  return { type, duration, value };
-}
-
 function createCombatState(
   players: Character[],
   enemies: Character[],
@@ -211,32 +203,8 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
     expect(selectedRule).toBeDefined();
   });
 
-  it('should show no rules checked for stunned character', () => {
-    const skill = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
-      { priority: 10, conditions: [] },
-    ]);
-    
-    const stunnedPlayer = createTestCharacter('player-1', 100, 100, [
-      createStatus('stunned', 2),
-    ], true, null, [skill]);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([stunnedPlayer], [enemy], 1);
-
-    const result = TickExecutorDebug.executeTickWithDebug(state);
-
-    const playerEval = result.debugInfo.ruleEvaluations.find(e => e.characterId === 'player-1');
-    
-    // Either no evaluation entry, or rulesChecked is empty
-    if (playerEval) {
-      expect(playerEval.rulesChecked.length).toBe(0);
-      expect(playerEval.selectedRule).toBeNull();
-      expect(playerEval.selectedSkill).toBeNull();
-    }
-  });
-
   it('should capture rule check reason for non-matching rules', () => {
-    const skill = createSkill('heal', 'Heal', 'self', 3, [
+    const skill = createSkill('strong-attack', 'Strong Attack', 'nearest-enemy', 3, [
       {
         priority: 10,
         conditions: [createCondition('hp-below', 50)], // Won't match at 100% HP
@@ -263,7 +231,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
     const skill1 = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       { priority: 10, conditions: [] },
     ]);
-    const skill2 = createSkill('heal', 'Heal', 'self', 3, [
+    const skill2 = createSkill('slash', 'Slash', 'nearest-enemy', 3, [
       { priority: 5, conditions: [] },
     ]);
     

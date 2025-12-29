@@ -1251,11 +1251,11 @@ describe('BattleController - Skill Instruction Updates', () => {
     
     const controller = new BattleController(initialState);
     
-    controller.updateTargetingOverride('player-1', 'strike', 'self');
+    controller.updateTargetingOverride('player-1', 'strike', 'nearest-enemy');
     
     const instructions = controller.getInstructionsState().instructions.get('player-1');
     const skillInstruction = instructions?.skillInstructions.find(si => si.skillId === 'strike');
-    expect(skillInstruction?.targetingOverride).toBe('self');
+    expect(skillInstruction?.targetingOverride).toBe('nearest-enemy');
   });
 
   it('should clear targeting override when updateTargetingOverride() called with undefined', () => {
@@ -1266,7 +1266,7 @@ describe('BattleController - Skill Instruction Updates', () => {
     
     const controller = new BattleController(initialState);
     
-    controller.updateTargetingOverride('player-1', 'strike', 'self');
+    controller.updateTargetingOverride('player-1', 'strike', 'nearest-enemy');
     controller.updateTargetingOverride('player-1', 'strike', undefined);
     
     const instructions = controller.getInstructionsState().instructions.get('player-1');
@@ -1360,12 +1360,12 @@ describe('BattleController - AC60: Instructions Application', () => {
     
     const controller = new BattleController(initialState);
     
-    controller.updateTargetingOverride('player-1', 'strike', 'self');
+    controller.updateTargetingOverride('player-1', 'strike', 'nearest-enemy');
     controller.applyInstructions();
     
     const currentState = controller.getCurrentState();
     const strikeSkill = currentState.players[0]?.skills.find(s => s.id === 'strike');
-    expect(strikeSkill?.rules?.[0]?.targetingOverride).toBe('self');
+    expect(strikeSkill?.rules?.[0]?.targetingOverride).toBe('nearest-enemy');
   });
 
   it('should set isDirty to false after applyInstructions()', () => {

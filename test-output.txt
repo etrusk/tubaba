@@ -1,0 +1,1081 @@
+
+> best-game-ever@1.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/home/bob/Projects/best-game-ever[39m
+
+ [31m❯[39m tests/ui/targeting-override-selector.test.ts [2m([22m[2m30 tests[22m[2m | [22m[31m11 failed[39m[2m)[22m[32m 19[2mms[22m[39m
+     [32m✓[39m should render root container with correct class[32m 1[2mms[22m[39m
+     [32m✓[39m should render label for the select dropdown[32m 0[2mms[22m[39m
+     [32m✓[39m should render select dropdown element[32m 0[2mms[22m[39m
+     [32m✓[39m should render help text container[32m 0[2mms[22m[39m
+[31m     [31m×[31m should render select with all 2 targeting modes[39m[32m 5[2mms[22m[39m
+[31m     [31m×[31m should render all 2 targeting mode options[39m[32m 2[2mms[22m[39m
+[31m     [31m×[31m should render human-readable labels for each targeting mode[39m[32m 1[2mms[22m[39m
+     [32m✓[39m should render "(Default)" option as first option[32m 0[2mms[22m[39m
+     [32m✓[39m should have empty value for default option[32m 0[2mms[22m[39m
+[31m     [31m×[31m should include skill default mode in default option label[39m[32m 3[2mms[22m[39m
+[31m     [31m×[31m should show different default labels for different skill defaults[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should select default option when currentOverride is undefined[32m 0[2mms[22m[39m
+     [32m✓[39m should mark selected option when override is set[32m 0[2mms[22m[39m
+     [32m✓[39m should only have one selected option[32m 0[2mms[22m[39m
+     [32m✓[39m should not mark default option as selected when override is set[32m 0[2mms[22m[39m
+[31m     [31m×[31m should correctly select each targeting mode[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should display help text for selected targeting mode[32m 0[2mms[22m[39m
+[31m     [31m×[31m should display default mode help text when no override set[39m[32m 1[2mms[22m[39m
+[31m     [31m×[31m should show different help text for different targeting modes[39m[32m 2[2mms[22m[39m
+     [32m✓[39m should update help text for all 2 targeting modes[32m 0[2mms[22m[39m
+     [32m✓[39m should have data-input attribute on select dropdown[32m 0[2mms[22m[39m
+     [32m✓[39m should have data-current-value attribute on container[32m 0[2mms[22m[39m
+     [32m✓[39m should have empty data-current-value when no override[32m 0[2mms[22m[39m
+[31m     [31m×[31m should return "Self" for self mode[39m[32m 1[2mms[22m[39m
+     [32m✓[39m should return "Nearest Enemy" for nearest-enemy[32m 0[2mms[22m[39m
+[31m     [31m×[31m should return descriptive help text for self[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should return descriptive help text for nearest-enemy[32m 0[2mms[22m[39m
+     [32m✓[39m should handle all targeting modes as skill default[32m 0[2mms[22m[39m
+     [32m✓[39m should render valid HTML structure[32m 0[2mms[22m[39m
+[31m     [31m×[31m should handle override same as default[39m[32m 0[2mms[22m[39m
+ [31m❯[39m tests/targeting/target-selector.test.ts [2m([22m[2m19 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 15[2mms[22m[39m
+[31m       [31m×[31m should always select the caster[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m should work even with no allies or enemies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should work when caster has low HP[39m[32m 0[2mms[22m[39m
+       [32m✓[39m should select first living enemy[32m 0[2mms[22m[39m
+       [32m✓[39m should select first living enemy regardless of HP[32m 1[2mms[22m[39m
+       [32m✓[39m should exclude knocked-out enemies (HP <= 0)[32m 3[2mms[22m[39m
+       [32m✓[39m should return empty array when all enemies are dead[32m 0[2mms[22m[39m
+       [32m✓[39m should return empty array when no enemies exist[32m 0[2mms[22m[39m
+       [32m✓[39m should skip dead enemies at start of array[32m 0[2mms[22m[39m
+       [32m✓[39m should handle single enemy[32m 0[2mms[22m[39m
+       [32m✓[39m should handle HP exactly at 0 as knocked out[32m 0[2mms[22m[39m
+       [32m✓[39m should handle HP exactly at 1 as valid target[32m 0[2mms[22m[39m
+       [32m✓[39m should return same results for identical inputs (self)[32m 0[2mms[22m[39m
+       [32m✓[39m should return same results for identical inputs (nearest-enemy)[32m 0[2mms[22m[39m
+       [32m✓[39m should select nearest enemy by Euclidean distance when positions available[32m 0[2mms[22m[39m
+       [32m✓[39m should fall back to first enemy when no positions[32m 0[2mms[22m[39m
+       [32m✓[39m should handle mixed (some with positions, some without)[32m 0[2mms[22m[39m
+       [32m✓[39m should fall back when caster has no position[32m 0[2mms[22m[39m
+       [32m✓[39m should exclude dead enemies even with positions[32m 0[2mms[22m[39m
+ [31m❯[39m tests/ui/action-forecast-analyzer.test.ts [2m([22m[2m20 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 24[2mms[22m[39m
+       [32m✓[39m should include queued actions in timeline[32m 2[2mms[22m[39m
+       [32m✓[39m should order timeline by tick number[32m 1[2mms[22m[39m
+       [32m✓[39m should handle multiple actions at same tick with deterministic ordering[32m 5[2mms[22m[39m
+       [32m✓[39m should predict next action using actual AI logic[32m 0[2mms[22m[39m
+       [32m✓[39m should combine queued and predicted actions in timeline[32m 0[2mms[22m[39m
+[31m       [31m×[31m should predict based on conditions matching current state[39m[32m 5[2mms[22m[39m
+       [32m✓[39m should include current action for character with queued action[32m 0[2mms[22m[39m
+       [32m✓[39m should have null current action for idle character[32m 0[2mms[22m[39m
+       [32m✓[39m should include all alive characters in forecasts[32m 0[2mms[22m[39m
+       [32m✓[39m should exclude dead characters from forecasts[32m 0[2mms[22m[39m
+[31m       [31m×[31m should generate human-readable rule summaries[39m[32m 7[2mms[22m[39m
+       [32m✓[39m should format multiple conditions with AND logic[32m 0[2mms[22m[39m
+       [32m✓[39m should show "Always" for empty conditions[32m 0[2mms[22m[39m
+[31m       [31m×[31m should include targeting override in rule summary[39m[32m 0[2mms[22m[39m
+       [32m✓[39m should mark disabled rules[32m 0[2mms[22m[39m
+       [32m✓[39m should handle character with no instructions (human mode)[32m 0[2mms[22m[39m
+       [32m✓[39m should handle character with no matching rules[32m 0[2mms[22m[39m
+       [32m✓[39m should limit timeline to next 5 actions[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle stunned character prediction[39m[32m 1[2mms[22m[39m
+       [32m✓[39m should handle empty instruction map[32m 0[2mms[22m[39m
+ [31m❯[39m tests/ai/action-selector.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m10 failed[39m[2m)[22m[32m 25[2mms[22m[39m
+[31m       [31m×[31m should select higher priority rule when both conditions are met[39m[32m 9[2mms[22m[39m
+       [32m✓[39m should select lower priority rule when only its condition is met[32m 0[2mms[22m[39m
+       [32m✓[39m should evaluate rules across all skills by priority[32m 2[2mms[22m[39m
+[31m       [31m×[31m should select first skill with matching rule when same priority[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should select skill with multiple rules based on highest matching priority[39m[32m 1[2mms[22m[39m
+       [32m✓[39m should use skill default targeting mode[32m 0[2mms[22m[39m
+[31m       [31m×[31m should use rule targetingOverride when specified[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should apply taunt forcing through TargetFilter[39m[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle self-targeting[39m[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle ally targeting for enemies[39m[32m 0[2mms[22m[39m
+       [32m✓[39m should return null when no rules match[32m 0[2mms[22m[39m
+       [32m✓[39m should return null when all rules fail conditions[32m 0[2mms[22m[39m
+       [32m✓[39m should always match rule with empty conditions array[32m 0[2mms[22m[39m
+       [32m✓[39m should use empty-condition rule as fallback when higher priority rules fail[32m 0[2mms[22m[39m
+       [32m✓[39m should require all conditions to be true for rule to match[32m 0[2mms[22m[39m
+       [32m✓[39m should not match when one condition is false[32m 0[2mms[22m[39m
+       [32m✓[39m should return null when enemy has no skills[32m 0[2mms[22m[39m
+       [32m✓[39m should match skill with no rules (default behavior)[32m 0[2mms[22m[39m
+       [32m✓[39m should match skill with empty rules array[32m 0[2mms[22m[39m
+       [32m✓[39m should return null when no valid targets exist[32m 0[2mms[22m[39m
+       [32m✓[39m should return null when enemy is knocked out (HP 0)[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle self-targeting when no enemies exist[39m[32m 0[2mms[22m[39m
+       [32m✓[39m should handle multiple knocked-out players when targeting[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle priority ties with rule order within skill[39m[32m 0[2mms[22m[39m
+[31m       [31m×[31m should handle skill with mixed rule priorities and conditions[39m[32m 1[2mms[22m[39m
+       [32m✓[39m should correctly evaluate across all skills and all rules[32m 0[2mms[22m[39m
+ [31m❯[39m tests/engine/tick-executor-debug.test.ts [2m([22m[2m14 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 13[2mms[22m[39m
+     [32m✓[39m should capture all rules checked for an idle character[32m 2[2mms[22m[39m
+     [32m✓[39m should capture rule check with pass/fail status for each condition[32m 0[2mms[22m[39m
+     [32m✓[39m should capture matched rule and selected skill/targets[32m 1[2mms[22m[39m
+[31m     [31m×[31m should show no rules checked for stunned character[39m[32m 6[2mms[22m[39m
+     [32m✓[39m should capture rule check reason for non-matching rules[32m 0[2mms[22m[39m
+     [32m✓[39m should capture multiple rule evaluations for multiple idle characters[32m 0[2mms[22m[39m
+     [32m✓[39m should include synthetic rule for character with skill that has no rules[32m 1[2mms[22m[39m
+     [32m✓[39m should provide complete debug info[32m 0[2mms[22m[39m
+     [32m✓[39m should maintain regular TickResult properties alongside debug info[32m 0[2mms[22m[39m
+     [32m✓[39m should respect targetingOverride from CharacterInstructions[32m 0[2mms[22m[39m
+     [32m✓[39m should queue action for character with skill that has NO rules (undefined)[32m 0[2mms[22m[39m
+     [32m✓[39m should queue action for character with skill that has EMPTY rules array[32m 0[2mms[22m[39m
+     [32m✓[39m should use legacy fallback path when no instructions provided for control mode[32m 0[2mms[22m[39m
+     [32m✓[39m should include skill without rules in debug ruleEvaluations with priority 0[32m 0[2mms[22m[39m
+ [31m❯[39m tests/integration/enemy-ai.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 52[2mms[22m[39m
+       [32m✓[39m should select correct skill based on rules[32m 2[2mms[22m[39m
+[31m       [31m×[31m should target correctly based on skill targeting mode[39m[32m 31[2mms[22m[39m
+       [32m✓[39m should prioritize higher priority rules when conditions met[32m 0[2mms[22m[39m
+       [32m✓[39m should fall back to lower priority when higher priority conditions not met[32m 0[2mms[22m[39m
+[31m       [31m×[31m should use heal when hp-below condition triggers[39m[32m 2[2mms[22m[39m
+       [32m✓[39m should change tactics based on ally-count condition[32m 0[2mms[22m[39m
+       [32m✓[39m should not trigger ally-count condition when alone[32m 0[2mms[22m[39m
+       [32m✓[39m should redirect attacks to taunting player[32m 0[2mms[22m[39m
+[31m       [31m×[31m should make decisions each turn as combat state changes[39m[32m 0[2mms[22m[39m
+       [32m✓[39m should demonstrate full multi-turn battle with AI decisions[32m 6[2mms[22m[39m
+[31m       [31m×[31m should validate AI re-evaluates rules when becoming idle[39m[32m 5[2mms[22m[39m
+       [32m✓[39m should respect targeting mode from skill definition[32m 1[2mms[22m[39m
+       [32m✓[39m should exclude dead targets from selection[32m 0[2mms[22m[39m
+ [31m❯[39m tests/ui/skill-priority-editor.test.ts [2m([22m[2m55 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[32m 81[2mms[22m[39m
+     [32m✓[39m should render root container with correct class[32m 2[2mms[22m[39m
+     [32m✓[39m should render header with title[32m 16[2mms[22m[39m
+     [32m✓[39m should render help text explaining priority system[32m 12[2mms[22m[39m
+     [32m✓[39m should render skill list container[32m 0[2mms[22m[39m
+     [32m✓[39m should render all skills in the list[32m 0[2mms[22m[39m
+     [32m✓[39m should render skills in priority order (highest first)[32m 0[2mms[22m[39m
+     [32m✓[39m should show skill name for each skill[32m 0[2mms[22m[39m
+     [32m✓[39m should show calculated priority number for each skill[32m 0[2mms[22m[39m
+     [32m✓[39m should show enable/disable checkbox for each skill[32m 1[2mms[22m[39m
+     [32m✓[39m should render each skill as a list item[32m 0[2mms[22m[39m
+     [32m✓[39m should calculate priority as 100 for single skill[32m 0[2mms[22m[39m
+     [32m✓[39m should calculate priorities as [100, 0] for two skills[32m 0[2mms[22m[39m
+     [32m✓[39m should calculate priorities as [100, 50, 0] for three skills[32m 0[2mms[22m[39m
+     [32m✓[39m should use linear interpolation for N skills[32m 0[2mms[22m[39m
+     [32m✓[39m should calculate 5 skills correctly[32m 0[2mms[22m[39m
+     [32m✓[39m should display calculated priorities in rendered output[32m 0[2mms[22m[39m
+     [32m✓[39m should render up/down arrow buttons for each skill[32m 0[2mms[22m[39m
+     [32m✓[39m should render move-up buttons with up arrow[32m 0[2mms[22m[39m
+     [32m✓[39m should render move-down buttons with down arrow[32m 0[2mms[22m[39m
+     [32m✓[39m should disable up button for first skill[32m 0[2mms[22m[39m
+     [32m✓[39m should not disable down button for first skill[32m 0[2mms[22m[39m
+     [32m✓[39m should disable down button for last skill[32m 0[2mms[22m[39m
+     [32m✓[39m should not disable up button for last skill[32m 0[2mms[22m[39m
+     [32m✓[39m should enable both buttons for middle skills[32m 0[2mms[22m[39m
+     [32m✓[39m should disable both arrows for single skill[32m 0[2mms[22m[39m
+     [32m✓[39m should check checkbox for enabled skills[32m 0[2mms[22m[39m
+     [32m✓[39m should uncheck checkbox for disabled skills[32m 0[2mms[22m[39m
+     [32m✓[39m should add "disabled" class to disabled skill items[32m 0[2mms[22m[39m
+     [32m✓[39m should not add "disabled" class to enabled skill items[32m 0[2mms[22m[39m
+     [32m✓[39m should include data-enabled attribute on skill items[32m 0[2mms[22m[39m
+     [32m✓[39m should show disabled skills in the list[32m 0[2mms[22m[39m
+     [32m✓[39m should include toggle-skill action on checkboxes[32m 0[2mms[22m[39m
+     [32m✓[39m should add "selected" class to selected skill[32m 0[2mms[22m[39m
+     [32m✓[39m should not add "selected" class to non-selected skills[32m 0[2mms[22m[39m
+     [32m✓[39m should handle null selectedSkillId (no selection)[32m 0[2mms[22m[39m
+     [32m✓[39m should include data-skill-id attribute on each skill item[32m 0[2mms[22m[39m
+     [32m✓[39m should handle empty instruction list[32m 0[2mms[22m[39m
+     [32m✓[39m should handle mismatched instructions and skills[32m 0[2mms[22m[39m
+     [32m✓[39m should preserve skill order from instructions array[32m 0[2mms[22m[39m
+     [32m✓[39m should display override targeting description in tooltip when targetingOverride is set[32m 0[2mms[22m[39m
+[31m     [31m×[31m should display default targeting description in tooltip when no override is set[39m[32m 10[2mms[22m[39m
+     [32m✓[39m should display correct targeting when override equals default[32m 0[2mms[22m[39m
+[31m     [31m×[31m should display override targeting for each skill when multiple skills have overrides[39m[32m 16[2mms[22m[39m
+       [32m✓[39m should render pool skills section when poolSkills are provided[32m 0[2mms[22m[39m
+       [32m✓[39m should render pool skills header/title[32m 0[2mms[22m[39m
+       [32m✓[39m should render pool skills with data-action="equip" attribute[32m 0[2mms[22m[39m
+       [32m✓[39m should render pool skills with data-skill-id for event delegation[32m 0[2mms[22m[39m
+[31m       [31m×[31m should render non-innate equipped skills with data-action="unequip" attribute[39m[32m 7[2mms[22m[39m
+       [32m✓[39m should render equipped non-innate skills with data-skill-id for unequip[32m 1[2mms[22m[39m
+       [32m✓[39m should NOT render unequip button for strike (innate skill)[32m 0[2mms[22m[39m
+[31m       [31m×[31m should NOT render unequip button for defend (innate skill)[39m[32m 2[2mms[22m[39m
+       [32m✓[39m should render unequip button for non-innate skills[32m 0[2mms[22m[39m
+       [32m✓[39m should show "All skills assigned" message when pool is empty[32m 0[2mms[22m[39m
+[31m       [31m×[31m should show no unequip buttons when only innate skills are equipped[39m[32m 1[2mms[22m[39m
+       [32m✓[39m should not render pool section when poolSkills parameter is undefined[32m 0[2mms[22m[39m
+ [31m❯[39m tests/integration/priority-bug-fix.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 10[2mms[22m[39m
+[31m     [31m×[31m should select Shield when it has higher priority than Strike[39m[32m 6[2mms[22m[39m
+     [32m✓[39m should select Strike when it has higher priority than Shield[32m 1[2mms[22m[39m
+[31m     [31m×[31m should respect enabled flag in instructions[39m[32m 1[2mms[22m[39m
+ [32m✓[39m tests/engine/tick-executor.test.ts [2m([22m[2m30 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/ui/action-forecast.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/ui/battle-arena-layout.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/ui/battle-controller.test.ts [2m([22m[2m93 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m tests/integration/battle-viewer.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m tests/engine/action-resolver.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/ui/event-log.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m tests/ui/grid-layout.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/integration/combat-engine.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/engine/skill-library.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/ui/debug-inspector.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/ui/instructions-converter.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/ui/instructions-builder.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/ui/character-card.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/ui/control-mode-toggle.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/ui/character-circle.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/ui/battle-visualization.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/ai/rule-condition-evaluator.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/ui/skill-color-palette.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 40 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - rule priority ordering[2m > [22mshould select higher priority rule when both conditions are met
+[31m[1mAssertionError[22m: expected 'attack' to be 'heal' // Object.is equality[39m
+
+Expected: [32m"heal"[39m
+Received: [31m"attack"[39m
+
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m93:32[22m[39m
+    [90m 91| [39m
+    [90m 92| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m 93| [39m      expect(result?.skill.id).toBe('heal'); // Higher priority rule w…
+    [90m   | [39m                               [31m^[39m
+    [90m 94| [39m      [34mexpect[39m(result[33m?.[39mskill[33m.[39mname)[33m.[39m[34mtoBe[39m([32m'Heal'[39m)[33m;[39m
+    [90m 95| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - skill selection[2m > [22mshould select first skill with matching rule when same priority
+[31m[1mAssertionError[22m: expected 'second' to be 'first' // Object.is equality[39m
+
+Expected: [32m"first"[39m
+Received: [31m"second"[39m
+
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m161:32[22m[39m
+    [90m159| [39m
+    [90m160| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m161| [39m      expect(result?.skill.id).toBe('first'); // First in array wins a…
+    [90m   | [39m                               [31m^[39m
+    [90m162| [39m    })[33m;[39m
+    [90m163| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - skill selection[2m > [22mshould select skill with multiple rules based on highest matching priority
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m177:26[22m[39m
+    [90m175| [39m      [35mconst[39m result [33m=[39m [34mselectAction[39m(enemy[33m,[39m combatState)[33m;[39m
+    [90m176| [39m
+    [90m177| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m178| [39m      [34mexpect[39m(result[33m?.[39mskill[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'multi-rule'[39m)[33m;[39m
+    [90m179| [39m      [90m// Priority 8 rule matches (HP below 50%), highest priority[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - targeting[2m > [22mshould use rule targetingOverride when specified
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m217:26[22m[39m
+    [90m215| [39m      [35mconst[39m result [33m=[39m [34mselectAction[39m(enemy[33m,[39m combatState)[33m;[39m
+    [90m216| [39m
+    [90m217| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m218| [39m      [34mexpect[39m(result[33m?.[39mtargets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m [90m// Self targeted[39m
+    [90m219| [39m      [34mexpect[39m(result[33m![39m[33m.[39mtargets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'e1'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - targeting[2m > [22mshould apply taunt forcing through TargetFilter
+[31m[1mAssertionError[22m: expected 'p1' to be 'p2' // Object.is equality[39m
+
+Expected: [32m"p[7m2[27m"[39m
+Received: [31m"p[7m1[27m"[39m
+
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m238:38[22m[39m
+    [90m236| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m237| [39m      [34mexpect[39m(result[33m?.[39mtargets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m238| [39m      expect(result!.targets[0]!.id).toBe('p2'); // Forced to target t…
+    [90m   | [39m                                     [31m^[39m
+    [90m239| [39m    })[33m;[39m
+    [90m240| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - targeting[2m > [22mshould handle self-targeting
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m252:26[22m[39m
+    [90m250| [39m      [35mconst[39m result [33m=[39m [34mselectAction[39m(enemy[33m,[39m combatState)[33m;[39m
+    [90m251| [39m
+    [90m252| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m253| [39m      [34mexpect[39m(result[33m?.[39mtargets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m254| [39m      [34mexpect[39m(result[33m![39m[33m.[39mtargets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'e1'[39m)[33m;[39m [90m// Targets self[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - targeting[2m > [22mshould handle ally targeting for enemies
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m270:26[22m[39m
+    [90m268| [39m      [35mconst[39m result [33m=[39m [34mselectAction[39m(enemy1[33m,[39m combatState)[33m;[39m
+    [90m269| [39m
+    [90m270| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m271| [39m      [34mexpect[39m(result[33m?.[39mtargets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m272| [39m      [34mexpect[39m(result[33m![39m[33m.[39mtargets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'e1'[39m)[33m;[39m [90m// Self targeting[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - edge cases[2m > [22mshould handle self-targeting when no enemies exist
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m468:26[22m[39m
+    [90m466| [39m      [35mconst[39m result [33m=[39m [34mselectAction[39m(enemy1[33m,[39m combatState)[33m;[39m
+    [90m467| [39m
+    [90m468| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m469| [39m      [34mexpect[39m(result[33m![39m[33m.[39mtargets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'e1'[39m)[33m;[39m [90m// Self targeting[39m
+    [90m470| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - complex scenarios[2m > [22mshould handle priority ties with rule order within skill
+[31m[1mAssertionError[22m: expected 'p1' to be 'e1' // Object.is equality[39m
+
+Expected: [32m"[7me[27m1"[39m
+Received: [31m"[7mp[27m1"[39m
+
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m506:38[22m[39m
+    [90m504| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m505| [39m      [90m// First matching rule at priority 5 should be selected[39m
+    [90m506| [39m      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting fro…
+    [90m   | [39m                                     [31m^[39m
+    [90m507| [39m    })[33m;[39m
+    [90m508| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ai/action-selector.test.ts[2m > [22mEnemyBrain[2m > [22mselectAction - complex scenarios[2m > [22mshould handle skill with mixed rule priorities and conditions
+[31m[1mAssertionError[22m: expected 'attack' to be 'heal' // Object.is equality[39m
+
+Expected: [32m"heal"[39m
+Received: [31m"attack"[39m
+
+[36m [2m❯[22m tests/ai/action-selector.test.ts:[2m525:32[22m[39m
+    [90m523| [39m
+    [90m524| [39m      [34mexpect[39m(result)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m525| [39m      expect(result?.skill.id).toBe('heal'); // Priority 5 heal rule m…
+    [90m   | [39m                               [31m^[39m
+    [90m526| [39m    })[33m;[39m
+    [90m527| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/engine/tick-executor-debug.test.ts[2m > [22mTickExecutor Debug Enhancement - AC45: Rule Evaluation Capture[2m > [22mshould show no rules checked for stunned character
+[31m[1mAssertionError[22m: expected 1 to be +0 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+[36m [2m❯[22m tests/engine/tick-executor-debug.test.ts:[2m232:46[22m[39m
+    [90m230| [39m    [90m// Either no evaluation entry, or rulesChecked is empty[39m
+    [90m231| [39m    [35mif[39m (playerEval) {
+    [90m232| [39m      [34mexpect[39m(playerEval[33m.[39mrulesChecked[33m.[39mlength)[33m.[39m[34mtoBe[39m([34m0[39m)[33m;[39m
+    [90m   | [39m                                             [31m^[39m
+    [90m233| [39m      [34mexpect[39m(playerEval[33m.[39mselectedRule)[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m234| [39m      [34mexpect[39m(playerEval[33m.[39mselectedSkill)[33m.[39m[34mtoBeNull[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/enemy-ai.test.ts[2m > [22mEnemy AI Integration[2m > [22mScenario: Basic AI Action Selection[2m > [22mshould target correctly based on skill targeting mode
+[31m[1mAssertionError[22m: expected null not to be null[39m
+[36m [2m❯[22m tests/integration/enemy-ai.test.ts:[2m144:29[22m[39m
+    [90m142| [39m      [35mconst[39m selection [33m=[39m [34mselectAction[39m(enemy1[33m,[39m state)[33m;[39m
+    [90m143| [39m
+    [90m144| [39m      [34mexpect[39m(selection)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m   | [39m                            [31m^[39m
+    [90m145| [39m      [34mexpect[39m(selection[33m?.[39mskill[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'enemy-heal'[39m)[33m;[39m
+    [90m146| [39m      [34mexpect[39m(selection[33m?.[39mtargets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/enemy-ai.test.ts[2m > [22mEnemy AI Integration[2m > [22mScenario: Condition-Driven Behavior[2m > [22mshould use heal when hp-below condition triggers
+[31m[1mAssertionError[22m: expected 'attack' to be 'self-heal' // Object.is equality[39m
+
+Expected: [32m"self-heal"[39m
+Received: [31m"attack"[39m
+
+[36m [2m❯[22m tests/integration/enemy-ai.test.ts:[2m326:35[22m[39m
+    [90m324| [39m
+    [90m325| [39m      [34mexpect[39m(selection)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m326| [39m      [34mexpect[39m(selection[33m?.[39mskill[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'self-heal'[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m327| [39m      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Self-targe…
+    [90m328| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/enemy-ai.test.ts[2m > [22mEnemy AI Integration[2m > [22mScenario: Multi-Turn AI Combat[2m > [22mshould make decisions each turn as combat state changes
+[31m[1mAssertionError[22m: expected 'aggressive' to be 'defensive' // Object.is equality[39m
+
+Expected: [32m"[7mdefen[27msive"[39m
+Received: [31m"[7maggres[27msive"[39m
+
+[36m [2m❯[22m tests/integration/enemy-ai.test.ts:[2m560:35[22m[39m
+    [90m558| [39m      state [33m=[39m [34mcreateCombatState[39m([player][33m,[39m [damagedEnemy])[33m;[39m
+    [90m559| [39m      selection [33m=[39m [34mselectAction[39m(damagedEnemy[33m,[39m state)[33m;[39m
+    [90m560| [39m      [34mexpect[39m(selection[33m?.[39mskill[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'defensive'[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m561| [39m
+    [90m562| [39m      // Test 3: After healing, back above 50% - should be aggressive …
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/enemy-ai.test.ts[2m > [22mEnemy AI Integration[2m > [22mScenario: Multi-Turn AI Combat[2m > [22mshould validate AI re-evaluates rules when becoming idle
+[31m[1mAssertionError[22m: expected 'power-strike' to be 'emergency-heal' // Object.is equality[39m
+
+Expected: [32m"emergency-heal"[39m
+Received: [31m"power-strike"[39m
+
+[36m [2m❯[22m tests/integration/enemy-ai.test.ts:[2m678:35[22m[39m
+    [90m676| [39m      state [33m=[39m [34mcreateCombatState[39m([player][33m,[39m [lowHpEnemy])[33m;[39m
+    [90m677| [39m      selection [33m=[39m [34mselectAction[39m(lowHpEnemy[33m,[39m state)[33m;[39m
+    [90m678| [39m      [34mexpect[39m(selection[33m?.[39mskill[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'emergency-heal'[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m679| [39m      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Targets se…
+    [90m680| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/priority-bug-fix.test.ts[2m > [22mBug Fix: Instructions Priorities Used by Action Selection[2m > [22mshould select Shield when it has higher priority than Strike
+[31m[1mAssertionError[22m: expected 'Strike' to be 'Shield' // Object.is equality[39m
+
+Expected: [32m"S[7mhield[27m"[39m
+Received: [31m"S[7mtrike[27m"[39m
+
+[36m [2m❯[22m tests/integration/priority-bug-fix.test.ts:[2m86:51[22m[39m
+    [90m 84| [39m    [34mexpect[39m(playerForecast)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m 85| [39m    [34mexpect[39m(playerForecast[33m?.[39mnextAction)[33m.[39m[34mtoBeDefined[39m()[33m;[39m
+    [90m 86| [39m    [34mexpect[39m(playerForecast[33m?.[39mnextAction[33m?.[39mskillName)[33m.[39m[34mtoBe[39m([32m'Shield'[39m)[33m;[39m
+    [90m   | [39m                                                  [31m^[39m
+    [90m 87| [39m    [34mexpect[39m(playerForecast[33m?.[39mnextAction[33m?.[39mreason)[33m.[39m[34mtoBe[39m([32m'Always'[39m)[33m;[39m
+    [90m 88| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/priority-bug-fix.test.ts[2m > [22mBug Fix: Instructions Priorities Used by Action Selection[2m > [22mshould respect enabled flag in instructions
+[31m[1mAssertionError[22m: expected undefined to be 'Shield' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"Shield"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m tests/integration/priority-bug-fix.test.ts:[2m256:51[22m[39m
+    [90m254| [39m    const playerForecast = forecast.characterForecasts.find(cf => cf.c…
+    [90m255| [39m    
+    [90m256| [39m    [34mexpect[39m(playerForecast[33m?.[39mnextAction[33m?.[39mskillName)[33m.[39m[34mtoBe[39m([32m'Shield'[39m)[33m;[39m
+    [90m   | [39m                                                  [31m^[39m
+    [90m257| [39m
+    [90m258| [39m    controller[33m.[39m[34mstep[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/targeting/target-selector.test.ts[2m > [22mTargetSelector[2m > [22mself targeting[2m > [22mshould always select the caster
+[31m[1mAssertionError[22m: expected [] to have a length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m tests/targeting/target-selector.test.ts:[2m60:23[22m[39m
+    [90m 58| [39m      const targets = TargetSelectorStub.selectTargets('self', caster,…
+    [90m 59| [39m
+    [90m 60| [39m      [34mexpect[39m(targets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 61| [39m      [34mexpect[39m(targets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'p1'[39m)[33m;[39m
+    [90m 62| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/targeting/target-selector.test.ts[2m > [22mTargetSelector[2m > [22mself targeting[2m > [22mshould work even with no allies or enemies
+[31m[1mAssertionError[22m: expected [] to have a length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m tests/targeting/target-selector.test.ts:[2m69:23[22m[39m
+    [90m 67| [39m      const targets = TargetSelectorStub.selectTargets('self', caster,…
+    [90m 68| [39m
+    [90m 69| [39m      [34mexpect[39m(targets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 70| [39m      [34mexpect[39m(targets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'p1'[39m)[33m;[39m
+    [90m 71| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/targeting/target-selector.test.ts[2m > [22mTargetSelector[2m > [22mself targeting[2m > [22mshould work when caster has low HP
+[31m[1mAssertionError[22m: expected [] to have a length of 1 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 0[39m
+
+[36m [2m❯[22m tests/targeting/target-selector.test.ts:[2m80:23[22m[39m
+    [90m 78| [39m      const targets = TargetSelectorStub.selectTargets('self', caster,…
+    [90m 79| [39m
+    [90m 80| [39m      [34mexpect[39m(targets)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m   | [39m                      [31m^[39m
+    [90m 81| [39m      [34mexpect[39m(targets[[34m0[39m][33m![39m[33m.[39mid)[33m.[39m[34mtoBe[39m([32m'p1'[39m)[33m;[39m
+    [90m 82| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/action-forecast-analyzer.test.ts[2m > [22mActionForecastAnalyzer[2m > [22mforecastNextActions - prediction accuracy[2m > [22mshould predict based on conditions matching current state
+[31m[1mAssertionError[22m: expected 'Strike' to be 'Heal' // Object.is equality[39m
+
+Expected: [32m"Heal"[39m
+Received: [31m"Strike"[39m
+
+[36m [2m❯[22m tests/ui/action-forecast-analyzer.test.ts:[2m282:49[22m[39m
+    [90m280| [39m      
+    [90m281| [39m      const p1Forecast = forecast.characterForecasts.find(f => f.chara…
+    [90m282| [39m      [34mexpect[39m(p1Forecast[33m![39m[33m.[39mnextAction[33m![39m[33m.[39mskillName)[33m.[39m[34mtoBe[39m([32m'Heal'[39m)[33m;[39m
+    [90m   | [39m                                                [31m^[39m
+    [90m283| [39m      [34mexpect[39m(p1Forecast[33m![39m[33m.[39mnextAction[33m![39m[33m.[39mreason)[33m.[39m[34mtoContain[39m([32m'HP < 50%'[39m)[33m;[39m
+    [90m284| [39m    })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/action-forecast-analyzer.test.ts[2m > [22mActionForecastAnalyzer[2m > [22mforecastNextActions - rule summaries[2m > [22mshould generate human-readable rule summaries
+[31m[1mAssertionError[22m: expected { priority: 100, …(5) } to deeply equal { priority: 100, …(5) }[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "conditionsText": "If HP < 50%",[22m
+[2m    "enabled": true,[22m
+[2m    "priority": 100,[22m
+[2m    "skillName": "Heal",[22m
+[32m-   "targetingMode": "Self",[39m
+[31m+   "targetingMode": "Unknown",[39m
+[2m    "tickCost": 3,[22m
+[2m  }[22m
+
+[36m [2m❯[22m tests/ui/action-forecast-analyzer.test.ts:[2m374:43[22m[39m
+    [90m372| [39m      const p1Forecast = forecast.characterForecasts.find(f => f.chara…
+    [90m373| [39m      [34mexpect[39m(p1Forecast[33m![39m[33m.[39mrulesSummary)[33m.[39m[34mtoHaveLength[39m([34m1[39m)[33m;[39m
+    [90m374| [39m      [34mexpect[39m(p1Forecast[33m?.[39mrulesSummary[[34m0[39m])[33m.[39m[34mtoEqual[39m({
+    [90m   | [39m                                          [31m^[39m
+    [90m375| [39m        priority[33m:[39m [34m100[39m[33m,[39m
+    [90m376| [39m        skillName[33m:[39m [32m'Heal'[39m[33m,[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/action-forecast-analyzer.test.ts[2m > [22mActionForecastAnalyzer[2m > [22mforecastNextActions - rule summaries[2m > [22mshould include targeting override in rule summary
+[31m[1mAssertionError[22m: expected 'Unknown' to be 'Self' // Object.is equality[39m
+
+Expected: [32m"Self"[39m
+Received: [31m"Unknown"[39m
+
+[36m [2m❯[22m tests/ui/action-forecast-analyzer.test.ts:[2m451:58[22m[39m
+    [90m449| [39m      
+    [90m450| [39m      const p1Forecast = forecast.characterForecasts.find(f => f.chara…
+    [90m451| [39m      [34mexpect[39m(p1Forecast[33m![39m[33m.[39mrulesSummary[[34m0[39m][33m![39m[33m.[39mtargetingMode)[33m.[39m[34mtoBe[39m([32m'Self'[39m)[33m;[39m
+    [90m   | [39m                                                         [31m^[39m
+    [90m452| [39m    })[33m;[39m
+    [90m453| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/action-forecast-analyzer.test.ts[2m > [22mActionForecastAnalyzer[2m > [22mforecastNextActions - edge cases[2m > [22mshould handle stunned character prediction
+[31m[1mAssertionError[22m: expected { skillName: 'Strike', …(2) } to be null[39m
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+{
+  "reason": "Always",
+  "skillName": "Strike",
+  "targetNames": [
+    "Goblin",
+  ],
+}
+
+[36m [2m❯[22m tests/ui/action-forecast-analyzer.test.ts:[2m571:38[22m[39m
+    [90m569| [39m      
+    [90m570| [39m      const p1Forecast = forecast.characterForecasts.find(f => f.chara…
+    [90m571| [39m      expect(p1Forecast?.nextAction).toBeNull(); // Stunned characters…
+    [90m   | [39m                                     [31m^[39m
+    [90m572| [39m    })[33m;[39m
+    [90m573| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/skill-priority-editor.test.ts[2m > [22mSkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)[2m > [22mshould display default targeting description in tooltip when no override is set
+[31m[1mAssertionError[22m: expected '<div class="skill-priority-editor">\n…' to contain 'data-tooltip-targeting="Targets self"'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- data-tooltip-targeting="Targets self"[39m
+[31m+ <div class="skill-priority-editor">[39m
+[31m+   <h4>Skill Priority</h4>[39m
+[31m+   <p class="help-text">Higher priority skills are tried first</p>[39m
+[31m+   [39m
+[31m+   <ul class="skill-list">[39m
+[31m+     <li class="skill-item" data-skill-id="heal" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" disabled title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" disabled title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="heal" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #888888;" data-skill-id="heal" data-tooltip-name="Heal" data-tooltip-duration="15 ticks" data-tooltip-effects="" data-tooltip-targeting="self">[39m
+[31m+   Heal[39m
+[31m+   <span class="skill-duration">(15 ticks)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">100</span>[39m
+[31m+       <span class="unequip-btn" data-action="unequip" data-skill-id="heal">×</span>[39m
+[31m+     </li>[39m
+[31m+   </ul>[39m
+[31m+   [39m
+[31m+   <div class="action-help">[39m
+[31m+     <p><strong>How priority works:</strong></p>[39m
+[31m+     <ul>[39m
+[31m+       <li>↑ Move up = Skill is tried earlier (higher priority)</li>[39m
+[31m+       <li>↓ Move down = Skill is tried later (lower priority)</li>[39m
+[31m+       <li>☐ Checkbox = Enable/disable skill for AI</li>[39m
+[31m+     </ul>[39m
+[31m+     <p>The AI tries skills from top to bottom until one's conditions are met.</p>[39m
+[31m+   </div>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/skill-priority-editor.test.ts:[2m592:18[22m[39m
+    [90m590| [39m
+    [90m591| [39m    // Without override, tooltip should show the skill's default targe…
+    [90m592| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'data-tooltip-targeting="Targets self"'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m593| [39m  })[33m;[39m
+    [90m594| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/skill-priority-editor.test.ts[2m > [22mSkillPriorityEditor - Tooltip Targeting Override Display (Bug Fix)[2m > [22mshould display override targeting for each skill when multiple skills have overrides
+[31m[1mAssertionError[22m: expected '<div class="skill-priority-editor">\n…' to contain 'data-tooltip-targeting="Targets self"'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- data-tooltip-targeting="Targets self"[39m
+[31m+ <div class="skill-priority-editor">[39m
+[31m+   <h4>Skill Priority</h4>[39m
+[31m+   <p class="help-text">Higher priority skills are tried first</p>[39m
+[31m+   [39m
+[31m+   <ul class="skill-list">[39m
+[31m+     <li class="skill-item" data-skill-id="strike" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" disabled title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="strike" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #FF6B6B;" data-skill-id="strike" data-tooltip-name="Strike" data-tooltip-duration="10 ticks" data-tooltip-effects="Deals 10 damage" data-tooltip-targeting="Targets nearest enemy">[39m
+[31m+   Strike[39m
+[31m+   <span class="skill-duration">(10 ticks)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">100</span>[39m
+[31m+       [39m
+[31m+     </li>[39m
+[31m+     <li class="skill-item" data-skill-id="shield" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" disabled title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="shield" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #888888;" data-skill-id="shield" data-tooltip-name="Shield" data-tooltip-duration="5 ticks" data-tooltip-effects="" data-tooltip-targeting="self">[39m
+[31m+   Shield[39m
+[31m+   <span class="skill-duration">(5 ticks)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">50</span>[39m
+[31m+       <span class="unequip-btn" data-action="unequip" data-skill-id="shield">×</span>[39m
+[31m+     </li>[39m
+[31m+   </ul>[39m
+[31m+   [39m
+[31m+   <div class="action-help">[39m
+[31m+     <p><strong>How priority works:</strong></p>[39m
+[31m+     <ul>[39m
+[31m+       <li>↑ Move up = Skill is tried earlier (higher priority)</li>[39m
+[31m+       <li>↓ Move down = Skill is tried later (lower priority)</li>[39m
+[31m+       <li>☐ Checkbox = Enable/disable skill for AI</li>[39m
+[31m+     </ul>[39m
+[31m+     <p>The AI tries skills from top to bottom until one's conditions are met.</p>[39m
+[31m+   </div>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/skill-priority-editor.test.ts:[2m664:18[22m[39m
+    [90m662| [39m    // Each skill's tooltip should show its respective override in dat…
+    [90m663| [39m    expect(html).toContain('data-tooltip-targeting="Targets nearest en…
+    [90m664| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'data-tooltip-targeting="Targets self"'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m665| [39m    
+    [90m666| [39m    // Should NOT show default targeting descriptions (reversed from o…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/skill-priority-editor.test.ts[2m > [22mSkillPriorityEditor - Pool Skills for Equip (Merge Panels)[2m > [22mUnequip Action Data Attributes[2m > [22mshould render non-innate equipped skills with data-action="unequip" attribute
+[31m[1mAssertionError[22m: expected [ 'data-action="unequip"', …(2) ] to have a length of 2 but got 3[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 3[39m
+
+[36m [2m❯[22m tests/ui/skill-priority-editor.test.ts:[2m845:30[22m[39m
+    [90m843| [39m      [90m// Should have unequip for heal and fireball (non-innate)[39m
+    [90m844| [39m      [35mconst[39m unequipMatches [33m=[39m html[33m.[39m[34mmatch[39m([36m/data-action="unequip"/g[39m)[33m;[39m
+    [90m845| [39m      [34mexpect[39m(unequipMatches)[33m.[39m[34mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m846| [39m    })[33m;[39m
+    [90m847| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/skill-priority-editor.test.ts[2m > [22mSkillPriorityEditor - Pool Skills for Equip (Merge Panels)[2m > [22mInnate Skills Protection[2m > [22mshould NOT render unequip button for defend (innate skill)
+[31m[1mAssertionError[22m: expected '<li class="skill-item" data-skill-id=…' not to contain 'data-action="unequip"'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- data-action="unequip"[39m
+[31m+ <li class="skill-item" data-skill-id="defend" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="defend" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #888888;" data-skill-id="defend" data-tooltip-name="Defend" data-tooltip-duration="1 tick" data-tooltip-effects="" data-tooltip-targeting="self">[39m
+[31m+   Defend[39m
+[31m+   <span class="skill-duration">(1 tick)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">50</span>[39m
+[31m+       <span class="unequip-btn" data-action="unequip" data-skill-id="defend">×</span>[39m
+[31m+     </li>[39m
+
+[36m [2m❯[22m tests/ui/skill-priority-editor.test.ts:[2m893:39[22m[39m
+    [90m891| [39m      const defendItemMatch = html.match(/<li[^>]*data-skill-id="defen…
+    [90m892| [39m      [34mexpect[39m(defendItemMatch)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m893| [39m      expect(defendItemMatch![0]).not.toContain('data-action="unequip"…
+    [90m   | [39m                                      [31m^[39m
+    [90m894| [39m    })[33m;[39m
+    [90m895| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/skill-priority-editor.test.ts[2m > [22mSkillPriorityEditor - Pool Skills for Equip (Merge Panels)[2m > [22mEdge Cases[2m > [22mshould show no unequip buttons when only innate skills are equipped
+[31m[1mAssertionError[22m: expected '<div class="skill-priority-editor">\n…' not to contain 'data-action="unequip"'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- data-action="unequip"[39m
+[31m+ <div class="skill-priority-editor">[39m
+[31m+   <h4>Skill Priority</h4>[39m
+[31m+   <p class="help-text">Higher priority skills are tried first</p>[39m
+[31m+   [39m
+[31m+   <ul class="skill-list">[39m
+[31m+     <li class="skill-item" data-skill-id="strike" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" disabled title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="strike" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #FF6B6B;" data-skill-id="strike" data-tooltip-name="Strike" data-tooltip-duration="2 ticks" data-tooltip-effects="Deals 15 damage" data-tooltip-targeting="Targets nearest enemy">[39m
+[31m+   Strike[39m
+[31m+   <span class="skill-duration">(2 ticks)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">100</span>[39m
+[31m+       [39m
+[31m+     </li>[39m
+[31m+     <li class="skill-item" data-skill-id="defend" data-enabled="true">[39m
+[31m+       <div class="skill-controls">[39m
+[31m+         <button class="move-btn" data-action="move-up" title="Move up: This skill will be tried BEFORE the skill above it">↑</button>[39m
+[31m+         <button class="move-btn" data-action="move-down" disabled title="Move down: This skill will be tried AFTER the skill below it">↓</button>[39m
+[31m+       </div>[39m
+[31m+       <input type="checkbox" class="skill-enable" checked data-action="toggle-skill" data-skill-id="defend" title="Enable/Disable: When disabled, this skill will not be used by the AI" />[39m
+[31m+       <span class="skill-name"><span class="skill-display" style="color: #888888;" data-skill-id="defend" data-tooltip-name="Defend" data-tooltip-duration="1 tick" data-tooltip-effects="" data-tooltip-targeting="self">[39m
+[31m+   Defend[39m
+[31m+   <span class="skill-duration">(1 tick)</span>[39m
+[31m+ </span></span>[39m
+[31m+       <span class="skill-priority">0</span>[39m
+[31m+       <span class="unequip-btn" data-action="unequip" data-skill-id="defend">×</span>[39m
+[31m+     </li>[39m
+[31m+   </ul>[39m
+[31m+   [39m
+[31m+   <div class="action-help">[39m
+[31m+     <p><strong>How priority works:</strong></p>[39m
+[31m+     <ul>[39m
+[31m+       <li>↑ Move up = Skill is tried earlier (higher priority)</li>[39m
+[31m+       <li>↓ Move down = Skill is tried later (lower priority)</li>[39m
+[31m+       <li>☐ Checkbox = Enable/disable skill for AI</li>[39m
+[31m+     </ul>[39m
+[31m+     <p>The AI tries skills from top to bottom until one's conditions are met.</p>[39m
+[31m+   </div>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/skill-priority-editor.test.ts:[2m941:24[22m[39m
+    [90m939| [39m
+    [90m940| [39m      // Should have NO unequip actions since only innate skills are e…
+    [90m941| [39m      [34mexpect[39m(html)[33m.[39mnot[33m.[39m[34mtoContain[39m([32m'data-action="unequip"'[39m)[33m;[39m
+    [90m   | [39m                       [31m^[39m
+    [90m942| [39m    })[33m;[39m
+    [90m943| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Dropdown Options (AC59)[2m > [22mshould render select with all 2 targeting modes
+[31m[1mAssertionError[22m: expected [ '<option', '<option' ] to have a length of 3 but got 2[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 2[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m60:27[22m[39m
+    [90m 58| [39m    [90m// Count option elements (2 targeting modes + 1 default = 3 total)[39m
+    [90m 59| [39m    [35mconst[39m optionMatches [33m=[39m html[33m.[39m[34mmatch[39m([36m/<option/g[39m)[33m;[39m
+    [90m 60| [39m    [34mexpect[39m(optionMatches)[33m.[39m[34mtoHaveLength[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m 61| [39m  })[33m;[39m
+    [90m 62| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Dropdown Options (AC59)[2m > [22mshould render all 2 targeting mode options
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain 'value="self"'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- value="self"[39m
+[31m+ <div class="targeting-override-selector" data-current-value="">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="" selected>(Default: undefined)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m66:18[22m[39m
+    [90m 64| [39m    [35mconst[39m html [33m=[39m [34mrenderTargetingOverrideSelector[39m(undefined[33m,[39m [32m'self'[39m)[33m;[39m
+    [90m 65| [39m
+    [90m 66| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'value="self"'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m 67| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'value="nearest-enemy"'[39m)[33m;[39m
+    [90m 68| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Dropdown Options (AC59)[2m > [22mshould render human-readable labels for each targeting mode
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain '>Self<'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- >Self<[39m
+[31m+ <div class="targeting-override-selector" data-current-value="">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="" selected>(Default: undefined)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m73:18[22m[39m
+    [90m 71| [39m    [35mconst[39m html [33m=[39m [34mrenderTargetingOverrideSelector[39m(undefined[33m,[39m [32m'self'[39m)[33m;[39m
+    [90m 72| [39m
+    [90m 73| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'>Self<'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m 74| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'>Nearest Enemy<'[39m)[33m;[39m
+    [90m 75| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Default Option[2m > [22mshould include skill default mode in default option label
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain '(Default: Self)'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- (Default: Self)[39m
+[31m+ <div class="targeting-override-selector" data-current-value="">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="" selected>(Default: undefined)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m97:18[22m[39m
+    [90m 95| [39m    [35mconst[39m html [33m=[39m [34mrenderTargetingOverrideSelector[39m(undefined[33m,[39m [32m'self'[39m)[33m;[39m
+    [90m 96| [39m
+    [90m 97| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'(Default: Self)'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m 98| [39m  })[33m;[39m
+    [90m 99| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Default Option[2m > [22mshould show different default labels for different skill defaults
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain '(Default: Self)'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- (Default: Self)[39m
+[31m+ <div class="targeting-override-selector" data-current-value="">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="" selected>(Default: undefined)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m104:19[22m[39m
+    [90m102| [39m    const html2 = renderTargetingOverrideSelector(undefined, 'nearest-…
+    [90m103| [39m
+    [90m104| [39m    [34mexpect[39m(html1)[33m.[39m[34mtoContain[39m([32m'(Default: Self)'[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m105| [39m    [34mexpect[39m(html2)[33m.[39m[34mtoContain[39m([32m'(Default: Nearest Enemy)'[39m)[33m;[39m
+    [90m106| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Current Selection (AC59)[2m > [22mshould correctly select each targeting mode
+[31m[1mAssertionError[22m: expected null to be truthy[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+null
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m154:27[22m[39m
+    [90m152| [39m      [35mconst[39m html [33m=[39m [34mrenderTargetingOverrideSelector[39m(mode[33m,[39m [32m'self'[39m)[33m;[39m
+    [90m153| [39m      const optionMatch = html.match(new RegExp(`<option value="${mode…
+    [90m154| [39m      [34mexpect[39m(optionMatch)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                          [31m^[39m
+    [90m155| [39m      [34mexpect[39m(optionMatch[33m![39m[[34m0[39m])[33m.[39m[34mtoContain[39m([32m'selected'[39m)[33m;[39m
+    [90m156| [39m    }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Help Text[2m > [22mshould display default mode help text when no override set
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain 'Targets only the character itself'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Targets only the character itself[39m
+[31m+ <div class="targeting-override-selector" data-current-value="">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="" selected>(Default: undefined)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m171:18[22m[39m
+    [90m169| [39m    [35mconst[39m html [33m=[39m [34mrenderTargetingOverrideSelector[39m(undefined[33m,[39m [32m'self'[39m)[33m;[39m
+    [90m170| [39m
+    [90m171| [39m    [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'Targets only the character itself'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m172| [39m  })[33m;[39m
+    [90m173| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Help Text[2m > [22mshould show different help text for different targeting modes
+[31m[1mAssertionError[22m: expected '<div class="targeting-override-select…' to contain 'Targets only the character itself'[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Targets only the character itself[39m
+[31m+ <div class="targeting-override-selector" data-current-value="self">[39m
+[31m+   <label for="targeting-select">Targeting Override</label>[39m
+[31m+   <select id="targeting-select" data-input="targeting-override">[39m
+[31m+     <option value="">(Default: Nearest Enemy)</option>[39m
+[31m+     <option value="nearest-enemy">Nearest Enemy</option>[39m
+[31m+   </select>[39m
+[31m+   <p class="targeting-help">undefined</p>[39m
+[31m+ </div>[39m
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m178:22[22m[39m
+    [90m176| [39m    const nearestEnemyHtml = renderTargetingOverrideSelector('nearest-…
+    [90m177| [39m
+    [90m178| [39m    [34mexpect[39m(selfHtml)[33m.[39m[34mtoContain[39m([32m'Targets only the character itself'[39m)[33m;[39m
+    [90m   | [39m                     [31m^[39m
+    [90m179| [39m    expect(nearestEnemyHtml).toContain('Targets the nearest living ene…
+    [90m180| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mgetTargetingModeLabel - Utility Function[2m > [22mshould return "Self" for self mode
+[31m[1mAssertionError[22m: expected undefined to be 'Self' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"Self"
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m218:43[22m[39m
+    [90m216| [39m[34mdescribe[39m([32m'getTargetingModeLabel - Utility Function'[39m[33m,[39m () [33m=>[39m {
+    [90m217| [39m  [34mit[39m([32m'should return "Self" for self mode'[39m[33m,[39m () [33m=>[39m {
+    [90m218| [39m    [34mexpect[39m([34mgetTargetingModeLabel[39m([32m'self'[39m))[33m.[39m[34mtoBe[39m([32m'Self'[39m)[33m;[39m
+    [90m   | [39m                                          [31m^[39m
+    [90m219| [39m  })[33m;[39m
+    [90m220| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mgetTargetingModeHelp - Utility Function[2m > [22mshould return descriptive help text for self
+[31m[1mAssertionError[22m: the given combination of arguments (undefined and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string[39m
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m229:18[22m[39m
+    [90m227| [39m  [34mit[39m([32m'should return descriptive help text for self'[39m[33m,[39m () [33m=>[39m {
+    [90m228| [39m    [35mconst[39m help [33m=[39m [34mgetTargetingModeHelp[39m([32m'self'[39m)[33m;[39m
+    [90m229| [39m    [34mexpect[39m(help)[33m.[39m[34mtoContain[39m([32m'itself'[39m)[33m;[39m
+    [90m   | [39m                 [31m^[39m
+    [90m230| [39m    [34mexpect[39m([35mtypeof[39m help)[33m.[39m[34mtoBe[39m([32m'string'[39m)[33m;[39m
+    [90m231| [39m    [34mexpect[39m(help[33m.[39mlength)[33m.[39m[34mtoBeGreaterThan[39m([34m0[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/40]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m tests/ui/targeting-override-selector.test.ts[2m > [22mTargetingOverrideSelector - Edge Cases[2m > [22mshould handle override same as default
+[31m[1mAssertionError[22m: expected null to be truthy[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+null
+
+[36m [2m❯[22m tests/ui/targeting-override-selector.test.ts:[2m270:25[22m[39m
+    [90m268| [39m    [90m// Should select the override option, not the default[39m
+    [90m269| [39m    [35mconst[39m optionMatch [33m=[39m html[33m.[39m[34mmatch[39m([36m/<option value="self"[^>]*>/[39m)[33m;[39m
+    [90m270| [39m    [34mexpect[39m(optionMatch)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                        [31m^[39m
+    [90m271| [39m    [34mexpect[39m(optionMatch[33m![39m[[34m0[39m])[33m.[39m[34mtoContain[39m([32m'selected'[39m)[33m;[39m
+    [90m272| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/40]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m19 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[31m40 failed[39m[22m[2m | [22m[1m[32m579 passed[39m[22m[90m (619)[39m
+[2m   Start at [22m 19:37:21
+[2m   Duration [22m 965ms[2m (transform 1.19s, setup 0ms, import 2.10s, tests 475ms, environment 2ms)[22m
+

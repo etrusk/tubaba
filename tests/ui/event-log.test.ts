@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseHTML } from 'linkedom';
-import type { CombatEvent, StatusType } from '../../src/types/index.js';
+import type { CombatEvent } from '../../src/types/index.js';
 import { renderEventLog } from '../../src/ui/event-log.js';
 
 /**
@@ -27,7 +27,7 @@ function createEvent(
     targetId?: string;
     value?: number;
     skillName?: string;
-    statusType?: StatusType;
+    statusType?: string;
   } = {}
 ): CombatEvent {
   return {

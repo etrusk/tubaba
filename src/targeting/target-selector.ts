@@ -17,9 +17,6 @@ export function selectTargets(
   enemies: Character[]
 ): Character[] {
   switch (mode) {
-    case 'self':
-      return [caster];
-
     case 'nearest-enemy': {
       const living = enemies.filter((e) => e.currentHp > 0);
       if (living.length === 0) return [];

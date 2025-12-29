@@ -14,7 +14,7 @@ const MAX_SKILLS_PER_CHARACTER = 4;
 /**
  * Innate skills that all characters have and cannot be unequipped
  */
-const INNATE_SKILLS = ['strike', 'defend'];
+const INNATE_SKILLS = ['strike'];
 
 /**
  * Distribute a skill to any character in debug mode

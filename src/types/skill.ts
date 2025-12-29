@@ -1,24 +1,17 @@
-import type { StatusType } from './status.js';
-
 /**
  * Targeting modes for skill execution
- * - self: Targets the caster
  * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
  */
-export type TargetingMode = 'self' | 'nearest-enemy';
+export type TargetingMode = 'nearest-enemy';
 
 /**
  * Effect applied when a skill resolves
  */
 export interface SkillEffect {
   /** Type of effect */
-  type: 'damage' | 'heal' | 'status' | 'shield' | 'revive' | 'cancel';
-  /** Numeric value for damage/healing/shield amount */
+  type: 'damage';
+  /** Numeric value for damage amount */
   value?: number;
-  /** Status type to apply (for status effects) */
-  statusType?: StatusType;
-  /** Duration in ticks (for status effects) */
-  duration?: number;
 }
 
 /**
@@ -30,8 +23,17 @@ export interface Condition {
   /** Threshold value for hp-below (percentage 0-100) or ally-count */
   threshold?: number;
   /** Status type to check for status-based conditions */
-  statusType?: StatusType;
+  statusType?: string;
 }
+
+/**
+ * Group of conditions that are AND-ed together
+ */
+export interface ConditionGroup {
+  conditions: Condition[];
+}
+
+export const ConditionGroup = 'ConditionGroup';
 
 /**
  * Rule for AI decision-making

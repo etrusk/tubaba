@@ -23,7 +23,6 @@ import type { TargetingMode } from '../types/skill.js';
  */
 export function getTargetingModeLabel(mode: TargetingMode): string {
   const labels: Record<TargetingMode, string> = {
-    'self': 'Self',
     'nearest-enemy': 'Nearest Enemy',
   };
 
@@ -38,13 +37,12 @@ export function getTargetingModeLabel(mode: TargetingMode): string {
  *
  * @example
  * ```typescript
- * getTargetingModeHelp('single-enemy-highest-hp');
- * // Returns: "Targets the enemy with the highest current HP"
+ * getTargetingModeHelp('nearest-enemy');
+ * // Returns: "Targets the nearest living enemy"
  * ```
  */
 export function getTargetingModeHelp(mode: TargetingMode): string {
   const helpTexts: Record<TargetingMode, string> = {
-    'self': 'Targets only the character itself',
     'nearest-enemy': 'Targets the nearest living enemy',
   };
 
@@ -85,7 +83,6 @@ export function renderTargetingOverrideSelector(
 
   // All available targeting modes in order
   const targetingModes: TargetingMode[] = [
-    'self',
     'nearest-enemy',
   ];
 

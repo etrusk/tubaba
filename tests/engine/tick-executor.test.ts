@@ -111,29 +111,8 @@ describe('TickExecutor - AC1: 5-Phase Tick Execution', () => {
     expect(result.events.length).toBeGreaterThan(0);
   });
 
-  it('should process status effects even with empty action queue', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 2, 5), // 5 damage per tick
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1, []);
-
-    const result = executor.executeTick(state);
-
-    // Phase 4: Status effects should process
-    // Player takes 5 poison damage
-    expect(result.updatedState.players[0]!.currentHp).toBe(95);
-    
-    // Poison duration decrements
-    const poison = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'poisoned');
-    expect(poison?.duration).toBe(1);
-  });
-
   it('should generate events from all applicable phases', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 1, 5),
-    ], true);
+    const player = createTestCharacter('player-1', 100, 100, [], true);
     const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
     
     const action = createAction('strike', 'player-1', ['enemy-1'], 0);
@@ -141,10 +120,7 @@ describe('TickExecutor - AC1: 5-Phase Tick Execution', () => {
 
     const result = executor.executeTick(state);
 
-    // Should have events from:
-    // - Phase 3: Action resolution
-    // - Phase 4: Status effect damage
-    // - Phase 4: Status expiration (poison at 1 tick expires)
+    // Should have events from Phase 3: Action resolution
     expect(result.events.length).toBeGreaterThan(0);
     
     // Events should be appended to state's event log
@@ -324,93 +300,6 @@ describe('TickExecutor - AC4: Simultaneous Resolution', () => {
   });
 });
 
-describe('TickExecutor - AC5: Status Effect Processing', () => {
-  it('should apply poison damage and decrement duration', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 2, 5),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // Phase 4: Poison applies 5 damage
-    expect(result.updatedState.players[0]!.currentHp).toBe(95);
-    
-    // Poison duration decrements to 1
-    const poison = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'poisoned');
-    expect(poison?.duration).toBe(1);
-  });
-
-  it('should process multiple status effects in defined order', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 3, 5),
-      createStatus('shielded', 2, 20),
-      createStatus('defending', 2),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // All status durations should decrement
-    const poison = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'poisoned');
-    const shield = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'shielded');
-    const defending = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'defending');
-    
-    expect(poison?.duration).toBe(2);
-    expect(shield?.duration).toBe(1);
-    expect(defending?.duration).toBe(1);
-    
-    // Poison damage should be applied
-    expect(result.updatedState.players[0]!.currentHp).toBe(95);
-  });
-
-  it('should remove expired status effects', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 1, 5), // Will expire this tick
-      createStatus('stunned', 2),     // Will not expire
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // Poison should be removed
-    const poison = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'poisoned');
-    expect(poison).toBeUndefined();
-    
-    // Stunned should remain with duration 1
-    const stunned = result.updatedState.players[0]!.statusEffects.find(s => s.type === 'stunned');
-    expect(stunned?.duration).toBe(1);
-    
-    // Should have status-expired event
-    const expiredEvent = result.events.find(e => e.type === 'status-expired');
-    expect(expiredEvent).toBeDefined();
-  });
-
-  it('should apply status effects to multiple characters', () => {
-    const player1 = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 2, 5),
-    ], true);
-    const player2 = createTestCharacter('player-2', 100, 100, [
-      createStatus('poisoned', 3, 5),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player1, player2], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // Both players take poison damage
-    expect(result.updatedState.players[0]!.currentHp).toBe(95);
-    expect(result.updatedState.players[1]!.currentHp).toBe(95);
-  });
-});
-
 describe('TickExecutor - AC6: Cleanup Phase Knockout Detection', () => {
   it('should detect knockout when HP reaches 0', () => {
     const player = createTestCharacter('player-1', 100, 100, [], true);
@@ -456,23 +345,6 @@ describe('TickExecutor - AC6: Cleanup Phase Knockout Detection', () => {
     expect(result.updatedState.battleStatus).toBe('victory');
   });
 
-  it('should detect knockout from poison damage', () => {
-    const player = createTestCharacter('player-1', 5, 100, [
-      createStatus('poisoned', 2, 5),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // Player takes 5 poison damage, HP goes to 0
-    expect(result.updatedState.players[0]!.currentHp).toBe(0);
-    
-    // Should have knockout event
-    const knockoutEvent = result.events.find(e => e.type === 'knockout');
-    expect(knockoutEvent).toBeDefined();
-  });
 });
 
 describe('TickExecutor - AC7: Victory Condition', () => {
@@ -570,21 +442,6 @@ describe('TickExecutor - AC8: Defeat Condition', () => {
     expect(result.battleEnded).toBe(true);
   });
 
-  it('should trigger defeat from poison damage', () => {
-    const player = createTestCharacter('player-1', 5, 100, [
-      createStatus('poisoned', 2, 5),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
-    
-    const state = createCombatState([player], [enemy], 1);
-
-    const result = executor.executeTick(state);
-
-    // Player knocked out by poison
-    expect(result.updatedState.players[0]!.currentHp).toBe(0);
-    expect(result.updatedState.battleStatus).toBe('defeat');
-    expect(result.battleEnded).toBe(true);
-  });
 });
 
 describe('TickExecutor - Tick Counter', () => {
@@ -639,25 +496,6 @@ describe('TickExecutor - Event Log Accumulation', () => {
     expect(result.updatedState.eventLog[0]!.message).toBe('Previous event');
   });
 
-  it('should generate events from multiple phases', () => {
-    const player = createTestCharacter('player-1', 100, 100, [
-      createStatus('poisoned', 1, 5),
-    ], true);
-    const enemy = createTestCharacter('enemy-1', 15, 100, [], false);
-    
-    const action = createAction('strike', 'player-1', ['enemy-1'], 0);
-    const state = createCombatState([player], [enemy], 1, [action]);
-
-    const result = executor.executeTick(state);
-
-    // Should have events from multiple phases:
-    // - Action resolution
-    // - Poison damage
-    // - Status expiration
-    // - Knockout
-    // - Victory
-    expect(result.events.length).toBeGreaterThan(3);
-  });
 });
 
 describe('TickExecutor - Battle Status', () => {
@@ -737,62 +575,6 @@ describe('TickExecutor - Knocked Out Characters', () => {
 });
 
 describe('TickExecutor - Complex Integration Scenarios', () => {
-  it('should handle full battle tick with all phases active', () => {
-    // Setup: Player has queued action, enemy has poison and queued action
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy = createTestCharacter('enemy-1', 50, 100, [
-      createStatus('poisoned', 2, 5),
-    ], false);
-    
-    const actions = [
-      createAction('strike', 'player-1', ['enemy-1'], 0), // Resolves this tick
-      createAction('strike', 'enemy-1', ['player-1'], 1), // Decrements to 0
-    ];
-    
-    const state = createCombatState([player], [enemy], 2, actions);
-
-    const result = executor.executeTick(state);
-
-    // Phase 1: No idle units (both have actions)
-    // Phase 2: Enemy action decrements 1 → 0
-    // Phase 3: Strike resolves (enemy -15 HP)
-    expect(result.updatedState.enemies[0]!.currentHp).toBe(30); // 50 - 15 - 5 (poison)
-    
-    // Phase 4: Enemy poison damage (50 - 5 from poison = 45, but also took 15 from strike = 30)
-    // The test above already accounts for both
-    
-    // Phase 5: No knockouts, battle ongoing
-    expect(result.updatedState.battleStatus).toBe('ongoing');
-    expect(result.updatedState.tickNumber).toBe(3);
-  });
-
-  it('should handle multiple simultaneous knockouts and victory', () => {
-    const player = createTestCharacter('player-1', 100, 100, [], true);
-    const enemy1 = createTestCharacter('enemy-1', 15, 100, [], false);
-    const enemy2 = createTestCharacter('enemy-2', 10, 100, [
-      createStatus('poisoned', 2, 10),
-    ], false);
-    
-    const action = createAction('strike', 'player-1', ['enemy-1'], 0);
-    const state = createCombatState([player], [enemy1, enemy2], 1, [action]);
-
-    const result = executor.executeTick(state);
-
-    // Enemy-1 knocked out by Strike (15 damage)
-    expect(result.updatedState.enemies[0]!.currentHp).toBe(0);
-    
-    // Enemy-2 knocked out by Poison (10 damage)
-    expect(result.updatedState.enemies[1]!.currentHp).toBe(0);
-    
-    // All enemies knocked out → victory
-    expect(result.updatedState.battleStatus).toBe('victory');
-    
-    // Should have 2 knockout events + 1 victory event
-    const knockouts = result.events.filter(e => e.type === 'knockout');
-    const victory = result.events.filter(e => e.type === 'victory');
-    expect(knockouts.length).toBe(2);
-    expect(victory.length).toBe(1);
-  });
 });
 
 describe('TickExecutor - runBattle Helper', () => {

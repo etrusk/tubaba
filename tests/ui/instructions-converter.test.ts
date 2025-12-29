@@ -27,16 +27,16 @@ function createTestCharacter(): Character {
         id: 'skill2',
         name: 'Heal',
         baseDuration: 15,
-        effects: [{ type: 'heal', value: 20 }],
-        targeting: 'self',
+        effects: [{ type: 'damage', value: 20 }],
+        targeting: 'nearest-enemy',
         rules: [{ priority: 2, conditions: [{ type: 'hp-below', threshold: 50 }] }], // Existing rule
       },
       {
         id: 'skill3',
         name: 'Buff',
         baseDuration: 5,
-        effects: [{ type: 'status', statusType: 'enraged', duration: 3 }],
-        targeting: 'self',
+        effects: [{ type: 'damage', value: 15 }],
+        targeting: 'nearest-enemy',
       },
     ],
     statusEffects: [],
@@ -101,7 +101,7 @@ describe('instructions-converter', () => {
               skillId: 'skill2',
               priority: 20,
               conditions: [{ type: 'ally-count', threshold: 2 }],
-              targetingOverride: 'self',
+              targetingOverride: 'nearest-enemy',
               enabled: true,
             },
           ],
@@ -122,7 +122,7 @@ describe('instructions-converter', () => {
         expect(result.skills[1]!.rules![0]).toEqual({
           priority: 20,
           conditions: [{ type: 'ally-count', threshold: 2 }],
-          targetingOverride: 'self',
+          targetingOverride: 'nearest-enemy',
         });
 
         // skill3 has no instruction, should have empty rules

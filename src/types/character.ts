@@ -1,7 +1,19 @@
 import type { Skill } from './skill.js';
-import type { StatusEffect } from './status.js';
 import type { Action } from './combat.js';
 import type { GridPosition } from '../targeting/grid-position.js';
+
+/**
+ * Status effect applied to a character
+ * Tracks type, duration, and optional value (for shields, poison damage, etc.)
+ */
+export interface StatusEffect {
+  /** Type of status effect */
+  type: string;
+  /** Ticks remaining (-1 = permanent until removed) */
+  duration: number;
+  /** Optional numeric value (shield HP, poison damage per tick, enrage bonus, etc.) */
+  value?: number;
+}
 
 /**
  * Character representation (player or enemy)

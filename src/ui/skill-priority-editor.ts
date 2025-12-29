@@ -83,7 +83,7 @@ export function renderSkillPriorityEditor(
 
   // Check if a skill is innate (cannot be unequipped)
   const isInnateSkill = (skillId: string): boolean => {
-    return skillId === 'strike' || skillId === 'defend';
+    return skillId === 'strike';
   };
 
   // Render each skill instruction that has a corresponding skill

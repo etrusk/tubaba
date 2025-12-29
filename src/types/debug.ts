@@ -31,10 +31,9 @@ export type ConditionType =
 
 /**
  * Targeting mode type (re-exported for convenience)
- * - self: Targets the caster
  * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
  */
-export type TargetingMode = 'self' | 'nearest-enemy';
+export type TargetingMode = 'nearest-enemy';
 
 /** Debug-enhanced tick result */
 export interface TickResultWithDebug {

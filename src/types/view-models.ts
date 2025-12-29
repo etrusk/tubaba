@@ -1,11 +1,9 @@
 /**
  * View Model Types
- * 
+ *
  * Presentation-ready interfaces that transform domain objects into UI-ready data.
  * All formatting, color coding, and calculations are pre-applied.
  */
-
-import type { StatusType } from './status.js';
 
 /**
  * Presentation-ready skill data
@@ -32,7 +30,7 @@ export interface SkillViewModel {
  */
 export interface StatusEffectViewModel {
   /** Type of status effect */
-  type: StatusType;
+  type: string;
   /** Ticks remaining */
   duration: number;
   /** Formatted duration text (e.g., "3 ticks") */

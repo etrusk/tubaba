@@ -1,12 +1,11 @@
 import type { Character } from './character.js';
-import type { StatusType } from './status.js';
+import type { GridPosition } from '../targeting/grid-position.js';
 
 /**
- * Targeting modes for skill execution (re-exported from skill.ts for convenience)
- * - self: Targets the caster
+ * Targeting mode for skill execution (re-exported from skill.ts for convenience)
  * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
  */
-export type TargetingMode = 'self' | 'nearest-enemy';
+export type TargetingMode = 'nearest-enemy';
 
 /**
  * Queued action in progress
@@ -69,7 +68,8 @@ export interface CombatEvent {
     | 'knockout'
     | 'victory'
     | 'defeat'
-    | 'target-lost';
+    | 'target-lost'
+    | 'movement';
   /** Who performed the action */
   actorId?: string;
   /** Who was affected */
@@ -79,7 +79,11 @@ export interface CombatEvent {
   /** Skill used */
   skillName?: string;
   /** Status applied/expired */
-  statusType?: StatusType;
+  statusType?: string;
   /** Human-readable description */
   message: string;
+  /** Old position before movement */
+  oldPosition?: GridPosition;
+  /** New position after movement */
+  newPosition?: GridPosition;
 }

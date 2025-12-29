@@ -19,7 +19,7 @@ const RADIUS = CELL_SIZE * 0.4; // 20px for 50px cells
 export function calculateCharacterPositions(
   players: Character[],
   enemies: Character[],
-  arenaDimensions: { width: number; height: number }
+  _arenaDimensions: { width: number; height: number }
 ): CharacterPosition[] {
   const positions: CharacterPosition[] = [];
   
