@@ -19,8 +19,8 @@ function createCharacter(id: string, name: string, isPlayer: boolean): Character
 describe('BattleArenaLayout', () => {
   const DEFAULT_ARENA = { width: 800, height: 500 };
 
-  describe('Character Positioning', () => {
-    it('should position both characters centered horizontally in 1v1 battle', () => {
+  describe('Grid-Based Character Positioning', () => {
+    it('should position 1 player at default grid position (3,4) = pixel (200, 250)', () => {
       const players = [createCharacter('p1', 'Player 1', true)];
       const enemies = [createCharacter('e1', 'Enemy 1', false)];
 
@@ -28,122 +28,60 @@ describe('BattleArenaLayout', () => {
 
       expect(positions).toHaveLength(2);
       
-      // Both should be centered at x = 400 (half of 800)
       const playerPos = positions.find(p => p.characterId === 'p1');
-      const enemyPos = positions.find(p => p.characterId === 'e1');
       
-      expect(playerPos?.x).toBe(400);
-      expect(enemyPos?.x).toBe(400);
-      
-      // Player at bottom, enemy at top
-      expect(playerPos?.y).toBe(400); // height - padding - radius
-      expect(enemyPos?.y).toBe(100); // padding + radius
+      // Grid position (3,4) converts to pixel (200, 250)
+      // x = 25 + 3 * 50 + 25 = 200
+      // y = 25 + 4 * 50 + 25 = 250
+      expect(playerPos?.x).toBe(200);
+      expect(playerPos?.y).toBe(250);
     });
 
-    it('should evenly space characters in 2v2 battle', () => {
-      const players = [
-        createCharacter('p1', 'Player 1', true),
-        createCharacter('p2', 'Player 2', true),
-      ];
-      const enemies = [
-        createCharacter('e1', 'Enemy 1', false),
-        createCharacter('e2', 'Enemy 2', false),
-      ];
-
-      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
-
-      expect(positions).toHaveLength(4);
-      
-      // Players should be evenly spaced
-      const playerPositions = positions.filter(p => p.characterId.startsWith('p'));
-      expect(playerPositions[0]!.x).toBe(140); // padding + 0 * spacing
-      expect(playerPositions[1]!.x).toBe(660); // padding + 1 * spacing
-      
-      // Enemies should be evenly spaced
-      const enemyPositions = positions.filter(p => p.characterId.startsWith('e'));
-      expect(enemyPositions[0]!.x).toBe(140);
-      expect(enemyPositions[1]!.x).toBe(660);
-    });
-
-    it('should utilize full width in 3v3 battle', () => {
-      const players = [
-        createCharacter('p1', 'Player 1', true),
-        createCharacter('p2', 'Player 2', true),
-        createCharacter('p3', 'Player 3', true),
-      ];
-      const enemies = [
-        createCharacter('e1', 'Enemy 1', false),
-        createCharacter('e2', 'Enemy 2', false),
-        createCharacter('e3', 'Enemy 3', false),
-      ];
-
-      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
-
-      expect(positions).toHaveLength(6);
-      
-      // Players should span from padding to width-padding
-      const playerPositions = positions.filter(p => p.characterId.startsWith('p')).sort((a, b) => a.x - b.x);
-      expect(playerPositions[0]!.x).toBe(100); // padding
-      expect(playerPositions[1]!.x).toBe(400); // center
-      expect(playerPositions[2]!.x).toBe(700); // width - padding
-      
-      // Enemies should have same spacing
-      const enemyPositions = positions.filter(p => p.characterId.startsWith('e')).sort((a, b) => a.x - b.x);
-      expect(enemyPositions[0]!.x).toBe(100);
-      expect(enemyPositions[1]!.x).toBe(400);
-      expect(enemyPositions[2]!.x).toBe(700);
-    });
-
-    it('should center player with enemies spread in 1v3 battle', () => {
+    it('should position 1 enemy at default grid position (5,4) = pixel (300, 250)', () => {
       const players = [createCharacter('p1', 'Player 1', true)];
-      const enemies = [
-        createCharacter('e1', 'Enemy 1', false),
-        createCharacter('e2', 'Enemy 2', false),
-        createCharacter('e3', 'Enemy 3', false),
-      ];
-
-      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
-
-      expect(positions).toHaveLength(4);
-      
-      // Single player centered
-      const playerPos = positions.find(p => p.characterId === 'p1');
-      expect(playerPos?.x).toBe(400);
-      
-      // Enemies spread across width
-      const enemyPositions = positions.filter(p => p.characterId.startsWith('e')).sort((a, b) => a.x - b.x);
-      expect(enemyPositions[0]!.x).toBe(100);
-      expect(enemyPositions[1]!.x).toBe(400);
-      expect(enemyPositions[2]!.x).toBe(700);
-    });
-
-    it('should center enemy with players spread in 3v1 battle', () => {
-      const players = [
-        createCharacter('p1', 'Player 1', true),
-        createCharacter('p2', 'Player 2', true),
-        createCharacter('p3', 'Player 3', true),
-      ];
       const enemies = [createCharacter('e1', 'Enemy 1', false)];
 
       const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
 
+      const enemyPos = positions.find(p => p.characterId === 'e1');
+      
+      // Grid position (5,4) converts to pixel (300, 250)
+      // x = 25 + 5 * 50 + 25 = 300
+      // y = 25 + 4 * 50 + 25 = 250
+      expect(enemyPos?.x).toBe(300);
+      expect(enemyPos?.y).toBe(250);
+    });
+
+    it('should position 2 players at default diagonal positions', () => {
+      const players = [
+        createCharacter('p1', 'Player 1', true),
+        createCharacter('p2', 'Player 2', true),
+      ];
+      const enemies = [
+        createCharacter('e1', 'Enemy 1', false),
+        createCharacter('e2', 'Enemy 2', false),
+      ];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
       expect(positions).toHaveLength(4);
       
-      // Players spread across width
-      const playerPositions = positions.filter(p => p.characterId.startsWith('p')).sort((a, b) => a.x - b.x);
-      expect(playerPositions[0]!.x).toBe(100);
-      expect(playerPositions[1]!.x).toBe(400);
-      expect(playerPositions[2]!.x).toBe(700);
+      const playerPositions = positions.filter(p => p.characterId.startsWith('p'));
       
-      // Single enemy centered
-      const enemyPos = positions.find(p => p.characterId === 'e1');
-      expect(enemyPos?.x).toBe(400);
+      // Player 1 at grid (3,4) = pixel (200, 250)
+      expect(playerPositions[0]!.x).toBe(200);
+      expect(playerPositions[0]!.y).toBe(250);
+      
+      // Player 2 at grid (4,5) = pixel (250, 300)
+      expect(playerPositions[1]!.x).toBe(250);
+      expect(playerPositions[1]!.y).toBe(300);
     });
-  });
 
-  describe('Row Positioning', () => {
-    it('should position enemies in top row (y = padding + radius)', () => {
-      const players = [createCharacter('p1', 'Player 1', true)];
+    it('should position 2 enemies at default diagonal positions', () => {
+      const players = [
+        createCharacter('p1', 'Player 1', true),
+        createCharacter('p2', 'Player 2', true),
+      ];
       const enemies = [
         createCharacter('e1', 'Enemy 1', false),
         createCharacter('e2', 'Enemy 2', false),
@@ -153,15 +91,20 @@ describe('BattleArenaLayout', () => {
 
       const enemyPositions = positions.filter(p => p.characterId.startsWith('e'));
       
-      // All enemies should have same Y position at top
-      expect(enemyPositions[0]!.y).toBe(100); // padding + radius = 60 + 40
-      expect(enemyPositions[1]!.y).toBe(100);
+      // Enemy 1 at grid (5,4) = pixel (300, 250)
+      expect(enemyPositions[0]!.x).toBe(300);
+      expect(enemyPositions[0]!.y).toBe(250);
+      
+      // Enemy 2 at grid (6,5) = pixel (350, 300)
+      expect(enemyPositions[1]!.x).toBe(350);
+      expect(enemyPositions[1]!.y).toBe(300);
     });
 
-    it('should position players in bottom row (y = height - padding - radius)', () => {
+    it('should position 3 players at default grid positions', () => {
       const players = [
         createCharacter('p1', 'Player 1', true),
         createCharacter('p2', 'Player 2', true),
+        createCharacter('p3', 'Player 3', true),
       ];
       const enemies = [createCharacter('e1', 'Enemy 1', false)];
 
@@ -169,35 +112,100 @@ describe('BattleArenaLayout', () => {
 
       const playerPositions = positions.filter(p => p.characterId.startsWith('p'));
       
-      // All players should have same Y position at bottom
-      expect(playerPositions[0]!.y).toBe(400); // 500 - 60 - 40
-      expect(playerPositions[1]!.y).toBe(400);
+      // Player 1 at grid (3,4) = pixel (200, 250)
+      expect(playerPositions[0]!.x).toBe(200);
+      expect(playerPositions[0]!.y).toBe(250);
+      
+      // Player 2 at grid (4,5) = pixel (250, 300)
+      expect(playerPositions[1]!.x).toBe(250);
+      expect(playerPositions[1]!.y).toBe(300);
+      
+      // Player 3 at grid (2,4) = pixel (150, 250)
+      expect(playerPositions[2]!.x).toBe(150);
+      expect(playerPositions[2]!.y).toBe(250);
     });
-  });
 
-  describe('Spacing and Overlap Prevention', () => {
-    it('should ensure no circle overlap (min 80px apart center-to-center)', () => {
+    it('should position 4 players at default grid positions', () => {
       const players = [
         createCharacter('p1', 'Player 1', true),
         createCharacter('p2', 'Player 2', true),
         createCharacter('p3', 'Player 3', true),
+        createCharacter('p4', 'Player 4', true),
       ];
-      const enemies = [
-        createCharacter('e1', 'Enemy 1', false),
-        createCharacter('e2', 'Enemy 2', false),
-        createCharacter('e3', 'Enemy 3', false),
-      ];
+      const enemies = [createCharacter('e1', 'Enemy 1', false)];
 
       const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
 
-      const playerPositions = positions.filter(p => p.characterId.startsWith('p')).sort((a, b) => a.x - b.x);
+      const playerPositions = positions.filter(p => p.characterId.startsWith('p'));
       
-      // Check spacing between adjacent characters (radius=40, so min distance = 80)
-      const spacing1 = playerPositions[1]!.x - playerPositions[0]!.x;
-      const spacing2 = playerPositions[2]!.x - playerPositions[1]!.x;
+      expect(playerPositions).toHaveLength(4);
       
-      expect(spacing1).toBeGreaterThanOrEqual(80);
-      expect(spacing2).toBeGreaterThanOrEqual(80);
+      // Player 1 at grid (3,4) = pixel (200, 250)
+      expect(playerPositions[0]!.x).toBe(200);
+      expect(playerPositions[0]!.y).toBe(250);
+      
+      // Player 2 at grid (4,5) = pixel (250, 300)
+      expect(playerPositions[1]!.x).toBe(250);
+      expect(playerPositions[1]!.y).toBe(300);
+      
+      // Player 3 at grid (2,4) = pixel (150, 250)
+      expect(playerPositions[2]!.x).toBe(150);
+      expect(playerPositions[2]!.y).toBe(250);
+      
+      // Player 4 at grid (3,5) = pixel (200, 300)
+      expect(playerPositions[3]!.x).toBe(200);
+      expect(playerPositions[3]!.y).toBe(300);
+    });
+  });
+
+  describe('Custom Grid Positions', () => {
+    it('should use character position property if available', () => {
+      const players = [
+        {
+          ...createCharacter('p1', 'Player 1', true),
+          position: { x: 1, y: 1 },
+        },
+      ];
+      const enemies = [createCharacter('e1', 'Enemy 1', false)];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
+      const playerPos = positions.find(p => p.characterId === 'p1');
+      
+      // Custom grid position (1,1) converts to pixel (100, 100)
+      // x = 25 + 1 * 50 + 25 = 100 (padding + grid_x * cell_size + half_cell)
+      // y = 25 + 1 * 50 + 25 = 100
+      expect(playerPos?.x).toBe(100);
+      expect(playerPos?.y).toBe(100);
+    });
+
+    it('should use default positions when no custom position provided', () => {
+      const players = [createCharacter('p1', 'Player 1', true)];
+      const enemies = [createCharacter('e1', 'Enemy 1', false)];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
+      const playerPos = positions.find(p => p.characterId === 'p1');
+      const enemyPos = positions.find(p => p.characterId === 'e1');
+      
+      // Should use default grid positions
+      expect(playerPos?.x).toBe(200); // grid (3,4)
+      expect(playerPos?.y).toBe(250);
+      expect(enemyPos?.x).toBe(300); // grid (5,4)
+      expect(enemyPos?.y).toBe(250);
+    });
+  });
+
+  describe('Radius and Circle Properties', () => {
+    it('should set radius to 20px (CELL_SIZE * 0.4)', () => {
+      const players = [createCharacter('p1', 'Player 1', true)];
+      const enemies = [createCharacter('e1', 'Enemy 1', false)];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
+      positions.forEach(pos => {
+        expect(pos.radius).toBe(20); // 50 * 0.4
+      });
     });
 
     it('should include radius in position data', () => {
@@ -207,7 +215,8 @@ describe('BattleArenaLayout', () => {
       const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
 
       positions.forEach(pos => {
-        expect(pos.radius).toBe(40);
+        expect(pos).toHaveProperty('radius');
+        expect(typeof pos.radius).toBe('number');
       });
     });
   });
@@ -221,8 +230,8 @@ describe('BattleArenaLayout', () => {
 
       expect(positions).toHaveLength(1);
       expect(positions[0]!.characterId).toBe('p1');
-      expect(positions[0]!.x).toBe(400); // Centered
-      expect(positions[0]!.y).toBe(400); // Bottom row
+      expect(positions[0]!.x).toBe(200); // Default grid position
+      expect(positions[0]!.y).toBe(250);
     });
 
     it('should handle zero players without crashing', () => {
@@ -233,8 +242,8 @@ describe('BattleArenaLayout', () => {
 
       expect(positions).toHaveLength(1);
       expect(positions[0]!.characterId).toBe('e1');
-      expect(positions[0]!.x).toBe(400); // Centered
-      expect(positions[0]!.y).toBe(100); // Top row
+      expect(positions[0]!.x).toBe(300); // Default grid position
+      expect(positions[0]!.y).toBe(250);
     });
 
     it('should handle both empty arrays without crashing', () => {
@@ -266,6 +275,48 @@ describe('BattleArenaLayout', () => {
         expect(typeof pos.y).toBe('number');
         expect(typeof pos.radius).toBe('number');
       });
+    });
+  });
+
+  describe('Diagonal Formation', () => {
+    it('should place players in diagonal formation', () => {
+      const players = [
+        createCharacter('p1', 'Player 1', true),
+        createCharacter('p2', 'Player 2', true),
+      ];
+      const enemies = [createCharacter('e1', 'Enemy 1', false)];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
+      const playerPositions = positions.filter(p => p.characterId.startsWith('p'));
+      
+      // Check diagonal formation: p1(3,4) and p2(4,5)
+      // They should differ in both x and y
+      const xDiff = Math.abs(playerPositions[1]!.x - playerPositions[0]!.x);
+      const yDiff = Math.abs(playerPositions[1]!.y - playerPositions[0]!.y);
+      
+      expect(xDiff).toBeGreaterThan(0);
+      expect(yDiff).toBeGreaterThan(0);
+    });
+
+    it('should place enemies in diagonal formation', () => {
+      const players = [createCharacter('p1', 'Player 1', true)];
+      const enemies = [
+        createCharacter('e1', 'Enemy 1', false),
+        createCharacter('e2', 'Enemy 2', false),
+      ];
+
+      const positions = calculateCharacterPositions(players, enemies, DEFAULT_ARENA);
+
+      const enemyPositions = positions.filter(p => p.characterId.startsWith('e'));
+      
+      // Check diagonal formation: e1(5,4) and e2(6,5)
+      // They should differ in both x and y
+      const xDiff = Math.abs(enemyPositions[1]!.x - enemyPositions[0]!.x);
+      const yDiff = Math.abs(enemyPositions[1]!.y - enemyPositions[0]!.y);
+      
+      expect(xDiff).toBeGreaterThan(0);
+      expect(yDiff).toBeGreaterThan(0);
     });
   });
 });

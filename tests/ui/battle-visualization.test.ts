@@ -149,7 +149,7 @@ describe('BattleVisualization Renderer', () => {
       expect(linesLayerIndex).toBeLessThan(charactersLayerIndex);
     });
 
-    it('should include viewBox attribute with correct dimensions', () => {
+    it('should include viewBox attribute with grid-based dimensions (550x550)', () => {
       const visualization: BattleVisualization = {
         characters: [],
         intentLines: [],
@@ -158,10 +158,11 @@ describe('BattleVisualization Renderer', () => {
 
       const svg = renderBattleVisualization(visualization);
 
-      expect(svg).toContain('viewBox="0 0 800 500"');
+      // Grid dimensions: 10 * 50 + 2 * 25 = 550
+      expect(svg).toContain('viewBox="0 0 550 550"');
     });
 
-    it('should include width and height attributes', () => {
+    it('should include width and height attributes from grid configuration', () => {
       const visualization: BattleVisualization = {
         characters: [],
         intentLines: [],
@@ -170,8 +171,9 @@ describe('BattleVisualization Renderer', () => {
 
       const svg = renderBattleVisualization(visualization);
 
-      expect(svg).toContain('width="800"');
-      expect(svg).toContain('height="500"');
+      // Grid dimensions: 10 * 50 + 2 * 25 = 550
+      expect(svg).toContain('width="550"');
+      expect(svg).toContain('height="550"');
     });
 
     it('should have class "battle-arena-svg" on root SVG element', () => {
@@ -212,7 +214,7 @@ describe('BattleVisualization Renderer', () => {
       expect(svg).toContain('</g>');
     });
 
-    it('should use arena dimensions from visualization data', () => {
+    it('should use fixed grid dimensions regardless of visualization data', () => {
       const customDimensions = { width: 1000, height: 600 };
       
       const visualization: BattleVisualization = {
@@ -223,9 +225,10 @@ describe('BattleVisualization Renderer', () => {
 
       const svg = renderBattleVisualization(visualization);
 
-      expect(svg).toContain('width="1000"');
-      expect(svg).toContain('height="600"');
-      expect(svg).toContain('viewBox="0 0 1000 600"');
+      // Should use grid dimensions (550x550), not custom dimensions
+      expect(svg).toContain('width="550"');
+      expect(svg).toContain('height="550"');
+      expect(svg).toContain('viewBox="0 0 550 550"');
     });
   });
 

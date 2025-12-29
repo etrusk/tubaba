@@ -1,26 +1,40 @@
 import type { BattleVisualization } from '../types/visualization.js';
 import { renderCharacterCircle } from './character-circle.js';
 import { renderIntentLine } from './intent-line.js';
+import { renderGridLines, GRID_SIZE, CELL_SIZE, GRID_PADDING } from './grid-layout.js';
+
+/**
+ * Get arena dimensions based on grid configuration
+ */
+export function getArenaDimensions(): { width: number; height: number } {
+  return {
+    width: GRID_SIZE * CELL_SIZE + 2 * GRID_PADDING,
+    height: GRID_SIZE * CELL_SIZE + 2 * GRID_PADDING,
+  };
+}
 
 /**
  * Render complete SVG battle arena from visualization data
- * Based on spec lines 362-390
- * 
+ *
  * SVG Structure:
  * - Root SVG element with dimensions and viewBox
- * - Intent lines layer (background)
+ * - Grid lines layer (base)
+ * - Intent lines layer (middle)
  * - Characters layer (foreground)
- * 
- * This ensures lines don't obscure character details
- * 
+ *
+ * This ensures proper layering with grid in background
+ *
  * @param visualization - Complete battle visualization data
  * @returns SVG string representing the full battle arena
  */
 export function renderBattleVisualization(visualization: BattleVisualization): string {
-  const { characters, intentLines, arenaDimensions } = visualization;
-  const { width, height } = arenaDimensions;
+  const { characters, intentLines } = visualization;
+  const { width, height } = getArenaDimensions();
 
-  // Render intent lines (background layer)
+  // Render grid lines (base layer)
+  const gridLinesHtml = renderGridLines();
+
+  // Render intent lines (middle layer)
   const intentLinesHtml = intentLines
     .map((line) => renderIntentLine(line))
     .join('\n');
@@ -42,6 +56,7 @@ export function renderBattleVisualization(visualization: BattleVisualization): s
       <stop offset="100%" style="stop-color:#f44336"/>
     </linearGradient>
   </defs>
+  ${gridLinesHtml}
   <g class="intent-lines-layer">
     ${intentLinesHtml}
   </g>
