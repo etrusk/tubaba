@@ -587,42 +587,11 @@ function executeTickWithDebug(
         let targetReason: string;
         if (targetingMode === 'self') {
           targetReason = 'self';
-        } else if (targetingMode === 'all-enemies') {
-          targetReason = `All ${finalTargets.length} enemies`;
-        } else if (targetingMode === 'all-allies') {
-          targetReason = `All ${finalTargets.length} allies`;
-        } else if (chosen) {
-          // Single target modes (chosen is guaranteed to exist here)
-          if (targetingMode === 'ally-dead') {
-            targetReason = `${chosen.name} - dead ally`;
-          } else {
-            targetReason = `${chosen.name}`;
-            if (targetingMode === 'single-enemy-lowest-hp') {
-              targetReason += ` - lowest HP (${chosen.currentHp}/${chosen.maxHp})`;
-              // Check for tie-breaker
-              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
-              if (tieCandidates.length > 1) {
-                targetReason += ` (${tieCandidates.length} tied, chose first)`;
-              }
-            } else if (targetingMode === 'single-enemy-highest-hp') {
-              targetReason += ` - highest HP (${chosen.currentHp}/${chosen.maxHp})`;
-              // Check for tie-breaker
-              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
-              if (tieCandidates.length > 1) {
-                targetReason += ` (${tieCandidates.length} tied, chose first)`;
-              }
-            } else if (targetingMode === 'ally-lowest-hp') {
-              targetReason += ` - ally lowest HP (${chosen.currentHp}/${chosen.maxHp})`;
-              // Check for tie-breaker
-              const tieCandidates = aliveCandidates.filter(c => c.currentHp === chosen.currentHp);
-              if (tieCandidates.length > 1) {
-                targetReason += ` (${tieCandidates.length} tied, chose first)`;
-              }
-            }
-          }
+        } else if (targetingMode === 'nearest-enemy') {
+          targetReason = `${chosen?.name ?? 'Unknown'} - nearest enemy`;
         } else {
-          // Fallback if chosen is undefined (shouldn't happen)
-          targetReason = 'Unknown target';
+          // Fallback for unknown targeting modes
+          targetReason = chosen?.name ?? 'Unknown target';
         }
         
         const finalTargetIds = finalTargets.map(t => t.id);
@@ -775,21 +744,8 @@ function executeTickWithDebug(
           }
         }
         
-        // Check for tie-breaker
-        let tieBreaker: string | undefined = undefined;
-        if (skill.targeting === 'single-enemy-lowest-hp' || skill.targeting === 'ally-lowest-hp' ||
-            skill.targeting === 'single-enemy-highest-hp') {
-          const aliveCandidates = allCandidates.filter(c => c.currentHp > 0);
-          if (aliveCandidates.length > 1 && action.targets.length > 0) {
-            const selectedTarget = aliveCandidates.find(c => c.id === action.targets[0]);
-            if (selectedTarget) {
-              const tieCandidates = aliveCandidates.filter(c => c.currentHp === selectedTarget.currentHp);
-              if (tieCandidates.length > 1) {
-                tieBreaker = 'leftmost (first in array order)';
-              }
-            }
-          }
-        }
+        // Tie-breaker tracking (not applicable for simplified targeting modes)
+        const tieBreaker: string | undefined = undefined;
         
         targetingDecisions.push({
           casterId: action.casterId,

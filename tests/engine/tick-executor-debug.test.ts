@@ -116,7 +116,7 @@ function createCondition(
 
 describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () => {
   it('should capture all rules checked for an idle character', () => {
-    const skill1 = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill1 = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       {
         priority: 10,
         conditions: [createCondition('hp-below', 50)],
@@ -147,7 +147,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should capture rule check with pass/fail status for each condition', () => {
-    const skill = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       {
         priority: 10,
         conditions: [
@@ -184,7 +184,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should capture matched rule and selected skill/targets', () => {
-    const skill = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       {
         priority: 10,
         conditions: [], // No conditions - always matches
@@ -212,7 +212,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should show no rules checked for stunned character', () => {
-    const skill = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       { priority: 10, conditions: [] },
     ]);
     
@@ -236,7 +236,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should capture rule check reason for non-matching rules', () => {
-    const skill = createSkill('heal', 'Heal', 'ally-lowest-hp', 3, [
+    const skill = createSkill('heal', 'Heal', 'self', 3, [
       {
         priority: 10,
         conditions: [createCondition('hp-below', 50)], // Won't match at 100% HP
@@ -260,10 +260,10 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should capture multiple rule evaluations for multiple idle characters', () => {
-    const skill1 = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill1 = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       { priority: 10, conditions: [] },
     ]);
-    const skill2 = createSkill('heal', 'Heal', 'ally-lowest-hp', 3, [
+    const skill2 = createSkill('heal', 'Heal', 'self', 3, [
       { priority: 5, conditions: [] },
     ]);
     
@@ -288,7 +288,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
   });
 
   it('should include synthetic rule for character with skill that has no rules', () => {
-    const skillNoRules = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3); // No rules
+    const skillNoRules = createSkill('strike', 'Strike', 'nearest-enemy', 3); // No rules
     
     const player = createTestCharacter('player-1', 100, 100, [], true, null, [skillNoRules]);
     const enemy = createTestCharacter('enemy-1', 100, 100, [], false);
@@ -310,7 +310,7 @@ describe('TickExecutor Debug Enhancement - AC45: Rule Evaluation Capture', () =>
 
 describe('TickExecutor Debug Enhancement - Integration', () => {
   it('should provide complete debug info', () => {
-    const skill = createSkill('strike', 'Strike', 'single-enemy-lowest-hp', 3, [
+    const skill = createSkill('strike', 'Strike', 'nearest-enemy', 3, [
       { priority: 10, conditions: [] },
     ]);
     
@@ -349,18 +349,18 @@ describe('TickExecutor Debug Enhancement - Integration', () => {
       id: 'strike',
       name: 'Strike',
       baseDuration: 3,
-      targeting: 'single-enemy-lowest-hp', // Default targeting
+      targeting: 'nearest-enemy', // Default targeting
       effects: [{ type: 'damage', value: 30 }],
       rules: [], // No rules - instructions will provide them
     };
     
     const player = createTestCharacter('player-1', 100, 100, [], true, null, [strikeSkill]);
     const enemy1 = createTestCharacter('enemy-1', 50, 100, [], false);
-    const enemy2 = createTestCharacter('enemy-2', 100, 100, [], false); // Highest HP
+    const enemy2 = createTestCharacter('enemy-2', 100, 100, [], false);
     
     const state = createCombatState([player], [enemy1, enemy2], 1);
 
-    // Create instructions with targetingOverride to highest HP
+    // Create instructions with targetingOverride
     const instructions = new Map();
     instructions.set('player-1', {
       characterId: 'player-1',
@@ -369,7 +369,7 @@ describe('TickExecutor Debug Enhancement - Integration', () => {
         skillId: 'strike',
         priority: 10,
         conditions: [],
-        targetingOverride: 'single-enemy-highest-hp', // Override to highest HP
+        targetingOverride: 'nearest-enemy',
         enabled: true,
       }],
     });
@@ -379,7 +379,7 @@ describe('TickExecutor Debug Enhancement - Integration', () => {
     // Verify rule evaluation shows the override was used
     const playerEval = result.debugInfo.ruleEvaluations.find(e => e.characterId === 'player-1');
     expect(playerEval).toBeDefined();
-    expect(playerEval?.selectedTargets).toContain('enemy-2');
+    expect(playerEval?.selectedTargets).toContain('enemy-1'); // Nearest (first) enemy
   });
 });
 
@@ -400,7 +400,7 @@ describe('TickExecutor Debug - Skills Without Rules (Legacy Fallback Path)', () 
       id: 'basic-attack',
       name: 'Basic Attack',
       baseDuration: 3,
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       effects: [{ type: 'damage', value: 30 }],
       // rules is undefined - NOT explicitly set
     };
@@ -432,7 +432,7 @@ describe('TickExecutor Debug - Skills Without Rules (Legacy Fallback Path)', () 
       id: 'slash',
       name: 'Slash',
       baseDuration: 2,
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       effects: [{ type: 'damage', value: 25 }],
       rules: [], // Explicitly empty array
     };
@@ -467,7 +467,7 @@ describe('TickExecutor Debug - Skills Without Rules (Legacy Fallback Path)', () 
       id: 'strike',
       name: 'Strike',
       baseDuration: 3,
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       effects: [{ type: 'damage', value: 20 }],
       // rules undefined - should work via legacy path
     };
@@ -508,7 +508,7 @@ describe('TickExecutor Debug - Skills Without Rules (Legacy Fallback Path)', () 
       id: 'basic-attack',
       name: 'Basic Attack',
       baseDuration: 3,
-      targeting: 'single-enemy-lowest-hp',
+      targeting: 'nearest-enemy',
       effects: [{ type: 'damage', value: 30 }],
       // rules undefined
     };

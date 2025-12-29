@@ -24,9 +24,9 @@ describe('SkillLibrary', () => {
       expect(strike.baseDuration).toBe(2);
     });
 
-    it('should target single enemy with lowest HP', () => {
+    it('should target nearest enemy', () => {
       strike = SkillLibrary.getSkill('strike');
-      expect(strike.targeting).toBe('single-enemy-lowest-hp');
+      expect(strike.targeting).toBe('nearest-enemy');
     });
   });
 

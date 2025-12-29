@@ -8,7 +8,7 @@ const skills: Skill[] = [
     id: 'strike',
     name: 'Strike',
     baseDuration: 2,
-    targeting: 'single-enemy-lowest-hp',
+    targeting: 'nearest-enemy',
     effects: [
       {
         type: 'damage',
