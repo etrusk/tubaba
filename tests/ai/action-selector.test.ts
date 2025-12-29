@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Character } from '../../src/types/character.js';
 import type { CombatState } from '../../src/types/combat.js';
-import type { Skill, Rule, Condition } from '../../src/types/skill.js';
+import type { Skill, Rule } from '../../src/types/skill.js';
 import type { StatusEffect } from '../../src/types/status.js';
 
 /**
@@ -195,7 +195,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('p1'); // Lowest HP player
+      expect(result!.targets[0]!.id).toBe('p1'); // Lowest HP player
     });
 
     it('should use rule targetingOverride when specified', () => {
@@ -216,7 +216,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1); // Self targeted
-      expect(result?.targets[0].id).toBe('e1');
+      expect(result!.targets[0]!.id).toBe('e1');
     });
 
     it('should apply taunt forcing through TargetFilter', () => {
@@ -235,7 +235,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('p2'); // Forced to target taunting player
+      expect(result!.targets[0]!.id).toBe('p2'); // Forced to target taunting player
     });
 
     it('should handle self-targeting', () => {
@@ -251,7 +251,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('e1'); // Targets self
+      expect(result!.targets[0]!.id).toBe('e1'); // Targets self
     });
 
     it('should handle ally targeting for enemies', () => {
@@ -269,7 +269,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('e1'); // Self targeting
+      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting
     });
   });
 
@@ -490,7 +490,7 @@ describe('EnemyBrain', () => {
       const result = selectAction(enemy1, combatState);
 
       expect(result).not.toBeNull();
-      expect(result?.targets[0].id).toBe('e1'); // Self targeting
+      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting
     });
 
     it('should handle multiple knocked-out players when targeting', () => {
@@ -508,7 +508,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       expect(result?.targets).toHaveLength(1);
-      expect(result?.targets[0].id).toBe('p3'); // Only alive player targeted
+      expect(result!.targets[0]!.id).toBe('p3'); // Only alive player targeted
     });
   });
 
@@ -527,7 +527,7 @@ describe('EnemyBrain', () => {
 
       expect(result).not.toBeNull();
       // First matching rule at priority 5 should be selected
-      expect(result?.targets[0].id).toBe('e1'); // Self targeting from first rule
+      expect(result!.targets[0]!.id).toBe('e1'); // Self targeting from first rule
     });
 
     it('should handle skill with mixed rule priorities and conditions', () => {

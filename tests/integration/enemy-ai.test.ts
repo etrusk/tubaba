@@ -98,7 +98,7 @@ describe('Enemy AI Integration', () => {
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('aggressive-strike');
       expect(selection?.targets).toHaveLength(1);
-      expect(selection!.targets[0].id).toBe('player-1');
+      expect(selection!.targets[0]!.id).toBe('player-1');
     });
 
     it('should target correctly based on skill targeting mode', () => {
@@ -144,7 +144,7 @@ describe('Enemy AI Integration', () => {
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('enemy-heal');
       expect(selection?.targets).toHaveLength(1);
-      expect(selection!.targets[0].id).toBe('enemy-1'); // Self targeting
+      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Self targeting
     });
   });
 
@@ -324,7 +324,7 @@ describe('Enemy AI Integration', () => {
 
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('self-heal');
-      expect(selection!.targets[0].id).toBe('enemy-1'); // Self-targeting
+      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Self-targeting
     });
 
     it('should react to enemy-has-status condition', () => {
@@ -553,7 +553,7 @@ describe('Enemy AI Integration', () => {
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('strike');
       expect(selection?.targets).toHaveLength(1);
-      expect(selection!.targets[0].id).toBe('player-1'); // Forced to tank, not DPS
+      expect(selection!.targets[0]!.id).toBe('player-1'); // Forced to tank, not DPS
     });
   });
 
@@ -738,7 +738,7 @@ describe('Enemy AI Integration', () => {
       state = createCombatState([player], [lowHpEnemy]);
       selection = selectAction(lowHpEnemy, state);
       expect(selection?.skill.id).toBe('emergency-heal');
-      expect(selection!.targets[0].id).toBe('enemy-1'); // Targets self
+      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Targets self
 
       // Scenario 3: After healing back up - returns to power strike
       const recoveredEnemy = { ...enemy, currentHp: 50 };
@@ -792,7 +792,7 @@ describe('Enemy AI Integration', () => {
       expect(selection).not.toBeNull();
       expect(selection?.skill.id).toBe('aoe-blast');
       expect(selection?.targets).toHaveLength(1); // Single nearest enemy
-      expect(['player-1', 'player-2']).toContain(selection?.targets[0].id);
+      expect(['player-1', 'player-2']).toContain(selection!.targets[0]!.id);
     });
 
     it('should apply targetingOverride from rules', () => {
@@ -855,7 +855,7 @@ describe('Enemy AI Integration', () => {
       expect(selection).not.toBeNull();
       expect(selection?.targets).toHaveLength(1);
       // Override changes targeting to self when condition is met
-      expect(selection!.targets[0].id).toBe('enemy-1'); // Self-targeting due to override
+      expect(selection!.targets[0]!.id).toBe('enemy-1'); // Self-targeting due to override
     });
 
     it('should exclude dead targets from selection', () => {
@@ -893,8 +893,8 @@ describe('Enemy AI Integration', () => {
 
       expect(selection).not.toBeNull();
       expect(selection?.targets).toHaveLength(1);
-      expect(selection!.targets[0].id).toBe('player-1');
-      expect(selection!.targets[0].currentHp).toBeGreaterThan(0);
+      expect(selection!.targets[0]!.id).toBe('player-1');
+      expect(selection!.targets[0]!.currentHp).toBeGreaterThan(0);
     });
   });
 });

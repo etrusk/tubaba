@@ -759,7 +759,7 @@ describe('SkillPriorityEditor - Pool Skills for Equip (Merge Panels)', () => {
 
   describe('Rendering Pool Skills Section', () => {
     it('should render pool skills section when poolSkills are provided', () => {
-      const equippedSkills = [...createInnateSkills(), createNonInnateSkills()[0]];
+      const equippedSkills = [...createInnateSkills(), createNonInnateSkills()[0]!];
       const instructions: SkillInstruction[] = [
         { skillId: 'strike', priority: 100, conditions: [], enabled: true },
         { skillId: 'defend', priority: 50, conditions: [], enabled: true },

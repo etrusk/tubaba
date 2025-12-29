@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Character } from '../../src/types/character.js';
 import type { CombatState, Action } from '../../src/types/combat.js';
-import type { Skill, Condition } from '../../src/types/skill.js';
+import type { Skill } from '../../src/types/skill.js';
 import type { CharacterInstructions } from '../../src/types/instructions.js';
 import type { StatusEffect } from '../../src/types/status.js';
 import { forecastNextActions } from '../../src/ui/action-forecast-analyzer.js';
@@ -140,10 +140,10 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       expect(forecast.timeline).toHaveLength(2);
-      expect(forecast.timeline[0].tickNumber).toBe(11); // Mage heals first
-      expect(forecast.timeline[0].characterName).toBe('Mage');
-      expect(forecast.timeline[1].tickNumber).toBe(13); // Warrior strikes later
-      expect(forecast.timeline[1].characterName).toBe('Warrior');
+      expect(forecast.timeline[0]!.tickNumber).toBe(11); // Mage heals first
+      expect(forecast.timeline[0]!.characterName).toBe('Mage');
+      expect(forecast.timeline[1]!.tickNumber).toBe(13); // Warrior strikes later
+      expect(forecast.timeline[1]!.characterName).toBe('Warrior');
     });
 
     it('should handle multiple actions at same tick with deterministic ordering', () => {
@@ -172,11 +172,11 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       expect(forecast.timeline).toHaveLength(2);
-      expect(forecast.timeline[0].tickNumber).toBe(12);
-      expect(forecast.timeline[1].tickNumber).toBe(12);
+      expect(forecast.timeline[0]!.tickNumber).toBe(12);
+      expect(forecast.timeline[1]!.tickNumber).toBe(12);
       // Players should come before enemies in ties (both are players here, so order preserved)
-      expect(forecast.timeline[0].characterId).toBe('p1');
-      expect(forecast.timeline[1].characterId).toBe('p2');
+      expect(forecast.timeline[0]!.characterId).toBe('p1');
+      expect(forecast.timeline[1]!.characterId).toBe('p2');
     });
   });
 
@@ -204,9 +204,9 @@ describe('ActionForecastAnalyzer', () => {
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
       expect(p1Forecast).toBeDefined();
-      expect(p1Forecast?.nextAction).not.toBeNull();
-      expect(p1Forecast?.nextAction?.skillName).toBe('Strike');
-      expect(p1Forecast?.nextAction?.targetNames).toEqual(['Goblin']);
+      expect(p1Forecast!.nextAction).not.toBeNull();
+      expect(p1Forecast!.nextAction!.skillName).toBe('Strike');
+      expect(p1Forecast!.nextAction!.targetNames).toEqual(['Goblin']);
     });
 
     it('should combine queued and predicted actions in timeline', () => {
@@ -243,9 +243,9 @@ describe('ActionForecastAnalyzer', () => {
       const predictedAction = forecast.timeline.find(e => !e.isQueued);
       
       expect(queuedAction).toBeDefined();
-      expect(queuedAction?.characterId).toBe('p1');
+      expect(queuedAction!.characterId).toBe('p1');
       expect(predictedAction).toBeDefined();
-      expect(predictedAction?.characterId).toBe('p2');
+      expect(predictedAction!.characterId).toBe('p2');
     });
 
     it('should predict based on conditions matching current state', () => {
@@ -279,8 +279,8 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.nextAction?.skillName).toBe('Heal');
-      expect(p1Forecast?.nextAction?.reason).toContain('HP < 50%');
+      expect(p1Forecast!.nextAction!.skillName).toBe('Heal');
+      expect(p1Forecast!.nextAction!.reason).toContain('HP < 50%');
     });
   });
 
@@ -302,10 +302,10 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.currentAction).not.toBeNull();
-      expect(p1Forecast?.currentAction?.skillName).toBe('Strike');
-      expect(p1Forecast?.currentAction?.targetNames).toEqual(['Goblin']);
-      expect(p1Forecast?.currentAction?.ticksRemaining).toBe(2);
+      expect(p1Forecast!.currentAction).not.toBeNull();
+      expect(p1Forecast!.currentAction!.skillName).toBe('Strike');
+      expect(p1Forecast!.currentAction!.targetNames).toEqual(['Goblin']);
+      expect(p1Forecast!.currentAction!.ticksRemaining).toBe(2);
     });
 
     it('should have null current action for idle character', () => {
@@ -370,7 +370,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary).toHaveLength(1);
+      expect(p1Forecast!.rulesSummary).toHaveLength(1);
       expect(p1Forecast?.rulesSummary[0]).toEqual({
         priority: 100,
         skillName: 'Heal',
@@ -403,7 +403,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary[0].conditionsText).toBe('If HP < 80% AND Ally Count > 1');
+      expect(p1Forecast!.rulesSummary[0]!.conditionsText).toBe('If HP < 80% AND Ally Count > 1');
     });
 
     it('should show "Always" for empty conditions', () => {
@@ -425,7 +425,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary[0].conditionsText).toBe('Always');
+      expect(p1Forecast!.rulesSummary[0]!.conditionsText).toBe('Always');
     });
 
     it('should include targeting override in rule summary', () => {
@@ -448,7 +448,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary[0].targetingMode).toBe('Self');
+      expect(p1Forecast!.rulesSummary[0]!.targetingMode).toBe('Self');
     });
 
     it('should mark disabled rules', () => {
@@ -470,7 +470,7 @@ describe('ActionForecastAnalyzer', () => {
       const forecast = forecastNextActions(state, instructions);
       
       const p1Forecast = forecast.characterForecasts.find(f => f.characterId === 'p1');
-      expect(p1Forecast?.rulesSummary[0].enabled).toBe(false);
+      expect(p1Forecast!.rulesSummary[0]!.enabled).toBe(false);
     });
   });
 

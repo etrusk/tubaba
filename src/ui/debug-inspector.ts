@@ -1,11 +1,7 @@
 import type {
   DebugInfo,
   RuleEvaluation,
-  RuleCheckResult,
   ConditionCheckResult,
-  TargetingDecision,
-  ResolutionSubstep,
-  SubstepDetail,
 } from '../types/debug.js';
 import { formatCharacterName } from './character-name-formatter.js';
 
@@ -115,43 +111,6 @@ function renderCharacterEvaluation(evaluation: RuleEvaluation): string {
   </div>`;
 }
 
-/**
- * Renders a single rule check result
- */
-function _renderRuleCheck(rule: RuleCheckResult): string {
-  // Use the new status field instead of matched
-  const icon = rule.status === 'selected' ? '✓' : '✗';
-  const cssClass = rule.status === 'selected' ? 'matched' :
-                   rule.status === 'skipped' ? 'skipped' :
-                   rule.status === 'not-reached' ? 'not-reached' :
-                   'failed';
-  
-  // Use the skillName field from the rule (now always populated)
-  const skillName = rule.skillName;
-  
-  let statusText = '';
-  if (rule.status === 'selected') {
-    statusText = ' - <strong>Selected:</strong> ' + rule.reason;
-    if (rule.targetChosen) {
-      statusText += ` → Target: ${rule.targetChosen}`;
-    }
-  } else if (rule.status === 'skipped') {
-    statusText = ` - <strong>Skipped:</strong> ${rule.reason}`;
-  } else if (rule.status === 'not-reached') {
-    statusText = ` - <strong>Not Reached:</strong> ${rule.reason}`;
-  } else {
-    // Failed status
-    statusText = ` - <strong>Failed:</strong> ${rule.reason}`;
-  }
-
-  const conditionDetails = rule.conditions.length > 0
-    ? `\n        <div class="conditions">Conditions: ${rule.conditions
-        .map(renderCondition)
-        .join(' AND ')}</div>`
-    : '';
-
-  return `<div class="rule ${cssClass}">${icon} <strong>${skillName}</strong>${statusText}</div>${conditionDetails}`;
-}
 
 /**
  * Renders a condition check result
@@ -161,122 +120,3 @@ function renderCondition(condition: ConditionCheckResult): string {
   return `${icon} ${condition.type} (expected: ${condition.expected}, actual: ${condition.actual})`;
 }
 
-/**
- * Renders the targeting decisions section
- */
-function _renderTargetingDecisions(decisions: TargetingDecision[], characterNameMap: Map<string, string>): string {
-  const content = decisions.length > 0
-    ? decisions.map(d => renderTargetingDecision(d, characterNameMap)).join('\n    ')
-    : '<div>No targeting decisions this tick</div>';
-
-  return `<div class="targeting-decisions">
-    <h3>Targeting Decisions</h3>
-    ${content}
-  </div>`;
-}
-
-/**
- * Renders a single targeting decision
- */
-function renderTargetingDecision(decision: TargetingDecision, characterNameMap: Map<string, string>): string {
-  const casterName = characterNameMap.get(decision.casterId) || decision.casterId;
-  const formattedCasterName = formatCharacterName(casterName, decision.casterId);
-  
-  const candidateNames = decision.candidates.map(id => {
-    const name = characterNameMap.get(id) || id;
-    return formatCharacterName(name, id);
-  });
-  
-  const finalTargetNames = decision.finalTargets.map(id => {
-    const name = characterNameMap.get(id) || id;
-    return formatCharacterName(name, id);
-  });
-  
-  // Explain targeting mode in human-readable terms
-  const modeExplanations: Record<string, string> = {
-    'self': 'targeting self',
-    'nearest-enemy': 'targeting nearest enemy'
-  };
-  
-  const modeExplanation = modeExplanations[decision.targetingMode] || decision.targetingMode;
-  
-  const filters = decision.filtersApplied.length > 0
-    ? decision.filtersApplied
-        .map(
-          (filter) => {
-            const removedNames = filter.removed.map(id => {
-              const name = characterNameMap.get(id) || id;
-              return formatCharacterName(name, id);
-            });
-            return `<div>  → Filter applied: <strong>${filter.filterType}</strong> removed [${removedNames.join(', ')}]</div>`;
-          }
-        )
-        .join('\n      ')
-    : '';
-
-  const tieBreaker = decision.tieBreaker
-    ? `<div>  → Tie-breaker used: ${decision.tieBreaker}</div>`
-    : '';
-
-  return `<div class="decision">
-      <div>${formattedCasterName} uses <strong>${decision.skillId}</strong> ${modeExplanation}</div>
-      <div>  → Initial candidates: [${candidateNames.join(', ')}]</div>
-      ${filters}
-      <div>  → <strong>Final targets:</strong> [${finalTargetNames.join(', ')}]</div>
-      ${tieBreaker}
-    </div>`;
-}
-
-/**
- * Renders the resolution substeps section
- */
-function _renderResolutionSubsteps(substeps: ResolutionSubstep[], characterNameMap: Map<string, string>): string {
-  const content = substeps.length > 0
-    ? `<ol>
-      ${substeps.map((substep, index) => renderSubstep(substep, index + 1, characterNameMap)).join('\n      ')}
-    </ol>`
-    : '<div>No resolutions this tick</div>';
-
-  return `<div class="resolution-substeps">
-    <h3>Resolution Substeps</h3>
-    ${content}
-  </div>`;
-}
-
-/**
- * Renders a single resolution substep
- */
-function renderSubstep(substep: ResolutionSubstep, stepNumber: number, characterNameMap: Map<string, string>): string {
-  const details = substep.details
-    .map((detail) => renderSubstepDetail(substep.substep, detail, characterNameMap))
-    .join('<br>');
-
-  return `<li class="substep ${substep.substep}">${stepNumber}. ${details}</li>`;
-}
-
-/**
- * Renders a single substep detail
- */
-function renderSubstepDetail(substepType: string, detail: SubstepDetail, characterNameMap: Map<string, string>): string {
-  const actorName = characterNameMap.get(detail.actorId) || detail.actorId;
-  const formattedActorName = formatCharacterName(actorName, detail.actorId);
-  
-  const targetName = characterNameMap.get(detail.targetId) || detail.targetId;
-  const formattedTargetName = formatCharacterName(targetName, detail.targetId);
-  
-  // Create verbose, descriptive output based on substep type
-  const typeLabels: Record<string, string> = {
-    'damage-calc': 'DAMAGE CALCULATION',
-    'healing-calc': 'HEALING CALCULATION',
-    'shield-absorption': 'SHIELD ABSORPTION',
-    'health-update': 'HEALTH UPDATE',
-    'status-application': 'STATUS APPLIED',
-    'action-cancel': 'ACTION CANCELLED'
-  };
-  
-  const typeLabel = typeLabels[substepType] || substepType.toUpperCase();
-  const value = detail.value !== undefined ? ` (${detail.value})` : '';
-  
-  // Enhanced description with before/after context where applicable
-  return `<strong>${typeLabel}:</strong> ${formattedActorName}'s <strong>${detail.skillId}</strong> → ${formattedTargetName}${value} - ${detail.description}`;
-}

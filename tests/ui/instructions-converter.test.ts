@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Character } from '../../src/types/character.js';
 import type { CharacterInstructions, SkillInstruction } from '../../src/types/instructions.js';
-import type { Skill } from '../../src/types/skill.js';
 import {
   applyInstructionsToCharacter,
   skillInstructionToRule,
@@ -60,9 +59,9 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // All skills should have empty rules arrays
-        expect(result.skills[0].rules).toEqual([]);
-        expect(result.skills[1].rules).toEqual([]);
-        expect(result.skills[2].rules).toEqual([]);
+        expect(result.skills[0]!.rules).toEqual([]);
+        expect(result.skills[1]!.rules).toEqual([]);
+        expect(result.skills[2]!.rules).toEqual([]);
       });
 
       it('returns new character without mutating original', () => {
@@ -76,12 +75,12 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // Original should be unchanged
-        expect(character.skills[0].rules).toHaveLength(1);
-        expect(character.skills[1].rules).toHaveLength(1);
+        expect(character.skills[0]!.rules).toHaveLength(1);
+        expect(character.skills[1]!.rules).toHaveLength(1);
         
         // Result should have empty rules
-        expect(result.skills[0].rules).toEqual([]);
-        expect(result.skills[1].rules).toEqual([]);
+        expect(result.skills[0]!.rules).toEqual([]);
+        expect(result.skills[1]!.rules).toEqual([]);
       });
     });
 
@@ -111,23 +110,23 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // skill1 should have one rule
-        expect(result.skills[0].rules).toHaveLength(1);
-        expect(result.skills[0].rules![0]).toEqual({
+        expect(result.skills[0]!.rules).toHaveLength(1);
+        expect(result.skills[0]!.rules![0]).toEqual({
           priority: 10,
           conditions: [{ type: 'hp-below', threshold: 30 }],
           targetingOverride: undefined,
         });
 
         // skill2 should have one rule
-        expect(result.skills[1].rules).toHaveLength(1);
-        expect(result.skills[1].rules![0]).toEqual({
+        expect(result.skills[1]!.rules).toHaveLength(1);
+        expect(result.skills[1]!.rules![0]).toEqual({
           priority: 20,
           conditions: [{ type: 'ally-count', threshold: 2 }],
           targetingOverride: 'self',
         });
 
         // skill3 has no instruction, should have empty rules
-        expect(result.skills[2].rules).toEqual([]);
+        expect(result.skills[2]!.rules).toEqual([]);
       });
 
       it('maps priority correctly', () => {
@@ -147,7 +146,7 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules![0].priority).toBe(99);
+        expect(result.skills[0]!.rules![0]!.priority).toBe(99);
       });
 
       it('passes conditions through correctly', () => {
@@ -171,7 +170,7 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules![0].conditions).toEqual(conditions);
+        expect(result.skills[0]!.rules![0]!.conditions).toEqual(conditions);
       });
 
       it('passes targeting override through correctly', () => {
@@ -192,7 +191,7 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules![0].targetingOverride).toBe('nearest-enemy');
+        expect(result.skills[0]!.rules![0]!.targetingOverride).toBe('nearest-enemy');
       });
     });
 
@@ -221,11 +220,11 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // skill1 disabled - should have empty rules
-        expect(result.skills[0].rules).toEqual([]);
+        expect(result.skills[0]!.rules).toEqual([]);
 
         // skill2 enabled - should have rule
-        expect(result.skills[1].rules).toHaveLength(1);
-        expect(result.skills[1].rules![0].priority).toBe(20);
+        expect(result.skills[1]!.rules).toHaveLength(1);
+        expect(result.skills[1]!.rules![0]!.priority).toBe(20);
       });
 
       it('only enabled skills get their rules generated', () => {
@@ -257,9 +256,9 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules).toHaveLength(1); // skill1: enabled
-        expect(result.skills[1].rules).toEqual([]);     // skill2: disabled
-        expect(result.skills[2].rules).toHaveLength(1); // skill3: enabled
+        expect(result.skills[0]!.rules).toHaveLength(1); // skill1: enabled
+        expect(result.skills[1]!.rules).toEqual([]);     // skill2: disabled
+        expect(result.skills[2]!.rules).toHaveLength(1); // skill3: enabled
       });
     });
 
@@ -275,9 +274,9 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // All skills should have empty rules
-        expect(result.skills[0].rules).toEqual([]);
-        expect(result.skills[1].rules).toEqual([]);
-        expect(result.skills[2].rules).toEqual([]);
+        expect(result.skills[0]!.rules).toEqual([]);
+        expect(result.skills[1]!.rules).toEqual([]);
+        expect(result.skills[2]!.rules).toEqual([]);
       });
 
       it('ignores skill instruction for skill not in character loadout', () => {
@@ -304,8 +303,8 @@ describe('instructions-converter', () => {
         const result = applyInstructionsToCharacter(character, instructions);
 
         // Should not throw, just ignore the nonexistent skill
-        expect(result.skills[0].rules).toHaveLength(1);
-        expect(result.skills[0].rules![0].priority).toBe(10);
+        expect(result.skills[0]!.rules).toHaveLength(1);
+        expect(result.skills[0]!.rules![0]!.priority).toBe(10);
       });
 
       it('handles empty conditions array as always-matching rule', () => {
@@ -325,7 +324,7 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        expect(result.skills[0].rules![0].conditions).toEqual([]);
+        expect(result.skills[0]!.rules![0]!.conditions).toEqual([]);
       });
 
       it('preserves other character properties', () => {
@@ -364,14 +363,14 @@ describe('instructions-converter', () => {
 
         const result = applyInstructionsToCharacter(character, instructions);
 
-        const resultSkill = result.skills[0];
+        const resultSkill = result.skills[0]!;
         const originalSkill = character.skills[0]!;
 
-        expect(resultSkill.id).toBe(originalSkill.id);
-        expect(resultSkill.name).toBe(originalSkill.name);
-        expect(resultSkill.baseDuration).toBe(originalSkill.baseDuration);
-        expect(resultSkill.effects).toBe(originalSkill.effects);
-        expect(resultSkill.targeting).toBe(originalSkill.targeting);
+        expect(resultSkill!.id).toBe(originalSkill.id);
+        expect(resultSkill!.name).toBe(originalSkill.name);
+        expect(resultSkill!.baseDuration).toBe(originalSkill.baseDuration);
+        expect(resultSkill!.effects).toBe(originalSkill.effects);
+        expect(resultSkill!.targeting).toBe(originalSkill.targeting);
       });
     });
   });

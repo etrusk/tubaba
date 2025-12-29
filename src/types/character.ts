@@ -1,6 +1,7 @@
 import type { Skill } from './skill.js';
 import type { StatusEffect } from './status.js';
 import type { Action } from './combat.js';
+import type { GridPosition } from '../targeting/grid-position.js';
 
 /**
  * Character representation (player or enemy)
@@ -22,4 +23,6 @@ export interface Character {
   currentAction: Action | null;
   /** Player vs enemy distinction */
   isPlayer: boolean;
+  /** Grid position for distance-based targeting (optional for backward compatibility) */
+  position?: GridPosition;
 }

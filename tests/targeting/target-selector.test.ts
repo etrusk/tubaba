@@ -289,4 +289,121 @@ describe('TargetSelector', () => {
       expect(targets1).toEqual(targets2);
     });
   });
+
+  describe('position-based targeting', () => {
+    it('should select nearest enemy by Euclidean distance when positions available', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      caster.position = { x: 0, y: 0 };
+      
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'Far Enemy', 100, 100, false),
+        createTestCharacter('e2', 'Near Enemy', 100, 100, false),
+        createTestCharacter('e3', 'Medium Enemy', 100, 100, false),
+      ];
+      enemies[0]!.position = { x: 10, y: 10 }; // Distance: sqrt(200) ≈ 14.14
+      enemies[1]!.position = { x: 3, y: 4 };   // Distance: 5
+      enemies[2]!.position = { x: 6, y: 8 };   // Distance: 10
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e2');
+    });
+
+    it('should fall back to first enemy when no positions', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'Enemy 1', 100, 100, false),
+        createTestCharacter('e2', 'Enemy 2', 100, 100, false),
+      ];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e1');
+    });
+
+    it('should handle mixed (some with positions, some without)', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      caster.position = { x: 0, y: 0 };
+      
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'No Position', 100, 100, false),
+        createTestCharacter('e2', 'Far Position', 100, 100, false),
+        createTestCharacter('e3', 'Near Position', 100, 100, false),
+      ];
+      // e1 has no position
+      enemies[1]!.position = { x: 10, y: 10 }; // Distance: sqrt(200) ≈ 14.14
+      enemies[2]!.position = { x: 3, y: 4 };   // Distance: 5
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e3'); // Should select nearest with position
+    });
+
+    it('should fall back when caster has no position', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      // No position set
+      
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'First Enemy', 100, 100, false),
+        createTestCharacter('e2', 'Second Enemy', 100, 100, false),
+      ];
+      enemies[0]!.position = { x: 10, y: 10 };
+      enemies[1]!.position = { x: 1, y: 1 };
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e1'); // Fallback to first
+    });
+
+    it('should exclude dead enemies even with positions', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      caster.position = { x: 0, y: 0 };
+      
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'Dead Near', 0, 100, false),
+        createTestCharacter('e2', 'Alive Far', 100, 100, false),
+      ];
+      enemies[0]!.position = { x: 1, y: 1 }; // Distance: sqrt(2) ≈ 1.41
+      enemies[1]!.position = { x: 10, y: 10 }; // Distance: sqrt(200) ≈ 14.14
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e2'); // Should skip dead enemy
+    });
+  });
 });

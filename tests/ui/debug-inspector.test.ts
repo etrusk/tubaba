@@ -5,9 +5,7 @@ import type {
   RuleCheckResult,
   ConditionCheckResult,
   TargetingDecision,
-  TargetFilterResult,
   ResolutionSubstep,
-  SubstepDetail,
 } from '../../src/types/debug.js';
 import { renderDebugInspector } from '../../src/ui/debug-inspector.js';
 
@@ -62,50 +60,6 @@ function createRuleEvaluation(
     selectedSkill,
     selectedTargets,
   };
-}
-
-function createTargetFilterResult(
-  filterType: 'taunt' | 'dead-exclusion' | 'self-exclusion',
-  removed: string[]
-): TargetFilterResult {
-  return { filterType, removed };
-}
-
-function createTargetingDecision(
-  casterId: string,
-  skillId: string,
-  targetingMode: 'self' | 'nearest-enemy',
-  candidates: string[],
-  filtersApplied: TargetFilterResult[],
-  finalTargets: string[],
-  tieBreaker?: string
-): TargetingDecision {
-  return {
-    casterId,
-    skillId,
-    targetingMode,
-    candidates,
-    filtersApplied,
-    finalTargets,
-    tieBreaker,
-  };
-}
-
-function createSubstepDetail(
-  actorId: string,
-  targetId: string,
-  skillId: string,
-  value: number | undefined,
-  description: string
-): SubstepDetail {
-  return { actorId, targetId, skillId, value, description };
-}
-
-function createResolutionSubstep(
-  substep: 'damage-calc' | 'healing-calc' | 'shield-absorption' | 'health-update' | 'status-application' | 'action-cancel',
-  details: SubstepDetail[]
-): ResolutionSubstep {
-  return { substep, details };
 }
 
 function createDebugInfo(
