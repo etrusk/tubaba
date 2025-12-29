@@ -29,15 +29,12 @@ export type ConditionType =
   | 'self-has-status' 
   | 'ally-has-status';
 
-/** Targeting mode type (re-exported for convenience) */
-export type TargetingMode = 
-  | 'self' 
-  | 'single-enemy-lowest-hp' 
-  | 'single-enemy-highest-hp'
-  | 'all-enemies' 
-  | 'ally-lowest-hp' 
-  | 'ally-dead' 
-  | 'all-allies';
+/**
+ * Targeting mode type (re-exported for convenience)
+ * - self: Targets the caster
+ * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
+ */
+export type TargetingMode = 'self' | 'nearest-enemy';
 
 /** Debug-enhanced tick result */
 export interface TickResultWithDebug {

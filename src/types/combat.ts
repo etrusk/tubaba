@@ -3,15 +3,10 @@ import type { StatusType } from './status.js';
 
 /**
  * Targeting modes for skill execution (re-exported from skill.ts for convenience)
+ * - self: Targets the caster
+ * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
  */
-export type TargetingMode =
-  | 'self'
-  | 'single-enemy-lowest-hp'
-  | 'single-enemy-highest-hp'
-  | 'all-enemies'
-  | 'ally-lowest-hp'
-  | 'ally-dead'
-  | 'all-allies';
+export type TargetingMode = 'self' | 'nearest-enemy';
 
 /**
  * Queued action in progress

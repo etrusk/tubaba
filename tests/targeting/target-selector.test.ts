@@ -82,8 +82,8 @@ describe('TargetSelector', () => {
     });
   });
 
-  describe('single-enemy-lowest-hp targeting', () => {
-    it('should select enemy with lowest HP', () => {
+  describe('nearest-enemy targeting', () => {
+    it('should select first living enemy', () => {
       const caster = createTestCharacter('p1', 'Player', 100, 100, true);
       const players = [caster];
       const enemies = [
@@ -93,35 +93,35 @@ describe('TargetSelector', () => {
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
       );
 
       expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('e2');
-      expect(targets[0]!.currentHp).toBe(50);
+      expect(targets[0]!.id).toBe('e1');
     });
 
-    it('should break ties by selecting leftmost in array', () => {
+    it('should select first living enemy regardless of HP', () => {
       const caster = createTestCharacter('p1', 'Player', 100, 100, true);
       const players = [caster];
       const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 50, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 50, 100, false),
+        createTestCharacter('e1', 'Enemy 1', 10, 100, false),
+        createTestCharacter('e2', 'Enemy 2', 100, 100, false),
         createTestCharacter('e3', 'Enemy 3', 50, 100, false),
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
       );
 
       expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('e1'); // Leftmost with 50 HP
+      expect(targets[0]!.id).toBe('e1');
+      expect(targets[0]!.currentHp).toBe(10);
     });
 
     it('should exclude knocked-out enemies (HP <= 0)', () => {
@@ -134,7 +134,7 @@ describe('TargetSelector', () => {
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
@@ -142,7 +142,6 @@ describe('TargetSelector', () => {
 
       expect(targets).toHaveLength(1);
       expect(targets[0]!.id).toBe('e2');
-      expect(targets[0]!.currentHp).toBe(50);
     });
 
     it('should return empty array when all enemies are dead', () => {
@@ -154,7 +153,7 @@ describe('TargetSelector', () => {
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
@@ -169,7 +168,7 @@ describe('TargetSelector', () => {
       const enemies: Character[] = [];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
@@ -177,20 +176,34 @@ describe('TargetSelector', () => {
 
       expect(targets).toHaveLength(0);
     });
-  });
 
-  describe('single-enemy-highest-hp targeting', () => {
-    it('should select enemy with highest HP', () => {
+    it('should skip dead enemies at start of array', () => {
       const caster = createTestCharacter('p1', 'Player', 100, 100, true);
       const players = [caster];
       const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 100, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 50, 100, false),
-        createTestCharacter('e3', 'Enemy 3', 75, 100, false),
+        createTestCharacter('e1', 'Dead 1', 0, 100, false),
+        createTestCharacter('e2', 'Dead 2', 0, 100, false),
+        createTestCharacter('e3', 'Alive Enemy', 75, 100, false),
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-highest-hp',
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets).toHaveLength(1);
+      expect(targets[0]!.id).toBe('e3');
+    });
+
+    it('should handle single enemy', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      const players = [caster];
+      const enemies = [createTestCharacter('e1', 'Solo Enemy', 50, 100, false)];
+
+      const targets = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
         caster,
         players,
         enemies
@@ -198,687 +211,6 @@ describe('TargetSelector', () => {
 
       expect(targets).toHaveLength(1);
       expect(targets[0]!.id).toBe('e1');
-      expect(targets[0]!.currentHp).toBe(100);
-    });
-
-    it('should break ties by selecting leftmost in array', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 100, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 100, 100, false),
-        createTestCharacter('e3', 'Enemy 3', 50, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-highest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('e1'); // Leftmost with 100 HP
-    });
-
-    it('should exclude knocked-out enemies', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Dead Enemy', 0, 100, false),
-        createTestCharacter('e2', 'Alive Enemy', 75, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-highest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('e2');
-    });
-
-    it('should return empty array when no valid enemies exist', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies: Character[] = [];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-highest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(0);
-    });
-  });
-
-  describe('all-enemies targeting', () => {
-    it('should select all living enemies', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 100, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 50, 100, false),
-        createTestCharacter('e3', 'Enemy 3', 75, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets).toHaveLength(3);
-      expect(targets.map((t) => t.id)).toEqual(['e1', 'e2', 'e3']);
-    });
-
-    it('should exclude dead enemies', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Alive Enemy 1', 100, 100, false),
-        createTestCharacter('e2', 'Dead Enemy', 0, 100, false),
-        createTestCharacter('e3', 'Alive Enemy 2', 75, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets).toHaveLength(2);
-      expect(targets.map((t) => t.id)).toEqual(['e1', 'e3']);
-    });
-
-    it('should return empty array when all enemies are dead', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Dead 1', 0, 100, false),
-        createTestCharacter('e2', 'Dead 2', 0, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets).toHaveLength(0);
-    });
-
-    it('should return empty array when no enemies exist', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies: Character[] = [];
-
-      const targets = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets).toHaveLength(0);
-    });
-
-    it('should maintain original array order', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'First', 50, 100, false),
-        createTestCharacter('e2', 'Second', 100, 100, false),
-        createTestCharacter('e3', 'Third', 25, 100, false),
-      ];
-
-      const targets = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets).toHaveLength(3);
-      expect(targets.map((t) => t.id)).toEqual(['e1', 'e2', 'e3']);
-    });
-  });
-
-  describe('ally-lowest-hp targeting', () => {
-    it('should select ally with lowest HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 80, 100, true),
-        createTestCharacter('p3', 'Player 3', 30, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-      expect(targets[0]!.currentHp).toBe(30);
-    });
-
-    it('should include caster in selection pool', () => {
-      const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 50, 100, true),
-        createTestCharacter('p3', 'Player 3', 75, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Should select caster when they have lowest HP
-    });
-
-    it('should break ties by selecting leftmost in array', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 50, 100, true),
-        createTestCharacter('p3', 'Player 3', 50, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p2'); // Leftmost with 50 HP (excluding caster)
-    });
-
-    it('should exclude knocked-out allies', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Dead Ally', 0, 100, true),
-        createTestCharacter('p3', 'Alive Ally', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-    });
-
-    it('should return caster when only caster alive', () => {
-      const caster = createTestCharacter('p1', 'Solo Caster', 100, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Caster can target self
-    });
-
-    it('should return caster when all other allies are dead', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Dead 1', 0, 100, true),
-        createTestCharacter('p3', 'Dead 2', 0, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Caster can target self
-    });
-
-    it('should select ally with lowest HP even if at full HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Full HP Ally', 100, 100, true), // At max HP
-        createTestCharacter('p3', 'Injured Ally', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3'); // Selects lowest HP regardless of full HP
-      expect(targets[0]!.currentHp).toBe(60);
-    });
-
-    it('should select ally when all allies are at full HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 120, 120, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Full HP 1', 100, 100, true),
-        createTestCharacter('p3', 'Full HP 2', 80, 80, true), // Different max but at full
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3'); // Selects lowest HP even when all at full HP
-      expect(targets[0]!.currentHp).toBe(80);
-    });
-  });
-
-  describe('ally-lowest-hp-damaged targeting', () => {
-    it('should select damaged ally with lowest HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 80, 100, true),
-        createTestCharacter('p3', 'Player 3', 30, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-      expect(targets[0]!.currentHp).toBe(30);
-    });
-
-    it('should include caster in selection pool if damaged', () => {
-      const caster = createTestCharacter('p1', 'Caster', 10, 100, true); // Lowest HP and damaged
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 50, 100, true),
-        createTestCharacter('p3', 'Player 3', 75, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Should select caster when they have lowest HP and are damaged
-    });
-
-    it('should break ties by selecting leftmost in array', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 50, 100, true),
-        createTestCharacter('p3', 'Player 3', 50, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p2'); // Leftmost with 50 HP (excluding caster)
-    });
-
-    it('should exclude knocked-out allies', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Dead Ally', 0, 100, true),
-        createTestCharacter('p3', 'Alive Ally', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-    });
-
-    it('should exclude allies at full HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Full HP Ally', 100, 100, true), // At max HP
-        createTestCharacter('p3', 'Injured Ally', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3'); // Should NOT select full HP ally
-      expect(targets[0]!.currentHp).toBe(60);
-    });
-
-    it('should return empty array when all allies are at full HP', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Full HP 1', 100, 100, true),
-        createTestCharacter('p3', 'Full HP 2', 80, 80, true), // Different max but at full
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(0); // No valid targets when all at full HP
-    });
-
-    it('should return empty array when only caster alive and at full HP', () => {
-      const caster = createTestCharacter('p1', 'Solo Caster', 100, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(0); // No damaged allies (caster is at full HP)
-    });
-
-    it('should return empty array when all other allies are dead', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Dead 1', 0, 100, true),
-        createTestCharacter('p3', 'Dead 2', 0, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(0);
-    });
-
-    it('should select damaged caster when other allies are at full HP', () => {
-      const caster = createTestCharacter('p1', 'Damaged Caster', 50, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Full HP Ally', 100, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets(
-        'ally-lowest-hp-damaged',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Caster can be selected when damaged
-    });
-  });
-
-  describe('ally-dead targeting', () => {
-    it('should select dead ally (HP = 0)', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Alive', 50, 100, true),
-        createTestCharacter('p3', 'Dead', 0, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('ally-dead', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-      expect(targets[0]!.currentHp).toBe(0);
-    });
-
-    it('should handle negative HP as dead', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Alive', 50, 100, true),
-        createTestCharacter('p3', 'Overkilled', -10, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('ally-dead', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p3');
-    });
-
-    it('should return empty array when no dead allies exist', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Alive 1', 80, 100, true),
-        createTestCharacter('p3', 'Alive 2', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('ally-dead', caster, players, enemies);
-
-      expect(targets).toHaveLength(0);
-    });
-
-    it('should select leftmost dead ally when multiple are dead', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        createTestCharacter('p2', 'Dead 1', 0, 100, true),
-        createTestCharacter('p3', 'Dead 2', 0, 100, true),
-        caster,
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('ally-dead', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p2'); // Leftmost dead ally
-    });
-
-    it('should include caster if caster is dead (edge case for resurrection mechanics)', () => {
-      const caster = createTestCharacter('p1', 'Dead Caster', 0, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Alive', 100, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('ally-dead', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1'); // Dead caster can be targeted
-    });
-  });
-
-  describe('all-allies targeting', () => {
-    it('should select all living allies including caster', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Player 2', 80, 100, true),
-        createTestCharacter('p3', 'Player 3', 60, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('all-allies', caster, players, enemies);
-
-      expect(targets).toHaveLength(3);
-      expect(targets.map((t) => t.id)).toEqual(['p1', 'p2', 'p3']);
-    });
-
-    it('should exclude dead allies', () => {
-      const caster = createTestCharacter('p1', 'Caster', 100, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Alive', 80, 100, true),
-        createTestCharacter('p3', 'Dead', 0, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('all-allies', caster, players, enemies);
-
-      expect(targets).toHaveLength(2);
-      expect(targets.map((t) => t.id)).toEqual(['p1', 'p2']);
-    });
-
-    it('should return only caster when all other allies are dead', () => {
-      const caster = createTestCharacter('p1', 'Solo Survivor', 50, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Dead 1', 0, 100, true),
-        createTestCharacter('p3', 'Dead 2', 0, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('all-allies', caster, players, enemies);
-
-      expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('p1');
-    });
-
-    it('should maintain original array order', () => {
-      const caster = createTestCharacter('p1', 'Caster', 50, 100, true);
-      const players = [
-        caster,
-        createTestCharacter('p2', 'Second', 100, 100, true),
-        createTestCharacter('p3', 'Third', 25, 100, true),
-      ];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('all-allies', caster, players, enemies);
-
-      expect(targets).toHaveLength(3);
-      expect(targets.map((t) => t.id)).toEqual(['p1', 'p2', 'p3']);
-    });
-
-    it('should return empty array if caster is dead and alone', () => {
-      const caster = createTestCharacter('p1', 'Dead Solo', 0, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Enemy', 100, 100, false)];
-
-      const targets = TargetSelectorStub.selectTargets('all-allies', caster, players, enemies);
-
-      expect(targets).toHaveLength(0); // Dead caster excluded
-    });
-  });
-
-  describe('deterministic behavior', () => {
-    it('should return same results for identical inputs (single-enemy-lowest-hp)', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 50, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 75, 100, false),
-      ];
-
-      const targets1 = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-      const targets2 = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-
-      expect(targets1).toEqual(targets2);
-    });
-
-    it('should return same results for identical inputs (all-enemies)', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [
-        createTestCharacter('e1', 'Enemy 1', 50, 100, false),
-        createTestCharacter('e2', 'Enemy 2', 75, 100, false),
-        createTestCharacter('e3', 'Enemy 3', 100, 100, false),
-      ];
-
-      const targets1 = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-      const targets2 = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(targets1).toEqual(targets2);
-      expect(targets1.map((t) => t.id)).toEqual(targets2.map((t) => t.id));
-    });
-  });
-
-  describe('edge cases and error handling', () => {
-    it('should handle single enemy for all targeting modes', () => {
-      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
-      const players = [caster];
-      const enemies = [createTestCharacter('e1', 'Solo Enemy', 50, 100, false)];
-
-      const lowestHp = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
-        caster,
-        players,
-        enemies
-      );
-      const highestHp = TargetSelectorStub.selectTargets(
-        'single-enemy-highest-hp',
-        caster,
-        players,
-        enemies
-      );
-      const allEnemies = TargetSelectorStub.selectTargets('all-enemies', caster, players, enemies);
-
-      expect(lowestHp).toHaveLength(1);
-      expect(highestHp).toHaveLength(1);
-      expect(allEnemies).toHaveLength(1);
-      expect(lowestHp[0]!.id).toBe('e1');
-      expect(highestHp[0]!.id).toBe('e1');
-      expect(allEnemies[0]!.id).toBe('e1');
     });
 
     it('should handle HP exactly at 0 as knocked out', () => {
@@ -890,14 +222,14 @@ describe('TargetSelector', () => {
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
       );
 
       expect(targets).toHaveLength(1);
-      expect(targets[0]!.id).toBe('e2'); // Should skip 0 HP enemy
+      expect(targets[0]!.id).toBe('e2');
     });
 
     it('should handle HP exactly at 1 as valid target', () => {
@@ -909,7 +241,7 @@ describe('TargetSelector', () => {
       ];
 
       const targets = TargetSelectorStub.selectTargets(
-        'single-enemy-lowest-hp',
+        'nearest-enemy',
         caster,
         players,
         enemies
@@ -918,6 +250,43 @@ describe('TargetSelector', () => {
       expect(targets).toHaveLength(1);
       expect(targets[0]!.id).toBe('e1');
       expect(targets[0]!.currentHp).toBe(1);
+    });
+  });
+
+  describe('deterministic behavior', () => {
+    it('should return same results for identical inputs (self)', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      const players = [caster];
+      const enemies = [createTestCharacter('e1', 'Enemy 1', 50, 100, false)];
+
+      const targets1 = TargetSelectorStub.selectTargets('self', caster, players, enemies);
+      const targets2 = TargetSelectorStub.selectTargets('self', caster, players, enemies);
+
+      expect(targets1).toEqual(targets2);
+    });
+
+    it('should return same results for identical inputs (nearest-enemy)', () => {
+      const caster = createTestCharacter('p1', 'Player', 100, 100, true);
+      const players = [caster];
+      const enemies = [
+        createTestCharacter('e1', 'Enemy 1', 50, 100, false),
+        createTestCharacter('e2', 'Enemy 2', 75, 100, false),
+      ];
+
+      const targets1 = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+      const targets2 = TargetSelectorStub.selectTargets(
+        'nearest-enemy',
+        caster,
+        players,
+        enemies
+      );
+
+      expect(targets1).toEqual(targets2);
     });
   });
 });

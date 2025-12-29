@@ -3,23 +3,9 @@ import type { StatusType } from './status.js';
 /**
  * Targeting modes for skill execution
  * - self: Targets the caster
- * - single-enemy-lowest-hp: Single enemy with lowest HP (tie-break: leftmost)
- * - single-enemy-highest-hp: Single enemy with highest HP
- * - all-enemies: All living enemies
- * - ally-lowest-hp: Ally or self with lowest HP
- * - ally-lowest-hp-damaged: Ally or self with lowest HP who is damaged (currentHp < maxHp)
- * - ally-dead: Dead ally (for Revive)
- * - all-allies: All living allies
+ * - nearest-enemy: First living enemy in array (preparation for grid-based distance)
  */
-export type TargetingMode =
-  | 'self'
-  | 'single-enemy-lowest-hp'
-  | 'single-enemy-highest-hp'
-  | 'all-enemies'
-  | 'ally-lowest-hp'
-  | 'ally-lowest-hp-damaged'
-  | 'ally-dead'
-  | 'all-allies';
+export type TargetingMode = 'self' | 'nearest-enemy';
 
 /**
  * Effect applied when a skill resolves
