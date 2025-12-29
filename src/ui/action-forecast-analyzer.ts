@@ -306,18 +306,8 @@ function formatTargetingMode(mode: TargetingMode): string {
   switch (mode) {
     case 'self':
       return 'Self';
-    case 'single-enemy-lowest-hp':
-      return 'Lowest HP Enemy';
-    case 'single-enemy-highest-hp':
-      return 'Highest HP Enemy';
-    case 'all-enemies':
-      return 'All Enemies';
-    case 'ally-lowest-hp':
-      return 'Lowest HP Ally';
-    case 'ally-dead':
-      return 'Dead Ally';
-    case 'all-allies':
-      return 'All Allies';
+    case 'nearest-enemy':
+      return 'Nearest Enemy';
     default:
       return 'Unknown';
   }

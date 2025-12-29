@@ -24,13 +24,7 @@ import type { TargetingMode } from '../types/skill.js';
 export function getTargetingModeLabel(mode: TargetingMode): string {
   const labels: Record<TargetingMode, string> = {
     'self': 'Self',
-    'single-enemy-lowest-hp': 'Single Enemy (Lowest HP)',
-    'single-enemy-highest-hp': 'Single Enemy (Highest HP)',
-    'all-enemies': 'All Enemies',
-    'ally-lowest-hp': 'Ally/Self (Lowest HP)',
-    'ally-lowest-hp-damaged': 'Ally/Self (Lowest HP - Damaged)',
-    'ally-dead': 'Ally (Dead - for Revive)',
-    'all-allies': 'All Allies',
+    'nearest-enemy': 'Nearest Enemy',
   };
 
   return labels[mode];
@@ -51,13 +45,7 @@ export function getTargetingModeLabel(mode: TargetingMode): string {
 export function getTargetingModeHelp(mode: TargetingMode): string {
   const helpTexts: Record<TargetingMode, string> = {
     'self': 'Targets only the character itself',
-    'single-enemy-lowest-hp': 'Targets the enemy with the lowest current HP',
-    'single-enemy-highest-hp': 'Targets the enemy with the highest current HP',
-    'all-enemies': 'Targets all enemies in the battle',
-    'ally-lowest-hp': 'Targets the ally or self with the lowest current HP',
-    'ally-lowest-hp-damaged': 'Targets the damaged ally or self with the lowest HP',
-    'ally-dead': 'Targets a dead ally (for revival skills)',
-    'all-allies': 'Targets all allies in the battle',
+    'nearest-enemy': 'Targets the nearest living enemy',
   };
 
   return helpTexts[mode];
@@ -98,13 +86,7 @@ export function renderTargetingOverrideSelector(
   // All available targeting modes in order
   const targetingModes: TargetingMode[] = [
     'self',
-    'single-enemy-lowest-hp',
-    'single-enemy-highest-hp',
-    'all-enemies',
-    'ally-lowest-hp',
-    'ally-lowest-hp-damaged',
-    'ally-dead',
-    'all-allies',
+    'nearest-enemy',
   ];
 
   // Generate option elements

@@ -192,13 +192,7 @@ export class ViewModelFactory {
   static formatTargeting(mode: TargetingMode): string {
     const descriptions: Record<TargetingMode, string> = {
       'self': 'Targets self',
-      'single-enemy-lowest-hp': 'Targets lowest HP enemy',
-      'single-enemy-highest-hp': 'Targets highest HP enemy',
-      'all-enemies': 'Targets all enemies',
-      'ally-lowest-hp': 'Targets lowest HP ally (including self)',
-      'ally-lowest-hp-damaged': 'Targets lowest HP damaged ally',
-      'ally-dead': 'Targets dead ally',
-      'all-allies': 'Targets all allies',
+      'nearest-enemy': 'Targets nearest enemy',
     };
     return descriptions[mode] ?? mode;
   }

@@ -195,13 +195,7 @@ function renderTargetingDecision(decision: TargetingDecision, characterNameMap: 
   // Explain targeting mode in human-readable terms
   const modeExplanations: Record<string, string> = {
     'self': 'targeting self',
-    'single-enemy-lowest-hp': 'targeting lowest HP enemy',
-    'single-enemy-highest-hp': 'targeting highest HP enemy',
-    'all-enemies': 'targeting all enemies',
-    'ally-lowest-hp': 'targeting ally/self with lowest HP',
-    'ally-lowest-hp-damaged': 'targeting damaged ally/self with lowest HP',
-    'ally-dead': 'targeting dead ally',
-    'all-allies': 'targeting all allies'
+    'nearest-enemy': 'targeting nearest enemy'
   };
   
   const modeExplanation = modeExplanations[decision.targetingMode] || decision.targetingMode;
